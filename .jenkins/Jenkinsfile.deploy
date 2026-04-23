@@ -1,12 +1,17 @@
-// RunLoop — Deploy to Kubernetes.
+// RunLoop — Deploy to Kubernetes (community namespace).
 //
 // Job location: http://10.1.102.52:32552/job/COMMUNITY/job/deploy-runloop-to-kube/
 // Triggered by: /COMMUNITY/runloop (on successful image push)
 // Accepts:      IMAGE_TAG (string parameter; default = latest)
 //
-// Applies manifests under k8s/ then rolls web + engine to the new tag.
-// One-time bootstrap (secret + namespace + postgres) should be applied
-// manually — this pipeline only updates the app deployments.
+// Uses `withCredentials([file(...)])` pattern (same as other BB deploy
+// jobs). Expects a Jenkins "Secret file" credential with ID
+// `kubeconfig-community` containing a kubeconfig authorized to
+// read/write in the `community` namespace.
+//
+// One-time manifest bootstrap (namespace, PV, secret, postgres,
+// ingress) is done OUTSIDE this pipeline — see docs/deployment/DEPLOYMENT.md.
+// This pipeline only rolls the web + engine deployments to a new tag.
 
 pipeline {
   agent any
@@ -20,7 +25,7 @@ pipeline {
     booleanParam(
       name: 'APPLY_MANIFESTS',
       defaultValue: false,
-      description: 'Re-apply all k8s/*.yaml (use for schema/infra changes only)',
+      description: 'Re-apply k8s/{30-engine,40-web,50-ingress}.yaml before rolling (use for infra changes only). Namespace/secret/postgres are NEVER auto-applied here.',
     )
   }
 
@@ -43,27 +48,29 @@ pipeline {
     stage('Apply manifests (optional)') {
       when { expression { return params.APPLY_MANIFESTS } }
       steps {
-        withKubeConfig(credentialsId: 'kubeconfig-community') {
-          sh 'kubectl apply -f k8s/00-namespace.yaml'
-          sh 'kubectl apply -f k8s/20-postgres.yaml'
-          sh 'kubectl apply -f k8s/30-engine.yaml'
-          sh 'kubectl apply -f k8s/40-web.yaml'
-          sh 'kubectl apply -f k8s/50-ingress.yaml'
+        withCredentials([file(credentialsId: 'kubeconfig-community', variable: 'KUBECONFIG')]) {
+          sh '''
+            set -e
+            kubectl apply -f k8s/30-engine.yaml
+            kubectl apply -f k8s/40-web.yaml
+            kubectl apply -f k8s/50-ingress.yaml
+          '''
         }
       }
     }
 
     stage('Roll web + engine') {
       steps {
-        withKubeConfig(credentialsId: 'kubeconfig-community') {
+        withCredentials([file(credentialsId: 'kubeconfig-community', variable: 'KUBECONFIG')]) {
           sh """
-            kubectl set image deployment/runloop-engine -n ${NAMESPACE} \
+            set -e
+            kubectl -n ${NAMESPACE} set image deployment/runloop-engine \
               engine=${ENG_IMAGE}
-            kubectl set image deployment/runloop-web -n ${NAMESPACE} \
+            kubectl -n ${NAMESPACE} set image deployment/runloop-web \
               web=${WEB_IMAGE} migrate=${WEB_IMAGE}
+            kubectl -n ${NAMESPACE} rollout status deployment/runloop-engine --timeout=180s
+            kubectl -n ${NAMESPACE} rollout status deployment/runloop-web    --timeout=300s
           """
-          sh "kubectl rollout status deployment/runloop-engine -n ${NAMESPACE} --timeout=180s"
-          sh "kubectl rollout status deployment/runloop-web    -n ${NAMESPACE} --timeout=300s"
         }
       }
     }
@@ -71,13 +78,15 @@ pipeline {
     stage('Smoke test') {
       steps {
         sh '''
-          set -e
-          echo "→ ingress health"
-          curl -sSf -o /dev/null -w "%{http_code}\\n" \
-            https://community.oneweb.tech/runloop || true
-          echo "→ engine health (via ingress)"
-          curl -sSf -o /dev/null -w "%{http_code}\\n" \
-            https://community.oneweb.tech/runloop/rl/health || true
+          set +e
+          echo "→ ingress health (host header)"
+          curl -s -o /dev/null -w "ingress /runloop      → %{http_code}\\n" \
+            --resolve community.oneweb.tech:80:10.1.102.89 \
+            http://community.oneweb.tech/runloop
+          echo "→ engine health"
+          curl -s -o /dev/null -w "engine /rl/health     → %{http_code}\\n" \
+            --resolve community.oneweb.tech:80:10.1.102.89 \
+            http://community.oneweb.tech/runloop/rl/health
         '''
       }
     }
@@ -87,10 +96,10 @@ pipeline {
     success { echo "✅ Deployed ${params.IMAGE_TAG} to ${NAMESPACE}" }
     failure {
       echo "❌ Deploy failed — rolling back"
-      withKubeConfig(credentialsId: 'kubeconfig-community') {
+      withCredentials([file(credentialsId: 'kubeconfig-community', variable: 'KUBECONFIG')]) {
         sh """
-          kubectl rollout undo deployment/runloop-web    -n ${NAMESPACE} || true
-          kubectl rollout undo deployment/runloop-engine -n ${NAMESPACE} || true
+          kubectl -n ${NAMESPACE} rollout undo deployment/runloop-web    || true
+          kubectl -n ${NAMESPACE} rollout undo deployment/runloop-engine || true
         """
       }
     }

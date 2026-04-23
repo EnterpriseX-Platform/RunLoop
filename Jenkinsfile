@@ -66,7 +66,7 @@ pipeline {
     stage('Push') {
       steps {
         withCredentials([usernamePassword(
-          credentialsId: 'dockerhub-avalantglobal',
+          credentialsId: 'docker-credential',
           usernameVariable: 'DH_USER',
           passwordVariable: 'DH_PASS',
         )]) {
