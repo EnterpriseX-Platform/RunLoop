@@ -1,0 +1,75 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: runloop-postgres
+    environment:
+      POSTGRES_USER: runloop
+      POSTGRES_PASSWORD: runloop_secret
+      POSTGRES_DB: runloop
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U runloop"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - runloop-network
+
+  # RunLoop Engine (Go)
+  runloop-engine:
+    build:
+      context: ./apps/runloop-engine
+      dockerfile: Dockerfile
+    container_name: runloop-engine
+    environment:
+      - EXECUTOR_PORT=8092
+      - BASE_PATH=/rl
+      - DATABASE_URL=postgres://runloop:runloop_secret@postgres:5432/runloop?sslmode=disable
+      - WORKER_COUNT=10
+      - WORKER_QUEUE_SIZE=100
+      - JWT_SECRET=dev-secret-key
+      - LOG_LEVEL=debug
+      - LOG_FORMAT=console
+    ports:
+      - "8092:8092"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - runloop-network
+    restart: unless-stopped
+
+  # RunLoop Web (Next.js) - Port 3081
+  runloop:
+    build:
+      context: ./apps/runloop
+      dockerfile: Dockerfile
+    container_name: runloop-web
+    environment:
+      - NODE_ENV=production
+      - PORT=3081
+      - DATABASE_URL=postgres://runloop:runloop_secret@postgres:5432/runloop?sslmode=disable
+      - JWT_SECRET=dev-secret-key
+      - NEXT_PUBLIC_SKIP_AUTH=true
+      - ENGINE_URL=http://runloop-engine:8092
+    ports:
+      - "3081:3081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      runloop-engine:
+        condition: service_started
+    networks:
+      - runloop-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  runloop-network:
+    driver: bridge

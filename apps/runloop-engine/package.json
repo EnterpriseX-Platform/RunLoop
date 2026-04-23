@@ -1,0 +1,12 @@
+{
+  "name": "@runloop/engine",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "go run main.go",
+    "build": "go build -o runloop-engine main.go",
+    "start": "./runloop-engine",
+    "test": "go test ./...",
+    "lint": "gofmt -w ."
+  }
+}

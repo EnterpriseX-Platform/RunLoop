@@ -1,0 +1,63 @@
+# runloop-engine — Go scheduler + worker pool (Fiber + gocron).
+# Serves /rl/* (REST) and /rl/ws/* (WebSocket). Talks to the same
+# Postgres as the web app; the web app's internal API proxies to it
+# via the ENGINE_URL env var.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: runloop-engine
+  namespace: community
+  labels: { app: runloop-engine }
+spec:
+  replicas: 1   # single scheduler instance — leader election not implemented
+  selector:
+    matchLabels: { app: runloop-engine }
+  template:
+    metadata:
+      labels: { app: runloop-engine }
+    spec:
+      containers:
+        - name: engine
+          image: avalantglobal/runloop-engine:latest
+          imagePullPolicy: Always
+          ports:
+            - { containerPort: 8092, name: http }
+          env:
+            - name: PORT
+              value: "8092"
+            - name: BASE_PATH
+              value: /rl
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef: { name: runloop-secret, key: DATABASE_URL }
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef: { name: runloop-secret, key: JWT_SECRET }
+            - name: SECRETS_KEY
+              valueFrom:
+                secretKeyRef: { name: runloop-secret, key: SECRETS_KEY }
+          readinessProbe:
+            httpGet: { path: /rl/health, port: 8092 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /rl/health, port: 8092 }
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits:   { cpu: "1000m", memory: "512Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: runloop-engine
+  namespace: community
+spec:
+  selector: { app: runloop-engine }
+  ports:
+    - name: http
+      port: 8092
+      targetPort: 8092
+  type: ClusterIP

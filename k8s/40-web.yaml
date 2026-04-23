@@ -1,0 +1,80 @@
+# runloop-web — Next.js 14 standalone server.
+# basePath is /runloop (set at build time in next.config.js).
+# ENGINE_URL points to the engine service so /runloop/api/* rewrites
+# land on the right pod.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: runloop-web
+  namespace: community
+  labels: { app: runloop-web }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: runloop-web }
+  template:
+    metadata:
+      labels: { app: runloop-web }
+    spec:
+      # Run migrations before the app starts. Safe on re-deploy —
+      # `prisma db push` is idempotent. Swap to `prisma migrate deploy`
+      # once you commit migration files.
+      initContainers:
+        - name: migrate
+          image: avalantglobal/runloop-web:latest
+          imagePullPolicy: Always
+          command: ["npx", "prisma", "db", "push", "--accept-data-loss", "--skip-generate"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef: { name: runloop-secret, key: DATABASE_URL }
+      containers:
+        - name: web
+          image: avalantglobal/runloop-web:latest
+          imagePullPolicy: Always
+          ports: [{ containerPort: 3081, name: http }]
+          env:
+            - name: PORT
+              value: "3081"
+            - name: HOSTNAME
+              value: "0.0.0.0"
+            - name: NODE_ENV
+              value: production
+            - name: ENGINE_URL
+              value: http://runloop-engine:8092
+            - name: NEXT_PUBLIC_ENGINE_URL
+              value: https://community.oneweb.tech
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef: { name: runloop-secret, key: DATABASE_URL }
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef: { name: runloop-secret, key: JWT_SECRET }
+            - name: SECRETS_KEY
+              valueFrom:
+                secretKeyRef: { name: runloop-secret, key: SECRETS_KEY }
+          readinessProbe:
+            httpGet: { path: /runloop, port: 3081 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /runloop, port: 3081 }
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests: { cpu: "100m", memory: "256Mi" }
+            limits:   { cpu: "1000m", memory: "1Gi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: runloop-web
+  namespace: community
+spec:
+  selector: { app: runloop-web }
+  ports:
+    - name: http
+      port: 3081
+      targetPort: 3081
+  type: ClusterIP

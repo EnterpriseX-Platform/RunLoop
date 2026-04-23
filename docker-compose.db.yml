@@ -1,0 +1,21 @@
+services:
+  # PostgreSQL Database Only
+  postgres:
+    image: postgres:16-alpine
+    container_name: runloopdb
+    environment:
+      POSTGRES_USER: runloop
+      POSTGRES_PASSWORD: runloop_secret
+      POSTGRES_DB: runloop
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5481:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U runloop"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

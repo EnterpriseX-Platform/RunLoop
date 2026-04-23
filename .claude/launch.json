@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "runloop-web",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["next", "dev", "-p", "3081"],
+      "port": 3081,
+      "cwd": "apps/runloop",
+      "env": {
+        "DATABASE_URL": "postgres://runloop:runloop_secret@localhost:5481/runloop?sslmode=disable",
+        "JWT_SECRET": "dev-secret-key",
+        "NEXT_PUBLIC_SKIP_AUTH": "true",
+        "ENGINE_URL": "http://localhost:8092"
+      }
+    }
+  ]
+}

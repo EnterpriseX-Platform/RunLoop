@@ -1,0 +1,98 @@
+// RunLoop — Deploy to Kubernetes.
+//
+// Job location: http://10.1.102.52:32552/job/COMMUNITY/job/deploy-runloop-to-kube/
+// Triggered by: /COMMUNITY/runloop (on successful image push)
+// Accepts:      IMAGE_TAG (string parameter; default = latest)
+//
+// Applies manifests under k8s/ then rolls web + engine to the new tag.
+// One-time bootstrap (secret + namespace + postgres) should be applied
+// manually — this pipeline only updates the app deployments.
+
+pipeline {
+  agent any
+
+  parameters {
+    string(
+      name: 'IMAGE_TAG',
+      defaultValue: 'latest',
+      description: 'Image tag to deploy (matches avalantglobal/runloop-*:<tag>)',
+    )
+    booleanParam(
+      name: 'APPLY_MANIFESTS',
+      defaultValue: false,
+      description: 'Re-apply all k8s/*.yaml (use for schema/infra changes only)',
+    )
+  }
+
+  environment {
+    NAMESPACE  = 'community'
+    WEB_IMAGE  = "avalantglobal/runloop-web:${params.IMAGE_TAG}"
+    ENG_IMAGE  = "avalantglobal/runloop-engine:${params.IMAGE_TAG}"
+  }
+
+  options {
+    timeout(time: 15, unit: 'MINUTES')
+    disableConcurrentBuilds()
+  }
+
+  stages {
+    stage('Checkout') {
+      steps { checkout scm }
+    }
+
+    stage('Apply manifests (optional)') {
+      when { expression { return params.APPLY_MANIFESTS } }
+      steps {
+        withKubeConfig(credentialsId: 'kubeconfig-community') {
+          sh 'kubectl apply -f k8s/00-namespace.yaml'
+          sh 'kubectl apply -f k8s/20-postgres.yaml'
+          sh 'kubectl apply -f k8s/30-engine.yaml'
+          sh 'kubectl apply -f k8s/40-web.yaml'
+          sh 'kubectl apply -f k8s/50-ingress.yaml'
+        }
+      }
+    }
+
+    stage('Roll web + engine') {
+      steps {
+        withKubeConfig(credentialsId: 'kubeconfig-community') {
+          sh """
+            kubectl set image deployment/runloop-engine -n ${NAMESPACE} \
+              engine=${ENG_IMAGE}
+            kubectl set image deployment/runloop-web -n ${NAMESPACE} \
+              web=${WEB_IMAGE} migrate=${WEB_IMAGE}
+          """
+          sh "kubectl rollout status deployment/runloop-engine -n ${NAMESPACE} --timeout=180s"
+          sh "kubectl rollout status deployment/runloop-web    -n ${NAMESPACE} --timeout=300s"
+        }
+      }
+    }
+
+    stage('Smoke test') {
+      steps {
+        sh '''
+          set -e
+          echo "→ ingress health"
+          curl -sSf -o /dev/null -w "%{http_code}\\n" \
+            https://community.oneweb.tech/runloop || true
+          echo "→ engine health (via ingress)"
+          curl -sSf -o /dev/null -w "%{http_code}\\n" \
+            https://community.oneweb.tech/runloop/rl/health || true
+        '''
+      }
+    }
+  }
+
+  post {
+    success { echo "✅ Deployed ${params.IMAGE_TAG} to ${NAMESPACE}" }
+    failure {
+      echo "❌ Deploy failed — rolling back"
+      withKubeConfig(credentialsId: 'kubeconfig-community') {
+        sh """
+          kubectl rollout undo deployment/runloop-web    -n ${NAMESPACE} || true
+          kubectl rollout undo deployment/runloop-engine -n ${NAMESPACE} || true
+        """
+      }
+    }
+  }
+}
