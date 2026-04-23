@@ -48,7 +48,7 @@ pipeline {
     stage('Apply manifests (optional)') {
       when { expression { return params.APPLY_MANIFESTS } }
       steps {
-        withCredentials([file(credentialsId: 'kubeconfig-community', variable: 'KUBECONFIG')]) {
+        withCredentials([file(credentialsId: 'bf9208b3-bbdb-49f1-aeac-e11c197a68a9', variable: 'KUBECONFIG')]) {
           sh '''
             set -e
             kubectl apply -f k8s/30-engine.yaml
@@ -61,7 +61,7 @@ pipeline {
 
     stage('Roll web + engine') {
       steps {
-        withCredentials([file(credentialsId: 'kubeconfig-community', variable: 'KUBECONFIG')]) {
+        withCredentials([file(credentialsId: 'bf9208b3-bbdb-49f1-aeac-e11c197a68a9', variable: 'KUBECONFIG')]) {
           sh """
             set -e
             kubectl -n ${NAMESPACE} set image deployment/runloop-engine \
@@ -96,7 +96,7 @@ pipeline {
     success { echo "✅ Deployed ${params.IMAGE_TAG} to ${NAMESPACE}" }
     failure {
       echo "❌ Deploy failed — rolling back"
-      withCredentials([file(credentialsId: 'kubeconfig-community', variable: 'KUBECONFIG')]) {
+      withCredentials([file(credentialsId: 'bf9208b3-bbdb-49f1-aeac-e11c197a68a9', variable: 'KUBECONFIG')]) {
         sh """
           kubectl -n ${NAMESPACE} rollout undo deployment/runloop-web    || true
           kubectl -n ${NAMESPACE} rollout undo deployment/runloop-engine || true
