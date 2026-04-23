@@ -1,0 +1,162 @@
+# community-gateway — namespace-owned nginx reverse proxy.
+#
+# Purpose: give ops a SINGLE upstream target (this NodePort) for the
+# external LB/DNS at community.oneweb.tech. All `/runloop/*` subpath
+# routing lives here in this namespace, so we can change it without
+# touching external infra.
+#
+# Routes (longest-prefix first, nginx picks most specific match):
+#   /runloop/rl/ws/*  → runloop-engine:8092/rl/ws/*  (WebSocket upgrade)
+#   /runloop/rl/*     → runloop-engine:8092/rl/*     (engine REST, path rewrite)
+#   /runloop/*        → runloop-web:3081/runloop/*   (Next.js app, basePath preserved)
+#   /                 → 308 → /runloop/              (friendly root redirect)
+#
+# Ops work needed after apply: point community.oneweb.tech's external
+# Apache upstream (or DNS) at any k8s node IP on the NodePort of
+# svc/community-gateway.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: community-gateway-conf
+  namespace: community
+data:
+  nginx.conf: |
+    worker_processes auto;
+    events { worker_connections 1024; }
+    http {
+      # Standard nginx setup — compact since this is a pure reverse proxy.
+      sendfile on;
+      tcp_nopush on;
+      tcp_nodelay on;
+      keepalive_timeout 65;
+      types_hash_max_size 2048;
+      client_max_body_size 50m;
+
+      # MIME types are only needed if we ever serve static content; safe to include.
+      include /etc/nginx/mime.types;
+      default_type application/octet-stream;
+
+      log_format main '$remote_addr - $host "$request" $status $body_bytes_sent "$http_user_agent"';
+      access_log /var/log/nginx/access.log main;
+      error_log  /var/log/nginx/error.log warn;
+
+      # WebSocket upgrade plumbing.
+      map $http_upgrade $connection_upgrade {
+        default upgrade;
+        ''      close;
+      }
+
+      upstream runloop_web    { server runloop-web.community.svc.cluster.local:3081; }
+      upstream runloop_engine { server runloop-engine.community.svc.cluster.local:8092; }
+
+      server {
+        listen 80 default_server;
+        server_name community.oneweb.tech _;
+
+        # Friendly root → app.
+        location = / {
+          return 308 /runloop/;
+        }
+
+        # Health endpoint for liveness probes / smoke tests.
+        location = /healthz {
+          access_log off;
+          return 200 "ok\n";
+        }
+
+        # WebSocket MUST come first (longest prefix). nginx picks the most
+        # specific prefix so this wins over /runloop/rl/.
+        location /runloop/rl/ws/ {
+          proxy_pass http://runloop_engine/rl/ws/;
+          proxy_http_version 1.1;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection $connection_upgrade;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_read_timeout 3600s;
+          proxy_send_timeout 3600s;
+        }
+
+        # Engine REST — strip /runloop prefix so upstream sees /rl/*.
+        location /runloop/rl/ {
+          rewrite ^/runloop/rl/(.*)$ /rl/$1 break;
+          proxy_pass http://runloop_engine;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # Next.js web — preserve /runloop/* path (basePath is /runloop in the app).
+        location /runloop/ {
+          proxy_pass http://runloop_web;
+          proxy_http_version 1.1;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+          proxy_read_timeout 120s;
+        }
+
+        # Alias without trailing slash.
+        location = /runloop {
+          return 308 /runloop/;
+        }
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: community-gateway
+  namespace: community
+  labels: { app: community-gateway }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: community-gateway }
+  template:
+    metadata:
+      labels: { app: community-gateway }
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27-alpine
+          ports: [{ containerPort: 80, name: http }]
+          volumeMounts:
+            - name: conf
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+          readinessProbe:
+            httpGet: { path: /healthz, port: 80 }
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: 80 }
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests: { cpu: "50m",  memory: "32Mi" }
+            limits:   { cpu: "500m", memory: "128Mi" }
+      volumes:
+        - name: conf
+          configMap:
+            name: community-gateway-conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: community-gateway
+  namespace: community
+  labels: { app: community-gateway }
+spec:
+  type: NodePort
+  selector: { app: community-gateway }
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      # nodePort is auto-assigned on apply unless specified. Check
+      # `kubectl -n community get svc community-gateway -o jsonpath={.spec.ports[0].nodePort}`
+      # and give that number to ops for the external upstream.
