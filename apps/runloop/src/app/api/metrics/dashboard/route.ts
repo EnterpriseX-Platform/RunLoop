@@ -34,22 +34,26 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
-    // Get recent executions
+    // Get recent executions. schedulerId is a loose identifier (not a FK),
+    // so we look up the scheduler record separately.
     const recentExecutions = await prisma.execution.findMany({
       where: { projectId: { in: projectIds } },
-      include: {
-        scheduler: {
-          select: { id: true, name: true },
-        },
-      },
       orderBy: { startedAt: 'desc' },
       take: 5,
     });
 
-    // Map scheduler to runloop in response
-    const mappedExecutions = recentExecutions.map((e: Record<string, unknown>) => ({
+    const schedulerIds = Array.from(new Set(recentExecutions.map((e) => e.schedulerId).filter((id): id is string => !!id)));
+    const schedulers = schedulerIds.length > 0
+      ? await prisma.scheduler.findMany({
+          where: { id: { in: schedulerIds } },
+          select: { id: true, name: true },
+        })
+      : [];
+    const schedulerById = new Map(schedulers.map((s) => [s.id, s]));
+
+    const mappedExecutions = recentExecutions.map((e) => ({
       ...e,
-      runloop: e.scheduler,
+      runloop: schedulerById.get(e.schedulerId) ?? null,
     }));
 
     // Get upcoming runloops
