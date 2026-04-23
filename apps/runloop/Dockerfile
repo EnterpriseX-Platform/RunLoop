@@ -1,12 +1,15 @@
-# Multi-stage build for Next.js application
+# Multi-stage build for Next.js application.
+#
+# OpenSSL note: Prisma 5 auto-detects the runtime OpenSSL version. On
+# node:20-alpine we need to install `openssl` explicitly in every stage
+# that touches Prisma (builder + runner) so it loads the
+# linux-musl-openssl-3.0.x engine binary, not the legacy 1.1.x one.
 FROM node:20-alpine AS base
+RUN apk add --no-cache libc6-compat openssl
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
-
-# Install dependencies
 COPY package.json ./
 RUN npm install
 
@@ -15,8 +18,6 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-# Generate Prisma Client
 RUN npx prisma generate
 
 # Build the application
