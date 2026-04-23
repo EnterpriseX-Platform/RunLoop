@@ -17,9 +17,13 @@ spec:
     metadata:
       labels: { app: runloop-web }
     spec:
+      # avalantglobal/* images on Docker Hub are private.
+      imagePullSecrets:
+        - name: oneweb-regcred
       # Run migrations before the app starts. Safe on re-deploy —
       # `prisma db push` is idempotent. Swap to `prisma migrate deploy`
-      # once you commit migration files.
+      # once you commit migration files. Requires the web image to
+      # include the full prisma CLI tree (package + engines + wasm).
       initContainers:
         - name: migrate
           image: avalantglobal/runloop-web:latest

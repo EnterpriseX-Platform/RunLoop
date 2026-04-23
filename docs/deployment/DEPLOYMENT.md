@@ -37,34 +37,50 @@ Browser
 On the master node:
 
 ```bash
-ssh onewebadm@10.1.102.89
-
 # 2.1 Create namespace
+ssh onewebadm@10.1.102.89 'kubectl create namespace community'
+
+# 2.2 Create runloop-secret (do NOT commit real values)
+#     DATABASE_URL must NOT contain ?schema=public — pgx (Go engine)
+#     rejects unknown parameters.
+ssh onewebadm@10.1.102.89 "kubectl -n community create secret generic runloop-secret \
+  --from-literal=DATABASE_URL='postgresql://runloop:<PASSWORD>@runloop-postgres:5432/runloop' \
+  --from-literal=POSTGRES_PASSWORD='<PASSWORD>' \
+  --from-literal=JWT_SECRET='$(openssl rand -hex 32)' \
+  --from-literal=SECRETS_KEY='$(openssl rand -hex 16)'"   # SECRETS_KEY = 32 chars exactly
+
+# 2.3 Copy Docker Hub imagePullSecret from neb-dev (avalantglobal/* is private).
+#     The secret used by other BB deployments works for our images too.
+ssh onewebadm@10.1.102.89 'kubectl get secret oneweb-regcred -n neb-dev -o json \
+  | jq "del(.metadata.namespace, .metadata.uid, .metadata.resourceVersion, .metadata.creationTimestamp, .metadata.managedFields, .metadata.annotations[\"kubectl.kubernetes.io/last-applied-configuration\"])" \
+  | kubectl -n community apply -f -'
+
+# 2.4 Create the NFS directory for Postgres (PV expects it to exist).
+#     Run this once via a bootstrap pod that mounts /datastore:
 kubectl apply -f - <<'EOF'
 apiVersion: v1
-kind: Namespace
+kind: Pod
 metadata:
-  name: community
+  name: nfs-bootstrap
+  namespace: community
+spec:
+  restartPolicy: Never
+  containers:
+    - name: mkdir
+      image: alpine:3
+      command: ["sh","-c","mkdir -p /nfs/runloop/postgres && chown 999:999 /nfs/runloop/postgres"]
+      volumeMounts: [{ name: nfs, mountPath: /nfs }]
+  volumes:
+    - name: nfs
+      nfs: { server: 10.1.102.92, path: /datastore }
 EOF
+kubectl -n community wait --for=condition=Ready pod/nfs-bootstrap --timeout=60s
+kubectl -n community delete pod nfs-bootstrap
 
-# 2.2 Create secret (do NOT commit real values)
-kubectl -n community create secret generic runloop-secret \
-  --from-literal=DATABASE_URL='postgresql://runloop:<PASSWORD>@runloop-postgres:5432/runloop?schema=public' \
-  --from-literal=POSTGRES_PASSWORD='<PASSWORD>' \
-  --from-literal=JWT_SECRET="$(openssl rand -hex 32)" \
-  --from-literal=SECRETS_KEY="$(openssl rand -hex 16)"   # 32 chars exactly
-
-# 2.3 TLS cert — assumes community-oneweb-tls already exists in community ns
-#     If not: copy from another namespace or request from ops
-kubectl -n community get secret community-oneweb-tls || {
-  echo "TLS secret missing — ask ops"
-}
-
-# 2.4 Apply manifests (run from a checkout of this repo on your laptop)
-cat k8s/20-postgres.yaml | ssh onewebadm@10.1.102.89 'kubectl apply -f -'
-cat k8s/30-engine.yaml   | ssh onewebadm@10.1.102.89 'kubectl apply -f -'
-cat k8s/40-web.yaml      | ssh onewebadm@10.1.102.89 'kubectl apply -f -'
-cat k8s/50-ingress.yaml  | ssh onewebadm@10.1.102.89 'kubectl apply -f -'
+# 2.5 Apply manifests (run from a checkout of this repo on your laptop)
+for f in k8s/20-postgres.yaml k8s/30-engine.yaml k8s/40-web.yaml k8s/50-ingress.yaml; do
+  cat $f | ssh onewebadm@10.1.102.89 'kubectl apply -f -'
+done
 ```
 
 ---
@@ -208,6 +224,20 @@ Browser connects to `wss://community.oneweb.tech/runloop/rl/ws/executions/<id>`.
 
 ### ❌ Engine can't reach Postgres
 Check `DATABASE_URL` in `runloop-secret`. Host must be `runloop-postgres` (the service DNS), not `localhost`.
+
+### ❌ Engine: `unrecognized configuration parameter "schema"`
+pgx doesn't accept Prisma's `?schema=public` query param. Strip it from the secret:
+```bash
+kubectl -n community patch secret runloop-secret --type='json' \
+  -p='[{"op":"replace","path":"/data/DATABASE_URL","value":"'$(printf 'postgresql://runloop:PASS@runloop-postgres:5432/runloop' | base64)'"}]'
+kubectl -n community rollout restart deployment/runloop-engine
+```
+
+### ❌ Web: ImagePullBackOff `pull access denied for avalantglobal/*`
+The `oneweb-regcred` imagePullSecret wasn't copied into `community` ns, or its creds don't cover avalantglobal/. Re-run step 2.3 of the bootstrap.
+
+### ❌ Web init: `prisma_schema_build_bg.wasm ENOENT`
+Runner image is missing the prisma CLI tree. The current Dockerfile bundles the full `node_modules/prisma` + `@prisma` + `.bin` — if you see this on a fresh build, verify the Dockerfile still has those COPY lines.
 
 ### ❌ `prisma db push` hangs in init container
 Postgres pod not ready yet — delete the web pod, it'll retry:

@@ -17,6 +17,10 @@ spec:
     metadata:
       labels: { app: runloop-engine }
     spec:
+      # avalantglobal/* images on Docker Hub are private. The secret is
+      # copied from neb-dev during bootstrap (see docs/deployment/DEPLOYMENT.md).
+      imagePullSecrets:
+        - name: oneweb-regcred
       containers:
         - name: engine
           image: avalantglobal/runloop-engine:latest
@@ -24,7 +28,9 @@ spec:
           ports:
             - { containerPort: 8092, name: http }
           env:
-            - name: PORT
+            # Engine reads EXECUTOR_PORT (not PORT) — see
+            # apps/runloop-engine/internal/config/config.go
+            - name: EXECUTOR_PORT
               value: "8092"
             - name: BASE_PATH
               value: /rl
