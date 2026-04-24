@@ -1,34 +1,21 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 
+// Inject Authorization: Bearer <token> from the httpOnly `token` cookie
+// before Next.js server-side rewrites forward /api/* to the Go engine.
+// Same-origin cookies are NOT forwarded by Next.js's proxy to a
+// different upstream host, so we promote the cookie to a header here —
+// transparent to the browser, authoritative to the engine.
 export function middleware(request: NextRequest) {
-  // Note: with basePath: '/runloop', pathname here is WITHOUT the basePath prefix
-  const { pathname } = request.nextUrl;
+  const token = request.cookies.get('token')?.value;
+  if (!token) return NextResponse.next();
 
-  // Redirect root → /p/{lastProjectId}/dashboard
-  if (pathname === '/' || pathname === '') {
-    const lastProjectId = request.cookies.get('lastProjectId')?.value;
-    if (lastProjectId) {
-      return NextResponse.redirect(new URL(`/runloop/p/${lastProjectId}/dashboard`, request.url));
-    }
-    return NextResponse.redirect(new URL('/runloop/projects', request.url));
+  const headers = new Headers(request.headers);
+  if (!headers.has('authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
   }
-
-  // Redirect old flat routes → project-scoped routes
-  const flatRoutes = ['/dashboard', '/flows', '/schedulers', '/executions'];
-  if (flatRoutes.includes(pathname)) {
-    const lastProjectId = request.cookies.get('lastProjectId')?.value;
-    const section = pathname.slice(1); // remove leading /
-    if (lastProjectId) {
-      return NextResponse.redirect(new URL(`/runloop/p/${lastProjectId}/${section}`, request.url));
-    }
-    return NextResponse.redirect(new URL('/runloop/projects', request.url));
-  }
-
-  return NextResponse.next();
+  return NextResponse.next({ request: { headers } });
 }
 
 export const config = {
-  // basePath is stripped — match without /runloop prefix
-  matcher: ['/', '/dashboard', '/flows', '/schedulers', '/executions'],
+  matcher: ['/api/:path*'],
 };
