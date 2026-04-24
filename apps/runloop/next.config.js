@@ -3,11 +3,14 @@ const nextConfig = {
   output: 'standalone',
   basePath: '/runloop',
   async redirects() {
+    // Root → /projects. AuthProvider picks up from there:
+    //   logged in  → stays on /projects (or last-selected project)
+    //   logged out → bounced to /login by the protected layout
     return [
       {
         source: '/',
-        destination: '/dashboard',
-        permanent: true,
+        destination: '/projects',
+        permanent: false,
       },
     ];
   },
