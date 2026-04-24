@@ -20,8 +20,15 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
 
+# next.config.js bakes the `rewrites()` destinations into the build
+# output (routes-manifest.json) — ENGINE_URL is evaluated at BUILD time,
+# not runtime. Default to the in-cluster service DNS; override via
+# --build-arg if needed.
+ARG ENGINE_URL=http://runloop-engine:8092
+ENV ENGINE_URL=${ENGINE_URL}
+
 # Build the application
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 # Production image, copy all the files and run next
