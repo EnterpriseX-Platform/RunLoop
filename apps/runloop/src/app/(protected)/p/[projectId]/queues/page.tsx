@@ -7,6 +7,7 @@ import {
   Plus, Inbox, AlertCircle, Loader2, ChevronRight,
   Database as DatabaseIcon, Radio, Rabbit, Waves,
 } from 'lucide-react';
+import { HeroHeader, MetricChip } from '@/components/ControlChrome';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const THEME = {
@@ -155,21 +156,25 @@ export default function QueuesPage() {
         </span>
       </div>
 
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: THEME.text.primary, letterSpacing: '-0.01em' }}>Queues</h1>
-          <p style={{ fontSize: 13, color: THEME.text.muted, marginTop: 2 }}>
-            Persistent job queues — Postgres / Redis / RabbitMQ / Kafka
-          </p>
-        </div>
-        <Link
-          href={`/p/${projectId}/queues/new`}
-          style={{ background: THEME.accent, color: '#fff', fontFamily: MONO, borderRadius: 2 }}
-          className="flex items-center gap-2 px-4 py-2 text-[12px] font-medium tracking-wide hover:opacity-90 transition"
-        >
-          <Plus className="w-3.5 h-3.5" /> $ NEW QUEUE →
-        </Link>
-      </div>
+      <HeroHeader
+        prompt="$ rl.queues · list"
+        title="Queues"
+        subtitle="Durable job inboxes — Postgres, Redis, RabbitMQ, Kafka. Producers push, workers pull, retries cascade into DLQ."
+        metrics={<>
+          <MetricChip label="queues"  value={String(queues.length).padStart(2, '0')} />
+          <MetricChip label="pending" value={String(totalPending).padStart(3, '0')} accent={totalPending > 0 ? '#F59E0B' : undefined} />
+          {totalDlq > 0 && <MetricChip label="dlq" value={String(totalDlq).padStart(2, '0')} accent="#EF4444" />}
+        </>}
+        right={
+          <Link
+            href={`/p/${projectId}/queues/new`}
+            style={{ background: THEME.accent, color: '#fff', fontFamily: MONO, borderRadius: 2 }}
+            className="flex items-center gap-2 px-4 py-2 text-[12px] font-medium tracking-wide hover:opacity-90 transition"
+          >
+            <Plus className="w-3.5 h-3.5" /> $ NEW QUEUE →
+          </Link>
+        }
+      />
 
       {queues.length === 0 ? (
         <div className="text-center py-16">

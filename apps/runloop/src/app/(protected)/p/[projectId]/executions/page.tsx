@@ -25,6 +25,7 @@ import {
   MousePointerClick,
 } from 'lucide-react';
 import type { Execution } from '@/types';
+import { HeroHeader, MetricChip } from '@/components/ControlChrome';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const THEME = {
@@ -293,24 +294,17 @@ export default function ExecutionsPage() {
         </span>
       </div>
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1
-            style={{
-              fontSize: 22,
-              fontWeight: 700,
-              color: THEME.text.primary,
-              letterSpacing: '-0.01em',
-            }}
-          >
-            Executions
-          </h1>
-          <p style={{ fontSize: 13, color: THEME.text.muted, marginTop: 2 }}>
-            Monitor and inspect execution history
-          </p>
-        </div>
-      </div>
+      <HeroHeader
+        prompt="$ rl.executions · tail"
+        title="Executions"
+        subtitle="Every run, every node, every millisecond — the raw log of what the engine actually did."
+        metrics={<>
+          <MetricChip label="total"    value={String(totalCount).padStart(3, '0')} />
+          <MetricChip label="success"  value={`${successRate}%`} accent="#10B981" />
+          <MetricChip label="failed"   value={String(failedCount).padStart(2, '0')} accent={failedCount > 0 ? '#EF4444' : undefined} />
+          <MetricChip label="avg"      value={formatDuration(avgDuration)} />
+        </>}
+      />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-4 gap-3 mb-6">

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useProject } from '@/context/ProjectContext';
 import type { Flow, FlowStatus, FlowType, JobType } from '@/types';
+import { HeroHeader, MetricChip } from '@/components/ControlChrome';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
@@ -142,20 +143,25 @@ export default function FlowsPage() {
         </span>
       </div>
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: THEME.text.primary, letterSpacing: '-0.01em' }}>Flows</h1>
-          <p style={{ fontSize: 13, color: THEME.text.muted, marginTop: 2 }}>Build and manage workflow pipelines</p>
-        </div>
-        <Link
-          href={`/p/${projectId}/flows/new`}
-          style={{ background: THEME.accent, color: '#fff', fontFamily: MONO, borderRadius: 2 }}
-          className="flex items-center gap-2 px-4 py-2 text-[12px] font-medium tracking-wide hover:opacity-90 transition"
-        >
-          <Plus className="w-3.5 h-3.5" /> $ NEW FLOW →
-        </Link>
-      </div>
+      <HeroHeader
+        prompt="$ rl.flows · list"
+        title="Flows"
+        subtitle="Build and manage workflow pipelines — drag nodes, wire edges, schedule runs."
+        metrics={<>
+          <MetricChip label="active" value={String(activeCount).padStart(2, '0')} accent="#10B981" />
+          <MetricChip label="draft"  value={String(draftCount).padStart(2, '0')}  accent="#F59E0B" />
+          <MetricChip label="total"  value={String(activeCount + draftCount).padStart(2, '0')} />
+        </>}
+        right={
+          <Link
+            href={`/p/${projectId}/flows/new`}
+            style={{ background: THEME.accent, color: '#fff', fontFamily: MONO, borderRadius: 2 }}
+            className="flex items-center gap-2 px-4 py-2 text-[12px] font-medium tracking-wide hover:opacity-90 transition"
+          >
+            <Plus className="w-3.5 h-3.5" /> $ NEW FLOW →
+          </Link>
+        }
+      />
 
       {/* Filter tabs — sharp-corner pills to match the aesthetic */}
       <div className="flex items-center gap-1.5 mb-3">

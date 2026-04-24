@@ -19,6 +19,7 @@ import {
   Check,
   X,
 } from 'lucide-react';
+import { HeroHeader, MetricChip } from '@/components/ControlChrome';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const THEME = {
@@ -342,20 +343,25 @@ export default function SchedulersPage() {
         </span>
       </div>
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: THEME.text.primary, letterSpacing: '-0.01em' }}>Schedulers</h1>
-          <p style={{ fontSize: 13, color: THEME.text.muted, marginTop: 2 }}>Schedule when and how tasks run</p>
-        </div>
-        <Link
-          href={`/p/${projectId}/schedulers/new`}
-          style={{ background: THEME.accent, color: '#fff', fontFamily: MONO, borderRadius: 2 }}
-          className="flex items-center gap-2 px-4 py-2 text-[12px] font-medium tracking-wide hover:opacity-90 transition"
-        >
-          <Plus className="w-3.5 h-3.5" /> $ NEW SCHEDULER →
-        </Link>
-      </div>
+      <HeroHeader
+        prompt="$ rl.schedulers · list"
+        title="Schedulers"
+        subtitle="Cron, webhook, and manual triggers — decide when and how each flow fires."
+        metrics={<>
+          <MetricChip label="active" value={String(runningCount).padStart(2, '0')} accent="#10B981" />
+          <MetricChip label="paused" value={String(pausedCount).padStart(2, '0')} accent="#F59E0B" />
+          <MetricChip label="total"  value={String(runningCount + pausedCount).padStart(2, '0')} />
+        </>}
+        right={
+          <Link
+            href={`/p/${projectId}/schedulers/new`}
+            style={{ background: THEME.accent, color: '#fff', fontFamily: MONO, borderRadius: 2 }}
+            className="flex items-center gap-2 px-4 py-2 text-[12px] font-medium tracking-wide hover:opacity-90 transition"
+          >
+            <Plus className="w-3.5 h-3.5" /> $ NEW SCHEDULER →
+          </Link>
+        }
+      />
 
       {/* Filter tabs — mono pills */}
       <div className="flex items-center gap-1.5 mb-3">

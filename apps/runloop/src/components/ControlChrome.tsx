@@ -46,29 +46,241 @@ export function ControlBreadcrumb({
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// Page title + subtitle, deliberately sans-serif to avoid mono fatigue.
-// Lives in the chrome module so dimensions and spacing stay consistent.
+// PageHeader — the hero strip that opens every internal page. Drew the
+// same payoff the /login page gets from its heading: a mono prompt
+// leading into a large title, a blinking accent caret that reads as
+// the page's "heartbeat," and a console-style subtitle. Optional
+// `metrics` slot renders a compact telemetry row on the right so each
+// page has its own signature readout (flows active / exec success / queue depth).
 // ─────────────────────────────────────────────────────────────────────────
 export function PageHeader({
   title,
   subtitle,
   right,
+  metrics,
+  prompt = '$ rl',
 }: {
   title: string;
   subtitle?: string;
   right?: React.ReactNode;
+  metrics?: React.ReactNode;
+  prompt?: string;
 }) {
   return (
-    <div className="flex items-center justify-between mb-5">
-      <div>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--t-text)', letterSpacing: '-0.01em' }}>
+    <div className="flex items-end justify-between mb-6 gap-4">
+      <div className="min-w-0 flex-1">
+        {/* Console prompt line — reads like a shell command being run. */}
+        <div
+          style={{
+            fontFamily: MONO,
+            fontSize: 10.5,
+            letterSpacing: '0.14em',
+            color: 'var(--t-text-muted)',
+            textTransform: 'uppercase',
+            marginBottom: 6,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <span style={{ color: 'var(--t-accent)', opacity: 0.85 }}>{prompt}</span>
+          <span style={{ opacity: 0.5 }}>·</span>
+          <span>{title}</span>
+        </div>
+        <h1
+          style={{
+            fontFamily: MONO,
+            fontSize: 28,
+            fontWeight: 500,
+            lineHeight: 1.1,
+            color: 'var(--t-text)',
+            letterSpacing: '-0.02em',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+          }}
+        >
           {title}
+          {/* Blinking caret — same heartbeat motif as the login h1. */}
+          <span
+            aria-hidden
+            style={{
+              display: 'inline-block',
+              width: 11,
+              height: 22,
+              marginLeft: 2,
+              background: 'var(--t-accent)',
+              animation: 'rl-ph-blink 1.2s steps(2, end) infinite',
+            }}
+          />
         </h1>
         {subtitle && (
-          <p style={{ fontSize: 13, color: 'var(--t-text-muted)', marginTop: 2 }}>{subtitle}</p>
+          <p
+            style={{
+              fontFamily: MONO,
+              fontSize: 12,
+              color: 'var(--t-text-muted)',
+              marginTop: 10,
+              letterSpacing: '0.02em',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <span style={{ opacity: 0.5 }}>{'//'}</span>
+            {subtitle}
+          </p>
+        )}
+        {metrics && (
+          <div
+            className="flex items-center gap-3 mt-3 flex-wrap"
+            style={{
+              fontFamily: MONO,
+              fontSize: 11,
+              color: 'var(--t-text-secondary)',
+              letterSpacing: '0.04em',
+            }}
+          >
+            {metrics}
+          </div>
         )}
       </div>
-      {right && <div className="flex items-center gap-2">{right}</div>}
+      {right && <div className="flex items-center gap-2 flex-shrink-0">{right}</div>}
+      <style jsx global>{`
+        @keyframes rl-ph-blink {
+          0%, 50% { opacity: 1; }
+          50.01%, 100% { opacity: 0; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// MetricChip — the small "▸ 01 active · 3 runs · 100% ok" pills that
+// sit below PageHeader. Each page composes its own from telemetry it
+// already fetches, so the hero feels specific to the context.
+// ─────────────────────────────────────────────────────────────────────────
+export function MetricChip({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: React.ReactNode;
+  accent?: string;
+}) {
+  const fg = accent || 'var(--t-text)';
+  return (
+    <span className="flex items-center gap-1.5">
+      <span style={{ color: 'var(--t-text-muted)', opacity: 0.75 }}>▸</span>
+      <span
+        style={{
+          color: fg,
+          fontWeight: 600,
+          fontVariantNumeric: 'tabular-nums',
+          letterSpacing: '0.02em',
+        }}
+      >
+        {value}
+      </span>
+      <span
+        style={{
+          color: 'var(--t-text-muted)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.1em',
+          fontSize: 10,
+        }}
+      >
+        {label}
+      </span>
+    </span>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// HeroHeader — the big "shell command + page title + blinking caret"
+// treatment every list page opens with. Extracted into ControlChrome so
+// we don't repeat the JSX across /flows, /schedulers, /executions etc.
+//
+// Composition:
+//   PROMPT          "$ rl.flows · list"   (mono uppercase)
+//   TITLE           "Flows█"              (28px mono with blinking caret)
+//   SUBTITLE        "// build and manage …" (mono comment style)
+//   METRICS         ▸ 02 ACTIVE  ▸ 01 DRAFT  (composed by caller)
+//   RIGHT           [ $ NEW FLOW → ]       (CTA)
+//
+// ─────────────────────────────────────────────────────────────────────────
+export function HeroHeader({
+  prompt,
+  title,
+  subtitle,
+  metrics,
+  right,
+}: {
+  prompt: string;       // e.g. "$ rl.flows · list"
+  title: string;
+  subtitle?: string;
+  metrics?: React.ReactNode;
+  right?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-end justify-between mb-6 gap-4">
+      <div className="min-w-0 flex-1">
+        <div
+          style={{
+            fontFamily: MONO, fontSize: 10.5, letterSpacing: '0.14em',
+            color: 'var(--t-text-muted)', textTransform: 'uppercase',
+            marginBottom: 6,
+          }}
+        >
+          <span style={{ color: 'var(--t-accent)', opacity: 0.85 }}>{prompt}</span>
+        </div>
+        <h1
+          style={{
+            fontFamily: MONO, fontSize: 28, fontWeight: 500, lineHeight: 1.1,
+            color: 'var(--t-text)', letterSpacing: '-0.02em',
+            display: 'flex', alignItems: 'center', gap: 4,
+          }}
+        >
+          {title}
+          <span
+            aria-hidden
+            style={{
+              display: 'inline-block', width: 11, height: 22, marginLeft: 2,
+              background: 'var(--t-accent)',
+              animation: 'rl-ph-blink 1.2s steps(2, end) infinite',
+            }}
+          />
+        </h1>
+        {subtitle && (
+          <p
+            style={{
+              fontFamily: MONO, fontSize: 12, color: 'var(--t-text-muted)',
+              marginTop: 10, letterSpacing: '0.02em',
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}
+          >
+            <span style={{ opacity: 0.5 }}>{'//'}</span>
+            {subtitle}
+          </p>
+        )}
+        {metrics && (
+          <div
+            className="flex items-center gap-3 mt-3 flex-wrap"
+            style={{ fontFamily: MONO, fontSize: 11, letterSpacing: '0.04em' }}
+          >
+            {metrics}
+          </div>
+        )}
+      </div>
+      {right && <div className="flex items-center gap-2 flex-shrink-0">{right}</div>}
+      <style jsx global>{`
+        @keyframes rl-ph-blink {
+          0%, 50% { opacity: 1; }
+          50.01%, 100% { opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }
