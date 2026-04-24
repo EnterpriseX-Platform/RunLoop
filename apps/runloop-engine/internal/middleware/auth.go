@@ -33,22 +33,27 @@ func JWTMiddleware(cfg *config.Config, database *db.Postgres) fiber.Handler {
 			return c.Next()
 		}
 
-		// Get Authorization header
+		// Token can come from the Authorization header OR the `token`
+		// cookie — the Next.js web app drops the JWT as an httpOnly
+		// cookie on login, and same-origin fetch() calls to proxied
+		// /api/* routes forward the cookie here but not the header.
+		var tokenString string
 		authHeader := c.Get("Authorization")
-		if authHeader == "" {
+		if authHeader != "" {
+			parts := strings.SplitN(authHeader, " ", 2)
+			if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+					"error": "Invalid authorization header format",
+				})
+			}
+			tokenString = parts[1]
+		} else if cookie := c.Cookies("token"); cookie != "" {
+			tokenString = cookie
+		} else {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Missing authorization header",
 			})
 		}
-
-		// Extract token
-		parts := strings.SplitN(authHeader, " ", 2)
-		if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid authorization header format",
-			})
-		}
-		tokenString := parts[1]
 
 		// If token looks like an API key, try API-key auth first.
 		if strings.HasPrefix(tokenString, APIKeyTokenPrefix) {
