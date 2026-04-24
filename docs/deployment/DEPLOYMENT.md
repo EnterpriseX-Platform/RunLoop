@@ -78,7 +78,7 @@ kubectl -n community wait --for=condition=Ready pod/nfs-bootstrap --timeout=60s
 kubectl -n community delete pod nfs-bootstrap
 
 # 2.5 Apply manifests (run from a checkout of this repo on your laptop)
-for f in k8s/20-postgres.yaml k8s/30-engine.yaml k8s/40-web.yaml k8s/50-ingress.yaml; do
+for f in k8s/20-postgres.yaml k8s/30-engine.yaml k8s/40-web.yaml; do
   cat $f | ssh onewebadm@10.1.102.89 'kubectl apply -f -'
 done
 ```
@@ -245,11 +245,21 @@ Postgres pod not ready yet — delete the web pod, it'll retry:
 ssh onewebadm@10.1.102.89 'kubectl delete pod -n community -l app=runloop-web'
 ```
 
-### ❌ Ingress returns 404 for /runloop/*
-`ingressClassName: nginx` must match the installed ingress controller. Check:
-```bash
-kubectl get ingressclass
+### ❌ External Apache returns 503 for /runloop
+The external Apache vhost for community.oneweb.tech needs upstream
+ProxyPass pointing at the NodePorts. Required lines:
+
+```apache
+ProxyPass        /runloop/rl/ws/ ws://10.1.102.89:31157/rl/ws/
+ProxyPassReverse /runloop/rl/ws/ ws://10.1.102.89:31157/rl/ws/
+ProxyPass        /runloop/rl/    http://10.1.102.89:31157/rl/
+ProxyPassReverse /runloop/rl/    http://10.1.102.89:31157/rl/
+ProxyPass        /runloop        http://10.1.102.89:31383/runloop
+ProxyPassReverse /runloop        http://10.1.102.89:31383/runloop
 ```
+
+If tests from master work but external still 503, check Apache error log —
+most likely cause is firewall blocking 10.1.102.89:3138x from the external host.
 
 ---
 
@@ -262,7 +272,7 @@ k8s/
   20-postgres.yaml        # PG 16 + 10Gi PVC
   30-engine.yaml          # Go engine deployment + service
   40-web.yaml             # Next.js deployment (2 replicas) + service + init migrate
-  50-ingress.yaml         # /runloop + /runloop/rl + /runloop/rl/ws routes
+  # (no ingress — external Apache routes /runloop/* to NodePorts directly)
 
 Jenkinsfile                      # build + push (at /COMMUNITY/runloop)
 .jenkins/Jenkinsfile.deploy      # deploy (at /COMMUNITY/deploy-runloop-to-kube)
