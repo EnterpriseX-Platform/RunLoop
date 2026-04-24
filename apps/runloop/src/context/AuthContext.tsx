@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // once real credentials worked at least once.
     if (typeof window !== 'undefined') sessionStorage.removeItem('rl-logged-out');
     setUser(data.user);
-    router.push('/dashboard');
+    router.push('/projects');
   };
 
   const logout = async () => {

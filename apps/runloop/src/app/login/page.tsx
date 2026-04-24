@@ -28,7 +28,7 @@ export default function LoginPage() {
     // ?preview=1 — view the login UI even when dev auth-skip is on.
     if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('preview')) return;
     if (isAuthenticated && !authLoading) {
-      router.push('/dashboard');
+      router.push('/projects');
     }
   }, [isAuthenticated, authLoading, router]);
 
