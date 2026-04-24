@@ -78,12 +78,12 @@ export interface FlowCanvasProps {
   showTestButton?: boolean;
 }
 
-// Edges use smooth bezier curves with thicker strokes and matching arrows.
-// Condition labels are only drawn when condition != ON_SUCCESS so the happy
-// path stays uncluttered.
+// Edges read as technical-drawing connectors. Thinner stroke, angular
+// rather than soft, coloured by edge condition so the eye catches
+// failure branches immediately.
 const DEFAULT_EDGE_STYLE = {
-  style: { stroke: '#94A3B8', strokeWidth: 2.5 },
-  markerEnd: { type: MarkerType.ArrowClosed, color: '#94A3B8', width: 22, height: 22 },
+  style: { stroke: 'var(--t-text-muted)', strokeWidth: 1.75 },
+  markerEnd: { type: MarkerType.ArrowClosed, color: '#64748B', width: 18, height: 18 },
   type: 'smoothstep' as const,
 };
 
@@ -93,6 +93,8 @@ const CONDITION_COLORS: Record<string, string> = {
   ON_ALWAYS: '#6366F1',
 };
 
+const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
+
 function styleForCondition(condition?: string) {
   const cond = condition ?? 'ON_SUCCESS';
   const color = CONDITION_COLORS[cond] ?? '#94A3B8';
@@ -100,17 +102,17 @@ function styleForCondition(condition?: string) {
   return {
     style: {
       stroke: color,
-      strokeWidth: 2.5,
-      strokeDasharray: cond === 'ON_FAILURE' ? '6 4' : undefined,
+      strokeWidth: 1.75,
+      strokeDasharray: cond === 'ON_FAILURE' ? '5 3' : undefined,
     },
-    markerEnd: { type: MarkerType.ArrowClosed, color, width: 22, height: 22 },
+    markerEnd: { type: MarkerType.ArrowClosed, color, width: 18, height: 18 },
     type: 'smoothstep' as const,
     animated: cond === 'ON_ALWAYS',
     label: isDefault ? undefined : cond === 'ON_FAILURE' ? 'on fail' : 'always',
-    labelStyle: { fill: color, fontSize: 11, fontWeight: 700 },
-    labelBgStyle: { fill: 'var(--flow-canvas-bg, #F8FAFC)', stroke: color, strokeWidth: 1 },
+    labelStyle: { fill: color, fontSize: 10, fontWeight: 600, fontFamily: MONO, letterSpacing: '0.06em' },
+    labelBgStyle: { fill: 'var(--t-panel)', stroke: color, strokeWidth: 1 },
     labelBgPadding: [6, 3] as [number, number],
-    labelBgBorderRadius: 6,
+    labelBgBorderRadius: 2,
   };
 }
 
@@ -377,58 +379,124 @@ function InnerFlow({
   return (
     <div className="flex flex-col h-full" style={{ fontFamily: "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif" }}>
       {/* ===== Toolbar ===== */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b" style={{ borderColor: 'var(--t-border)', background: 'var(--t-panel)' }}>
+      <div
+        className="flex items-center justify-between px-4 py-2.5 border-b"
+        style={{ borderColor: 'var(--t-border)', background: 'var(--t-panel)' }}
+      >
         <div className="flex items-center gap-3 flex-1">
+          <span
+            style={{ fontFamily: MONO, fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: '0.14em' }}
+          >
+            {'//'} FLOW
+          </span>
           <input
             type="text"
-            placeholder="Flow name…"
+            placeholder="flow name…"
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={readOnly}
-            style={{ background: 'transparent', color: 'var(--t-text)', border: 'none', outline: 'none', fontSize: 15, fontWeight: 700, width: 260 }}
+            style={{
+              background: 'transparent',
+              color: 'var(--t-text)',
+              border: 'none',
+              outline: 'none',
+              fontFamily: MONO,
+              fontSize: 14,
+              fontWeight: 500,
+              letterSpacing: '-0.005em',
+              width: 260,
+            }}
           />
           <input
             type="text"
-            placeholder="Description (optional)"
+            placeholder="description (optional)"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={readOnly}
-            style={{ background: 'transparent', color: 'var(--t-text-muted)', border: 'none', outline: 'none', fontSize: 13, flex: 1 }}
+            style={{
+              background: 'transparent',
+              color: 'var(--t-text-muted)',
+              border: 'none',
+              outline: 'none',
+              fontSize: 12,
+              fontFamily: MONO,
+              flex: 1,
+              letterSpacing: '0.01em',
+            }}
           />
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs" style={{ color: 'var(--t-text-muted)' }}>
+          <span
+            style={{
+              fontFamily: MONO,
+              fontSize: 10,
+              color: 'var(--t-text-muted)',
+              letterSpacing: '0.08em',
+            }}
+          >
             {nodes.length} nodes · {edges.length} edges
           </span>
           <button
             onClick={handleAutoLayout}
-            className="px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5"
-            style={{ background: 'var(--t-input)', border: '1px solid var(--t-border)', color: 'var(--t-text-secondary)' }}
+            className="flex items-center gap-1.5"
+            style={{
+              padding: '6px 10px',
+              background: 'transparent',
+              border: '1px solid var(--t-border)',
+              color: 'var(--t-text-secondary)',
+              fontFamily: MONO,
+              fontSize: 11,
+              letterSpacing: '0.08em',
+              borderRadius: 2,
+              textTransform: 'uppercase',
+            }}
             title="Auto-layout"
           >
             <Wand2 className="w-3.5 h-3.5" />
-            Auto-layout
+            auto-layout
           </button>
           {showTestButton && onTest && !readOnly && (
             <button
               onClick={handleTest}
               disabled={testing}
-              className="px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 disabled:opacity-50"
-              style={{ background: '#10B98115', border: '1px solid #10B98140', color: '#10B981' }}
+              className="flex items-center gap-1.5 disabled:opacity-50"
+              style={{
+                padding: '6px 10px',
+                background: 'color-mix(in srgb, #10B981 12%, transparent)',
+                border: '1px solid color-mix(in srgb, #10B981 40%, transparent)',
+                color: '#10B981',
+                fontFamily: MONO,
+                fontSize: 11,
+                letterSpacing: '0.08em',
+                borderRadius: 2,
+                textTransform: 'uppercase',
+              }}
             >
               <TestTube2 className="w-3.5 h-3.5" />
-              {testing ? 'Testing…' : 'Test Run'}
+              {testing ? 'testing…' : 'test run'}
             </button>
           )}
           {!readOnly && onSave && (
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-4 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 text-white disabled:opacity-50"
-              style={{ background: 'var(--t-accent)' }}
+              className="flex items-center gap-1.5 disabled:opacity-50"
+              style={{
+                padding: '6px 12px',
+                background: 'var(--t-accent)',
+                color: '#fff',
+                fontFamily: MONO,
+                fontSize: 11,
+                letterSpacing: '0.1em',
+                borderRadius: 2,
+                textTransform: 'uppercase',
+                fontWeight: 600,
+              }}
             >
+              <span style={{ opacity: 0.6 }}>$</span>
               <Save className="w-3.5 h-3.5" />
-              {saving ? 'Saving…' : saveLabel}
+              {saving ? 'saving…' : saveLabel}
+              <span style={{ opacity: 0.7 }}>→</span>
             </button>
           )}
         </div>
@@ -466,16 +534,29 @@ function InnerFlow({
             >
               <div className="flex items-center justify-between mb-2">
                 <p
-                  className="text-[10px] uppercase font-bold"
-                  style={{ color: 'var(--t-text-muted)', letterSpacing: '0.12em' }}
+                  style={{
+                    fontFamily: MONO,
+                    fontSize: 10,
+                    color: 'var(--t-text-muted)',
+                    letterSpacing: '0.16em',
+                    textTransform: 'uppercase',
+                  }}
                 >
-                  Nodes
+                  <span style={{ opacity: 0.5 }}>{'//'}</span> nodes
                 </p>
                 <span
-                  className="text-[10px] font-mono px-1.5 py-0.5 rounded"
-                  style={{ color: 'var(--t-text-muted)', background: 'var(--t-input)' }}
+                  style={{
+                    fontFamily: MONO,
+                    fontSize: 10,
+                    color: 'var(--t-text-muted)',
+                    background: 'var(--t-input)',
+                    border: '1px solid var(--t-border)',
+                    padding: '1px 5px',
+                    borderRadius: 2,
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
                 >
-                  {mergedPalette.reduce((n, c) => n + c.items.length, 0)}
+                  {String(mergedPalette.reduce((n, c) => n + c.items.length, 0)).padStart(2, '0')}
                 </span>
               </div>
               <div
@@ -483,7 +564,7 @@ function InnerFlow({
                 style={{
                   background: 'var(--t-input)',
                   border: '1px solid var(--t-border)',
-                  borderRadius: 8,
+                  borderRadius: 2,
                 }}
               >
                 <Search
@@ -494,14 +575,14 @@ function InnerFlow({
                   type="text"
                   value={paletteQuery}
                   onChange={(e) => setPaletteQuery(e.target.value)}
-                  placeholder="Search nodes…"
-                  className="w-full bg-transparent pl-8 pr-7 py-1.5 text-[12px] outline-none"
-                  style={{ color: 'var(--t-text)' }}
+                  placeholder="search nodes…"
+                  className="w-full bg-transparent pl-8 pr-7 py-1.5 outline-none"
+                  style={{ color: 'var(--t-text)', fontFamily: MONO, fontSize: 11.5 }}
                 />
                 {paletteQuery && (
                   <button
                     onClick={() => setPaletteQuery('')}
-                    className="absolute right-2 p-0.5 rounded hover:opacity-80"
+                    className="absolute right-2 p-0.5 hover:opacity-80"
                     style={{ color: 'var(--t-text-muted)' }}
                   >
                     <X className="w-3 h-3" />
@@ -531,31 +612,38 @@ function InnerFlow({
                           [category.category]: !s[category.category],
                         }))
                       }
-                      className="w-full flex items-center justify-between px-2 py-1.5 rounded-md group"
+                      className="w-full flex items-center justify-between px-2 py-1.5 group"
                       style={{ color: 'var(--t-text-muted)' }}
                     >
                       <div className="flex items-center gap-1.5">
                         <ChevronDown
                           className="w-3 h-3 transition-transform"
-                          style={{
-                            transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)',
-                          }}
+                          style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}
                         />
                         <span
-                          className="text-[10px] font-bold uppercase"
-                          style={{ letterSpacing: '0.1em' }}
+                          style={{
+                            fontFamily: MONO,
+                            fontSize: 9.5,
+                            letterSpacing: '0.16em',
+                            textTransform: 'uppercase',
+                          }}
                         >
-                          {category.category}
+                          <span style={{ opacity: 0.5 }}>{'//'}</span> {category.category}
                         </span>
                       </div>
                       <span
-                        className="text-[10px] font-mono px-1.5 py-0.5 rounded"
                         style={{
+                          fontFamily: MONO,
+                          fontSize: 9.5,
                           color: 'var(--t-text-muted)',
                           background: 'var(--t-input)',
+                          border: '1px solid var(--t-border)',
+                          padding: '1px 4px',
+                          borderRadius: 2,
+                          fontVariantNumeric: 'tabular-nums',
                         }}
                       >
-                        {category.items.length}
+                        {String(category.items.length).padStart(2, '0')}
                       </span>
                     </button>
                     {!isCollapsed && (
@@ -568,26 +656,25 @@ function InnerFlow({
                               draggable
                               onDragStart={(e) => onDragStart(e, item)}
                               tabIndex={0}
-                              className="group flex items-center gap-2.5 pl-2.5 pr-2 py-1.5 rounded-md cursor-grab active:cursor-grabbing outline-none"
+                              className="group flex items-center gap-2.5 pl-2.5 pr-2 py-1.5 cursor-grab active:cursor-grabbing outline-none"
                               style={{
+                                borderRadius: 2,
                                 background: 'transparent',
                                 border: '1px solid transparent',
                                 transition:
-                                  'background 140ms ease, border-color 140ms ease, box-shadow 140ms ease',
+                                  'background 140ms ease, border-color 140ms ease',
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.background = item.color + '12';
-                                e.currentTarget.style.borderColor = item.color + '40';
-                                e.currentTarget.style.boxShadow = `0 0 0 1px ${item.color}10, 0 6px 16px -8px ${item.color}70`;
+                                e.currentTarget.style.background = `color-mix(in srgb, ${item.color} 10%, transparent)`;
+                                e.currentTarget.style.borderColor = `color-mix(in srgb, ${item.color} 38%, transparent)`;
                               }}
                               onMouseLeave={(e) => {
                                 e.currentTarget.style.background = 'transparent';
                                 e.currentTarget.style.borderColor = 'transparent';
-                                e.currentTarget.style.boxShadow = 'none';
                               }}
                               onFocus={(e) => {
-                                e.currentTarget.style.background = item.color + '12';
-                                e.currentTarget.style.borderColor = item.color + '55';
+                                e.currentTarget.style.background = `color-mix(in srgb, ${item.color} 12%, transparent)`;
+                                e.currentTarget.style.borderColor = `color-mix(in srgb, ${item.color} 50%, transparent)`;
                               }}
                               onBlur={(e) => {
                                 e.currentTarget.style.background = 'transparent';
@@ -597,24 +684,35 @@ function InnerFlow({
                               <div
                                 className="flex items-center justify-center flex-shrink-0"
                                 style={{
-                                  width: 24,
-                                  height: 24,
-                                  borderRadius: 6,
-                                  background: `linear-gradient(135deg, ${item.color}, ${item.color}CC)`,
-                                  boxShadow: `inset 0 1px 0 rgba(255,255,255,0.22), 0 1px 2px ${item.color}55`,
+                                  width: 22,
+                                  height: 22,
+                                  borderRadius: 2,
+                                  background: `color-mix(in srgb, ${item.color} 14%, transparent)`,
+                                  border: `1px solid color-mix(in srgb, ${item.color} 36%, transparent)`,
                                 }}
                               >
-                                <Icon className="w-3 h-3 text-white" strokeWidth={2.75} />
+                                <Icon style={{ color: item.color, width: 12, height: 12 }} strokeWidth={1.75} />
                               </div>
                               <span
-                                className="text-[12px] font-medium truncate flex-1"
-                                style={{ color: 'var(--t-text)' }}
+                                className="truncate flex-1"
+                                style={{
+                                  color: 'var(--t-text)',
+                                  fontFamily: MONO,
+                                  fontSize: 11,
+                                  letterSpacing: '0.02em',
+                                }}
                               >
                                 {item.label}
                               </span>
                               <span
-                                className="text-[9px] opacity-0 group-hover:opacity-100 transition-opacity uppercase font-semibold tracking-wider"
-                                style={{ color: item.color }}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                style={{
+                                  color: item.color,
+                                  fontFamily: MONO,
+                                  fontSize: 9,
+                                  letterSpacing: '0.14em',
+                                  textTransform: 'uppercase',
+                                }}
                               >
                                 drag
                               </span>
@@ -630,13 +728,16 @@ function InnerFlow({
 
             {/* Footer hint */}
             <div
-              className="px-3 py-2 text-[10px]"
+              className="px-3 py-2"
               style={{
                 borderTop: '1px solid var(--t-border)',
                 color: 'var(--t-text-muted)',
+                fontFamily: MONO,
+                fontSize: 9.5,
+                letterSpacing: '0.1em',
               }}
             >
-              Drag a node onto the canvas to add it.
+              <span style={{ opacity: 0.5 }}>{'//'}</span> drag a node to canvas
             </div>
           </div>
         )}
@@ -647,7 +748,7 @@ function InnerFlow({
           ref={wrapperRef}
           onDrop={onDrop}
           onDragOver={onDragOver}
-          style={{ background: 'var(--flow-canvas-bg, #F8FAFC)' }}
+          style={{ background: 'var(--t-bg)' }}
         >
           <ReactFlow
             nodes={nodes}
@@ -676,56 +777,74 @@ function InnerFlow({
             <Background
               variant={BackgroundVariant.Dots}
               gap={28}
-              size={1.5}
-              color="var(--flow-canvas-dots, #CBD5E1)"
+              size={1}
+              color="color-mix(in srgb, var(--t-border) 80%, transparent)"
             />
             <Controls
               showInteractive={false}
               style={{
-                background: 'var(--flow-node-bg, #FFFFFF)',
-                border: '1px solid var(--flow-node-border, #E5E7EB)',
-                borderRadius: 10,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                background: 'var(--t-panel)',
+                border: '1px solid var(--t-border)',
+                borderRadius: 2,
                 overflow: 'hidden',
               }}
             />
             <MiniMap
-              maskColor="rgba(15, 23, 42, 0.04)"
+              maskColor="color-mix(in srgb, var(--t-bg) 70%, transparent)"
               pannable
               zoomable
               style={{
-                background: 'var(--flow-node-bg, #FFFFFF)',
-                border: '1px solid var(--flow-node-border, #E5E7EB)',
-                borderRadius: 10,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                background: 'var(--t-panel)',
+                border: '1px solid var(--t-border)',
+                borderRadius: 2,
               }}
               nodeColor={(n) => {
                 const type = n.data?.type as string;
                 const found = mergedPalette.flatMap((c) => c.items).find((i: any) => i.nodeType === type);
-                return found?.color || '#6B7280';
+                return found?.color || 'var(--t-text-muted)';
               }}
-              nodeStrokeWidth={3}
-              nodeBorderRadius={6}
+              nodeStrokeWidth={2}
+              nodeBorderRadius={2}
             />
 
             {nodes.length === 0 && !readOnly && (
               <Panel position="top-center">
                 <div
-                  className="px-8 py-5 rounded-2xl mt-24 flex flex-col items-center gap-2"
+                  className="px-8 py-5 mt-24 flex flex-col items-center gap-2 relative"
                   style={{
-                    background: 'var(--flow-node-bg, #FFFFFF)',
-                    border: '2px dashed var(--flow-node-border, #E5E7EB)',
-                    boxShadow: '0 4px 14px rgba(0,0,0,0.04)',
+                    background: 'var(--t-panel)',
+                    border: '1px dashed var(--t-border)',
+                    borderRadius: 2,
                   }}
                 >
+                  {/* Schematic corner marks like login's form frame */}
+                  <span style={{ position: 'absolute', top: -1, left: -1, width: 10, height: 1, background: 'var(--t-accent)' }} />
+                  <span style={{ position: 'absolute', top: -1, left: -1, width: 1, height: 10, background: 'var(--t-accent)' }} />
+                  <span style={{ position: 'absolute', top: -1, right: -1, width: 10, height: 1, background: 'var(--t-accent)' }} />
+                  <span style={{ position: 'absolute', top: -1, right: -1, width: 1, height: 10, background: 'var(--t-accent)' }} />
+                  <span style={{ position: 'absolute', bottom: -1, left: -1, width: 10, height: 1, background: 'var(--t-accent)' }} />
+                  <span style={{ position: 'absolute', bottom: -1, left: -1, width: 1, height: 10, background: 'var(--t-accent)' }} />
+                  <span style={{ position: 'absolute', bottom: -1, right: -1, width: 10, height: 1, background: 'var(--t-accent)' }} />
+                  <span style={{ position: 'absolute', bottom: -1, right: -1, width: 1, height: 10, background: 'var(--t-accent)' }} />
                   <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center"
-                    style={{ background: 'linear-gradient(135deg, #3B82F6, #6366F1)' }}
+                    className="w-10 h-10 flex items-center justify-center"
+                    style={{
+                      borderRadius: 2,
+                      background: 'color-mix(in srgb, var(--t-accent) 14%, transparent)',
+                      border: '1px solid color-mix(in srgb, var(--t-accent) 36%, transparent)',
+                    }}
                   >
-                    <Plus className="w-5 h-5 text-white" strokeWidth={2.5} />
+                    <Plus className="w-5 h-5" style={{ color: 'var(--t-accent)' }} strokeWidth={2} />
                   </div>
-                  <p className="text-sm font-semibold" style={{ color: 'var(--flow-node-text, #111827)' }}>
-                    Drag nodes from the left to start building
+                  <p
+                    style={{
+                      color: 'var(--t-text)',
+                      fontFamily: MONO,
+                      fontSize: 12,
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    drag nodes from the left to start building
                   </p>
                   <p className="text-xs" style={{ color: 'var(--flow-node-text-muted, #6B7280)' }}>
                     Connect output → input · Double-click an edge to change condition
@@ -757,25 +876,25 @@ function InnerFlow({
                     <div
                       className="flex items-center justify-center flex-shrink-0"
                       style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 9,
-                        background: `linear-gradient(135deg, ${selectedPaletteMeta.color}, ${selectedPaletteMeta.color}CC)`,
-                        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.22), 0 2px 6px ${selectedPaletteMeta.color}55`,
+                        width: 30,
+                        height: 30,
+                        borderRadius: 2,
+                        background: `color-mix(in srgb, ${selectedPaletteMeta.color} 14%, transparent)`,
+                        border: `1px solid color-mix(in srgb, ${selectedPaletteMeta.color} 40%, transparent)`,
                       }}
                     >
                       <selectedPaletteMeta.icon
-                        className="w-4 h-4 text-white"
-                        strokeWidth={2.5}
+                        style={{ color: selectedPaletteMeta.color, width: 16, height: 16 }}
+                        strokeWidth={1.75}
                       />
                     </div>
                   ) : (
                     <div
                       className="flex items-center justify-center flex-shrink-0"
                       style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 9,
+                        width: 30,
+                        height: 30,
+                        borderRadius: 2,
                         background: 'var(--t-input)',
                         border: '1px solid var(--t-border)',
                       }}

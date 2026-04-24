@@ -196,29 +196,89 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
         }
       />
 
-      {/* Timeline */}
-      <div style={{ background: THEME.panel, border: `1px solid ${THEME.border}`, borderRadius: 2, padding: 20 }} className="mb-5">
+      {/* Timeline — mono timestamps, schematic progress bar. */}
+      <div
+        style={{
+          background: THEME.panel,
+          border: `1px solid ${THEME.border}`,
+          borderRadius: 2,
+          padding: 20,
+          position: 'relative',
+        }}
+        className="mb-5"
+      >
+        {/* Corner ticks for schematic feel */}
+        <span style={{ position: 'absolute', top: -1, left: -1, width: 8, height: 1, background: THEME.accent }} />
+        <span style={{ position: 'absolute', top: -1, left: -1, width: 1, height: 8, background: THEME.accent }} />
+        <span style={{ position: 'absolute', top: -1, right: -1, width: 8, height: 1, background: THEME.accent }} />
+        <span style={{ position: 'absolute', top: -1, right: -1, width: 1, height: 8, background: THEME.accent }} />
+        <span style={{ position: 'absolute', bottom: -1, left: -1, width: 8, height: 1, background: THEME.accent }} />
+        <span style={{ position: 'absolute', bottom: -1, left: -1, width: 1, height: 8, background: THEME.accent }} />
+        <span style={{ position: 'absolute', bottom: -1, right: -1, width: 8, height: 1, background: THEME.accent }} />
+        <span style={{ position: 'absolute', bottom: -1, right: -1, width: 1, height: 8, background: THEME.accent }} />
+
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <p style={{ fontSize: 12, color: THEME.text.secondary }}>Started</p>
-            <p style={{ fontSize: 13, color: THEME.text.primary }}>{new Date(execution.startedAt).toLocaleString()}</p>
+            <p
+              style={{
+                fontFamily: MONO,
+                fontSize: 10,
+                letterSpacing: '0.14em',
+                color: THEME.text.muted,
+                textTransform: 'uppercase',
+              }}
+            >
+              <span style={{ opacity: 0.5 }}>{'//'}</span> started
+            </p>
+            <p
+              style={{
+                fontFamily: MONO,
+                fontSize: 12.5,
+                color: THEME.text.primary,
+                marginTop: 2,
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {new Date(execution.startedAt).toLocaleString()}
+            </p>
           </div>
           <div className="flex-1 px-4">
-            <div style={{ height: 2, background: THEME.border, position: 'relative', borderRadius: 1 }}>
-              <div style={{
-                position: 'absolute', top: 0, left: 0, height: '100%', borderRadius: 1,
-                background: execution.status === 'SUCCESS' ? THEME.colors.emerald :
-                  execution.status === 'FAILED' ? THEME.colors.red :
-                  execution.status === 'RUNNING' ? THEME.colors.blue : THEME.colors.amber,
-                width: execution.status === 'RUNNING' ? '50%' : execution.status === 'PENDING' ? '0%' : '100%',
-                transition: 'width 0.3s',
-              }} />
+            <div style={{ height: 2, background: THEME.border, position: 'relative' }}>
+              <div
+                style={{
+                  position: 'absolute', top: 0, left: 0, height: '100%',
+                  background:
+                    execution.status === 'SUCCESS' ? THEME.colors.emerald :
+                    execution.status === 'FAILED' ? THEME.colors.red :
+                    execution.status === 'RUNNING' ? THEME.colors.blue : THEME.colors.amber,
+                  width: execution.status === 'RUNNING' ? '50%' : execution.status === 'PENDING' ? '0%' : '100%',
+                  transition: 'width 0.3s',
+                }}
+              />
             </div>
           </div>
           <div className="flex-1 text-right">
-            <p style={{ fontSize: 12, color: THEME.text.secondary }}>Completed</p>
-            <p style={{ fontSize: 13, color: THEME.text.primary }}>
-              {execution.completedAt ? new Date(execution.completedAt).toLocaleString() : '-'}
+            <p
+              style={{
+                fontFamily: MONO,
+                fontSize: 10,
+                letterSpacing: '0.14em',
+                color: THEME.text.muted,
+                textTransform: 'uppercase',
+              }}
+            >
+              <span style={{ opacity: 0.5 }}>{'//'}</span> completed
+            </p>
+            <p
+              style={{
+                fontFamily: MONO,
+                fontSize: 12.5,
+                color: THEME.text.primary,
+                marginTop: 2,
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {execution.completedAt ? new Date(execution.completedAt).toLocaleString() : '—'}
             </p>
           </div>
         </div>
