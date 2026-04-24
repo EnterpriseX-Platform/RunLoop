@@ -6,15 +6,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useProject } from '@/context/ProjectContext';
+import { ControlBackdrop } from './ControlBackdrop';
 import {
   LayoutDashboard,
-  Zap,
   Workflow,
   Clock,
   Settings,
   ChevronDown,
-  ChevronRight,
-  ChevronUp,
   Search,
   Bell,
   User,
@@ -23,22 +21,34 @@ import {
   Plus,
   Sun,
   Moon,
-  FileText,
-  Shield,
-  Layers,
   HelpCircle,
   Activity,
   Inbox,
   FolderKanban,
-  Users,
-  Key,
+  Layers,
   X,
   Check,
-  ScrollText,
   LucideIcon,
 } from 'lucide-react';
 
-const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
+// Layout — the chrome that wraps every internal page. The identity goal
+// is continuity with /login: the user never feels like they've left the
+// "control room." Two big moves:
+//
+//  1. A quiet <ControlBackdrop/> sits behind the main scroll area, so
+//     every page has the same DAG/grid atmosphere without any per-page
+//     effort. Opacity is low enough that dense tables still read fine.
+//
+//  2. The sidebar and header are restyled as instrumentation rather
+//     than dashboard chrome — section labels are `// MAIN_MENU` style,
+//     nav entries use mono uppercase, counts are tabular-nums, and
+//     the sidebar footer shows a live status stack (engine / UTC
+//     clock / cron tick) mirroring the login page's footer.
+//
+// Functional surface (project selector, notifications, user menu,
+// count fetching) is preserved exactly — only the shell is new.
+
+const SANS = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
 
 /* ==================== Nav Config ==================== */
@@ -51,18 +61,14 @@ interface NavItemType {
   projectScoped?: boolean;
 }
 
-// Paths are relative — will be prefixed with /p/{projectId}
 const mainNavigation: NavItemType[] = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, countKey: null },
-  { name: 'Flows', href: '/flows', icon: Workflow, countKey: 'flows' },
-  { name: 'Schedulers', href: '/schedulers', icon: Clock, countKey: 'schedulers' },
-  { name: 'Executions', href: '/executions', icon: Activity, countKey: null },
-  { name: 'Queues', href: '/queues', icon: Inbox, countKey: null },
+  { name: 'Dashboard',  href: '/dashboard',  icon: LayoutDashboard, countKey: null },
+  { name: 'Flows',      href: '/flows',      icon: Workflow,        countKey: 'flows' },
+  { name: 'Schedulers', href: '/schedulers', icon: Clock,           countKey: 'schedulers' },
+  { name: 'Executions', href: '/executions', icon: Activity,        countKey: null },
+  { name: 'Queues',     href: '/queues',     icon: Inbox,           countKey: null },
 ];
 
-// System section collapsed into a single "Settings" entry. Sub-areas
-// (Secrets / API Keys / Audit Log / DLQ / Members) are reachable via
-// the SettingsTabs bar on each settings-related page.
 const systemNavigation: NavItemType[] = [
   { name: 'Settings', href: '/settings', icon: Settings, countKey: null },
 ];
@@ -86,28 +92,23 @@ const breadcrumbMap: Record<string, string> = {
 
 function Breadcrumb() {
   const pathname = usePathname() || '';
-  // usePathname() returns path WITHOUT basePath (/runloop)
-  // So pathname is like: /p/{projectId}/dashboard
   const projectMatch = pathname.match(/^\/(p\/[^/]+)/);
   const projectPrefix = projectMatch ? `/${projectMatch[1]}` : '';
-
-  // Strip /p/{projectId}/ prefix to get clean segments
   const cleaned = pathname.replace(/^\/p\/[^/]+\/?/, '').replace(/^\//, '');
   const segments = cleaned.split('/').filter(Boolean);
-
-  if (segments.length === 0) {
-    segments.push('dashboard');
-  }
+  if (segments.length === 0) segments.push('dashboard');
 
   return (
     <nav
-      style={{ fontFamily: MONO, fontSize: 11, letterSpacing: '0.04em' }}
+      style={{ fontFamily: MONO, fontSize: 11, letterSpacing: '0.06em' }}
       className="flex items-center gap-1.5 min-w-0"
     >
+      {/* Shell prompt — reinforces the "inside a running process" feel. */}
+      <span style={{ color: 'var(--t-accent)', opacity: 0.7 }}>{'>'}</span>
       <Link
         href={`${projectPrefix}/dashboard`}
         style={{ color: 'var(--t-text-muted)' }}
-        className="hover:!text-[var(--t-accent)] transition-colors whitespace-nowrap uppercase"
+        className="hover:!text-[var(--t-accent)] transition-colors whitespace-nowrap"
       >
         ~
       </Link>
@@ -115,14 +116,13 @@ function Breadcrumb() {
         const isLast = index === segments.length - 1;
         const href = `${projectPrefix}/` + segments.slice(0, index + 1).join('/');
         const label = breadcrumbMap[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);
-
         return (
           <div key={segment + index} className="flex items-center gap-1.5 min-w-0">
             <span style={{ color: 'var(--t-border)' }}>/</span>
             {isLast ? (
               <span
-                style={{ color: 'var(--t-text)', letterSpacing: '0.08em' }}
-                className="truncate max-w-[200px] uppercase"
+                style={{ color: 'var(--t-text)', letterSpacing: '0.1em' }}
+                className="truncate max-w-[220px] uppercase"
                 title={label}
               >
                 {label}
@@ -146,9 +146,8 @@ function Breadcrumb() {
 
 /* ==================== NavItem ==================== */
 
-function NavItem({ item, pathname, collapsed, isActive, count }: {
+function NavItem({ item, collapsed, isActive, count }: {
   item: NavItemType;
-  pathname: string;
   collapsed: boolean;
   isActive: boolean;
   count?: number;
@@ -157,53 +156,60 @@ function NavItem({ item, pathname, collapsed, isActive, count }: {
     <Link
       href={item.href}
       style={{
-        fontFamily: FONT,
+        fontFamily: MONO,
+        fontSize: 11.5,
+        letterSpacing: '0.14em',
         color: isActive ? 'var(--t-text)' : 'var(--t-text-secondary)',
-        background: isActive ? 'color-mix(in srgb, var(--t-accent) 10%, transparent)' : 'transparent',
-        border: `1px solid ${isActive ? 'color-mix(in srgb, var(--t-accent) 30%, transparent)' : 'transparent'}`,
+        background: isActive ? 'color-mix(in srgb, var(--t-accent) 12%, transparent)' : 'transparent',
         borderRadius: 2,
         position: 'relative',
+        textTransform: 'uppercase',
       }}
       className={[
-        'group flex items-center gap-3 px-3 py-2 text-[13px] transition-all duration-150',
-        isActive ? 'font-semibold' : 'hover:text-[var(--t-text)] hover:bg-[var(--t-panel-hover)]',
-        collapsed ? 'justify-center px-2' : '',
+        'group flex items-center gap-3 py-2 transition-all duration-150',
+        collapsed ? 'justify-center px-2 mx-1' : 'px-3 mx-1',
+        !isActive && 'hover:text-[var(--t-text)] hover:bg-[var(--t-panel-hover)]',
       ].filter(Boolean).join(' ')}
       title={collapsed ? item.name : undefined}
     >
-      {/* Left accent bar when active — like a selected DAG node */}
-      {isActive && (
-        <span
-          aria-hidden
-          style={{
-            position: 'absolute',
-            left: 0, top: 4, bottom: 4,
-            width: 2,
-            background: 'var(--t-accent)',
-          }}
-        />
-      )}
+      {/* Left accent bar — like a selected DAG node. Same motif the
+          login form uses on focused inputs. */}
+      <span
+        aria-hidden
+        style={{
+          position: 'absolute',
+          left: 0, top: 4, bottom: 4,
+          width: 2,
+          background: 'var(--t-accent)',
+          transform: isActive ? 'scaleY(1)' : 'scaleY(0)',
+          transformOrigin: 'center',
+          transition: 'transform 0.18s ease',
+        }}
+      />
       <item.icon
-        className="w-4 h-4 flex-shrink-0"
+        className="w-3.5 h-3.5 flex-shrink-0"
         style={{ color: isActive ? 'var(--t-accent)' : 'var(--t-text-muted)' }}
       />
       {!collapsed && (
         <>
-          <span className="flex-1 truncate">
+          <span className="flex-1 truncate" style={{ fontWeight: isActive ? 600 : 500 }}>
             {item.name}
           </span>
           {count !== undefined && count > 0 && (
             <span
               style={{
                 fontFamily: MONO,
-                fontSize: 10,
+                fontSize: 9.5,
+                fontVariantNumeric: 'tabular-nums',
                 padding: '1px 5px',
-                letterSpacing: '0.04em',
+                letterSpacing: '0.06em',
                 background: isActive
-                  ? 'color-mix(in srgb, var(--t-accent) 18%, transparent)'
+                  ? 'color-mix(in srgb, var(--t-accent) 20%, transparent)'
                   : 'var(--t-panel)',
                 color: isActive ? 'var(--t-accent)' : 'var(--t-text-muted)',
-                border: `1px solid ${isActive ? 'color-mix(in srgb, var(--t-accent) 30%, transparent)' : 'var(--t-border)'}`,
+                border: `1px solid ${isActive ? 'color-mix(in srgb, var(--t-accent) 32%, transparent)' : 'var(--t-border)'}`,
+                minWidth: 22,
+                textAlign: 'center',
               }}
             >
               {String(count).padStart(2, '0')}
@@ -215,7 +221,7 @@ function NavItem({ item, pathname, collapsed, isActive, count }: {
   );
 }
 
-/* ==================== Project Selector (inline with logo) ==================== */
+/* ==================== Project Selector ==================== */
 
 function ProjectSelector({ collapsed }: { collapsed: boolean }) {
   const { projects, selectedProject, selectProject, fetchProjects, refreshProjects } = useProject();
@@ -231,7 +237,7 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
   useEffect(() => {
     const savedId = localStorage.getItem('selectedProjectId');
     if (savedId && projects.length > 0 && !selectedProject) {
-      const found = projects.find(p => p.id === savedId);
+      const found = projects.find((p) => p.id === savedId);
       if (found) selectProject(found);
     }
   }, [projects, selectedProject, selectProject]);
@@ -269,8 +275,6 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
         setShowCreateForm(false);
         setIsOpen(false);
       }
-    } catch (error) {
-      console.error('Failed to create project:', error);
     } finally {
       setIsCreating(false);
     }
@@ -283,15 +287,12 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
     selectProject(project);
     setIsOpen(false);
     if (project) {
-      // Navigate to same section under new project
-      // Extract the current section from URL (e.g., /flows, /dashboard)
-      const sectionMatch = psPathname.match(/\/(dashboard|flows|schedulers|executions)(\/.*)?$/);
+      const sectionMatch = psPathname.match(/\/(dashboard|flows|schedulers|executions|queues)(\/.*)?$/);
       const section = sectionMatch ? sectionMatch[1] : 'dashboard';
       psRouter.push(`/p/${project.id}/${section}`);
     }
   };
 
-  /* Dropdown menu (shared between collapsed & expanded) */
   const dropdownMenu = (positionClass: string) => (
     <div
       style={{ backgroundColor: 'var(--t-panel)', borderColor: 'var(--t-border)', borderRadius: 2 }}
@@ -300,23 +301,36 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
       <div className="max-h-48 overflow-auto py-0.5">
         <button
           onClick={() => handleSelect(null)}
-          className="w-full px-3 py-1.5 text-left text-[12px] hover:bg-[var(--t-panel-hover)] flex items-center gap-2 transition-colors"
-          style={{ color: !selectedProject ? '#60A5FA' : 'var(--t-text-secondary)' }}
+          className="w-full px-3 py-1.5 text-left flex items-center gap-2 transition-colors hover:bg-[var(--t-panel-hover)]"
+          style={{
+            fontFamily: MONO,
+            fontSize: 11,
+            letterSpacing: '0.04em',
+            color: !selectedProject ? 'var(--t-accent)' : 'var(--t-text-secondary)',
+          }}
         >
           <Layers className="w-3 h-3" style={{ color: 'var(--t-text-muted)' }} />
-          <span className="flex-1">All Projects</span>
-          {!selectedProject && <Check className="w-3 h-3 text-[#60A5FA]" />}
+          <span className="flex-1">all projects</span>
+          {!selectedProject && <Check className="w-3 h-3" style={{ color: 'var(--t-accent)' }} />}
         </button>
         {projects.map((project) => (
           <button
             key={project.id}
             onClick={() => handleSelect(project)}
-            className="w-full px-3 py-1.5 text-left text-[12px] hover:bg-[var(--t-panel-hover)] flex items-center gap-2 transition-colors"
-            style={{ color: selectedProject?.id === project.id ? '#60A5FA' : 'var(--t-text-secondary)' }}
+            className="w-full px-3 py-1.5 text-left flex items-center gap-2 transition-colors hover:bg-[var(--t-panel-hover)]"
+            style={{
+              fontFamily: MONO,
+              fontSize: 11,
+              letterSpacing: '0.02em',
+              color: selectedProject?.id === project.id ? 'var(--t-accent)' : 'var(--t-text-secondary)',
+            }}
           >
-            <div className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: project.color || '#3B82F6' }} />
+            <div
+              className="w-2 h-2 flex-shrink-0"
+              style={{ backgroundColor: project.color || 'var(--t-accent)' }}
+            />
             <span className="flex-1 truncate">{project.name}</span>
-            {selectedProject?.id === project.id && <Check className="w-3 h-3 text-[#60A5FA]" />}
+            {selectedProject?.id === project.id && <Check className="w-3 h-3" style={{ color: 'var(--t-accent)' }} />}
           </button>
         ))}
       </div>
@@ -324,10 +338,16 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
         {!showCreateForm ? (
           <button
             onClick={() => setShowCreateForm(true)}
-            className="w-full px-3 py-1.5 text-left text-[12px] text-[#60A5FA] hover:bg-[var(--t-panel-hover)] flex items-center gap-2 transition-colors"
+            className="w-full px-3 py-1.5 text-left flex items-center gap-2 transition-colors hover:bg-[var(--t-panel-hover)]"
+            style={{
+              fontFamily: MONO,
+              fontSize: 11,
+              letterSpacing: '0.06em',
+              color: 'var(--t-accent)',
+            }}
           >
             <Plus className="w-3 h-3" />
-            New Project
+            new project
           </button>
         ) : (
           <div className="px-2.5 py-2 space-y-1.5">
@@ -340,22 +360,29 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
                 if (e.key === 'Enter') handleCreateProject();
                 if (e.key === 'Escape') { setShowCreateForm(false); setNewProjectName(''); }
               }}
-              placeholder="Project name..."
-              style={{ backgroundColor: 'var(--t-input)', borderColor: 'var(--t-border)', color: 'var(--t-text)' }}
-              className="w-full h-7 px-2 text-[11px] border rounded focus:outline-none focus:border-[#3B82F6] focus:ring-1 focus:ring-[#3B82F6]/30"
+              placeholder="project name…"
+              style={{
+                backgroundColor: 'var(--t-input)',
+                borderColor: 'var(--t-border)',
+                color: 'var(--t-text)',
+                fontFamily: MONO,
+                borderRadius: 2,
+              }}
+              className="w-full h-7 px-2 text-[11px] border focus:outline-none focus:border-[var(--t-accent)]"
             />
             <div className="flex gap-1">
               <button
                 onClick={handleCreateProject}
                 disabled={!newProjectName.trim() || isCreating}
-                className="flex-1 h-6 text-[10px] font-medium bg-[#3B82F6] text-white rounded hover:bg-[#2563EB] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                style={{ fontFamily: MONO, letterSpacing: '0.08em', borderRadius: 2 }}
+                className="flex-1 h-6 text-[10px] font-medium bg-[var(--t-accent)] text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed uppercase transition-opacity"
               >
-                {isCreating ? '...' : 'Create'}
+                {isCreating ? '...' : 'create'}
               </button>
               <button
                 onClick={() => { setShowCreateForm(false); setNewProjectName(''); }}
-                style={{ color: 'var(--t-text-muted)' }}
-                className="h-6 w-6 flex items-center justify-center rounded hover:bg-[var(--t-panel-hover)] transition-colors"
+                style={{ color: 'var(--t-text-muted)', borderRadius: 2 }}
+                className="h-6 w-6 flex items-center justify-center hover:bg-[var(--t-panel-hover)]"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -371,10 +398,11 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
       <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-[var(--t-panel-hover)]"
+          style={{ borderRadius: 2 }}
+          className="w-8 h-8 flex items-center justify-center transition-all hover:bg-[var(--t-panel-hover)]"
           title={selectedProject?.name || 'Select Project'}
         >
-          <FolderKanban className="w-4 h-4" style={{ color: selectedProject ? '#60A5FA' : 'var(--t-text-muted)' }} />
+          <FolderKanban className="w-4 h-4" style={{ color: selectedProject ? 'var(--t-accent)' : 'var(--t-text-muted)' }} />
         </button>
         {isOpen && dropdownMenu('absolute left-full top-0 ml-2 w-48')}
       </div>
@@ -385,15 +413,15 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1 px-1 py-0.5 transition-all hover:bg-[var(--t-panel-hover)] max-w-full"
         style={{ borderRadius: 2 }}
+        className="flex items-center gap-1 px-1 py-0.5 transition-all hover:bg-[var(--t-panel-hover)] max-w-full"
         title={selectedProject?.name || 'Select Project'}
       >
-        <span style={{ fontFamily: MONO, fontSize: 9, color: 'var(--t-text-muted)', opacity: 0.7, letterSpacing: '0.1em' }}>
+        <span style={{ fontFamily: MONO, fontSize: 9, color: 'var(--t-text-muted)', opacity: 0.7, letterSpacing: '0.12em' }}>
           project:
         </span>
         <span
-          className="truncate max-w-[90px]"
+          className="truncate max-w-[100px]"
           style={{ fontFamily: MONO, fontSize: 10.5, color: 'var(--t-text-secondary)', letterSpacing: '0.02em' }}
         >
           {selectedProject?.name || 'all'}
@@ -407,8 +435,8 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
 
 /* ==================== Schematic primitives ==================== */
 
-// Tiny "run loop" mark — two nodes joined by a curved edge. Sharp-cornered
-// bounding box reads as schematic rather than SaaS. Matches the login page.
+// The run-loop mark — two nodes joined by a curved edge. Same mark used
+// on /login so the brand reads consistently.
 function SidebarMark() {
   return (
     <div
@@ -437,10 +465,9 @@ function SidebarMark() {
   );
 }
 
-// Live UTC ticker — the kind of detail a DevOps dashboard would show. It's
-// deliberately small and mono so it reads as telemetry, not copy.
+// Live UTC clock — the kind of detail a DevOps panel would show.
 function UtcClock() {
-  const [t, setT] = useState<string>('');
+  const [t, setT] = useState<string>('--:--:--');
   useEffect(() => {
     const tick = () => {
       const d = new Date();
@@ -458,18 +485,19 @@ function UtcClock() {
       style={{
         fontFamily: MONO,
         fontSize: 10.5,
+        fontVariantNumeric: 'tabular-nums',
         color: 'var(--t-text-secondary)',
         letterSpacing: '0.04em',
       }}
     >
       {t}
-      <span style={{ color: 'var(--t-text-muted)', marginLeft: 4, opacity: 0.6 }}>UTC</span>
+      <span style={{ color: 'var(--t-text-muted)', marginLeft: 4, opacity: 0.55 }}>UTC</span>
     </span>
   );
 }
 
-// Engine dot — a soft pulsing green dot + "ENGINE" label. Sits in the header
-// to echo the login page's ONLINE footer.
+// Engine dot — soft pulsing green dot + "ENGINE" label. Echoes the
+// login footer's ONLINE indicator.
 function EngineDot() {
   return (
     <span
@@ -490,6 +518,118 @@ function EngineDot() {
   );
 }
 
+// Tiny cron ticker — the same idea as login's `CRON */2 * * * * t=0005`,
+// but compressed for a control strip. The tick counter flashes when it
+// advances, so the header feels "live" without being loud.
+function CronTicker() {
+  const [tick, setTick] = useState(0);
+  const [flash, setFlash] = useState(false);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setTick((t) => t + 1);
+      setFlash(true);
+      const stop = setTimeout(() => setFlash(false), 180);
+      return () => clearTimeout(stop);
+    }, 2000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <div className="hidden lg:flex items-center gap-2" style={{ fontFamily: MONO, fontSize: 9.5 }}>
+      <span style={{ color: 'var(--t-text-muted)', letterSpacing: '0.12em' }}>CRON</span>
+      <span style={{ color: 'var(--t-text-muted)', opacity: 0.5 }}>*/2&nbsp;*&nbsp;*&nbsp;*&nbsp;*</span>
+      <span
+        style={{
+          display: 'inline-block',
+          minWidth: 50,
+          padding: '1px 5px',
+          textAlign: 'center',
+          fontVariantNumeric: 'tabular-nums',
+          border: '1px solid var(--t-border)',
+          color: flash ? 'var(--t-accent)' : 'var(--t-text-secondary)',
+          background: flash ? 'color-mix(in srgb, var(--t-accent) 10%, transparent)' : 'transparent',
+          transition: 'color 0.2s, background 0.2s',
+          letterSpacing: '0.05em',
+        }}
+      >
+        t={String(tick).padStart(4, '0')}
+      </span>
+    </div>
+  );
+}
+
+// Sidebar footer — telemetry stack at the bottom of the left column.
+// Three lines: engine pulse, UTC clock, and a subtle //fiber+gocron
+// subtitle. Mirrors the login footer, but oriented vertically.
+function SidebarFooter({ collapsed }: { collapsed: boolean }) {
+  const [t, setT] = useState<string>('--:--:--');
+  useEffect(() => {
+    const tick = () => {
+      const d = new Date();
+      const hh = String(d.getUTCHours()).padStart(2, '0');
+      const mm = String(d.getUTCMinutes()).padStart(2, '0');
+      const ss = String(d.getUTCSeconds()).padStart(2, '0');
+      setT(`${hh}:${mm}:${ss}`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+  if (collapsed) {
+    return (
+      <div className="px-2 py-3 flex flex-col items-center gap-2" style={{ borderTop: '1px solid var(--t-border-light)' }}>
+        <span
+          aria-hidden
+          style={{
+            width: 6, height: 6, borderRadius: 999,
+            background: '#10B981',
+            boxShadow: '0 0 0 3px color-mix(in srgb, #10B981 18%, transparent)',
+            animation: 'rl-engine-pulse 2.4s ease-in-out infinite',
+          }}
+        />
+      </div>
+    );
+  }
+  return (
+    <div
+      className="px-3 py-3 space-y-1.5"
+      style={{
+        borderTop: '1px solid var(--t-border-light)',
+        fontFamily: MONO,
+        fontSize: 9.5,
+        letterSpacing: '0.08em',
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <span style={{ color: 'var(--t-text-muted)' }}>{'//'} STATUS</span>
+      </div>
+      <div className="flex items-center gap-1.5" style={{ color: 'var(--t-text-secondary)' }}>
+        <span
+          aria-hidden
+          style={{
+            width: 6, height: 6, borderRadius: 999,
+            background: '#10B981',
+            boxShadow: '0 0 0 3px color-mix(in srgb, #10B981 18%, transparent)',
+            animation: 'rl-engine-pulse 2.4s ease-in-out infinite',
+          }}
+        />
+        ENGINE
+        <span style={{ marginLeft: 'auto', color: '#10B981' }}>ONLINE</span>
+      </div>
+      <div
+        className="flex items-center gap-1.5"
+        style={{ color: 'var(--t-text-secondary)', fontVariantNumeric: 'tabular-nums' }}
+      >
+        <span style={{ width: 6, height: 6, borderRadius: 999, background: 'color-mix(in srgb, var(--t-accent) 80%, transparent)' }} />
+        CLOCK
+        <span style={{ marginLeft: 'auto' }}>{t}</span>
+      </div>
+      <div style={{ color: 'var(--t-text-muted)', opacity: 0.7, paddingTop: 4 }}>
+        {'//'} fiber+gocron
+      </div>
+    </div>
+  );
+}
+
 /* ==================== Layout ==================== */
 
 export function Layout({ children }: { children?: React.ReactNode }) {
@@ -499,7 +639,6 @@ export function Layout({ children }: { children?: React.ReactNode }) {
   const pathname = usePathname() || '';
   const router = useRouter();
 
-  // Build project-scoped path prefix
   const projectPrefix = selectedProject ? `/p/${selectedProject.id}` : '';
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -510,7 +649,6 @@ export function Layout({ children }: { children?: React.ReactNode }) {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
 
-  // Fetch sidebar counts (filtered by selected project)
   useEffect(() => {
     async function fetchCounts() {
       try {
@@ -540,7 +678,6 @@ export function Layout({ children }: { children?: React.ReactNode }) {
     fetchCounts();
   }, [pathname, selectedProject?.id]);
 
-  // Close menus when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
@@ -554,20 +691,18 @@ export function Layout({ children }: { children?: React.ReactNode }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = async () => {
-    await logout();
-  };
+  const handleLogout = async () => { await logout(); };
 
   return (
-    <div className="min-h-screen flex" style={{ fontFamily: FONT, backgroundColor: 'var(--t-bg)' }}>
-      {/* ===== Sidebar (fixed, Orch.io style) ===== */}
+    <div className="min-h-screen flex" style={{ fontFamily: SANS, backgroundColor: 'var(--t-bg)' }}>
+      {/* ===== Sidebar ===== */}
       <aside
-        style={{ fontFamily: FONT, backgroundColor: 'var(--t-sidebar)', borderColor: 'var(--t-border-light)' }}
+        style={{ fontFamily: SANS, backgroundColor: 'var(--t-sidebar)', borderColor: 'var(--t-border-light)' }}
         className={`fixed top-0 left-0 z-40 h-full border-r flex flex-col transition-all duration-200 ${
-          sidebarCollapsed ? 'w-16' : 'w-52'
+          sidebarCollapsed ? 'w-16' : 'w-56'
         }`}
       >
-        {/* Logo + Project Selector */}
+        {/* Brand + project selector */}
         <div className={`h-14 flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'px-3'}`}>
           <SidebarMark />
           {!sidebarCollapsed && (
@@ -580,7 +715,14 @@ export function Layout({ children }: { children?: React.ReactNode }) {
                   runloop
                 </span>
                 <span
-                  style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: '0.1em', color: 'var(--t-accent)', borderColor: 'color-mix(in srgb, var(--t-accent) 35%, transparent)', borderRadius: 0 }}
+                  style={{
+                    fontFamily: MONO,
+                    fontSize: 8.5,
+                    letterSpacing: '0.1em',
+                    color: 'var(--t-accent)',
+                    borderColor: 'color-mix(in srgb, var(--t-accent) 35%, transparent)',
+                    borderRadius: 0,
+                  }}
                   className="px-1 py-[1px] border font-medium leading-none uppercase"
                 >
                   beta
@@ -592,17 +734,24 @@ export function Layout({ children }: { children?: React.ReactNode }) {
           {sidebarCollapsed && <ProjectSelector collapsed={true} />}
         </div>
 
-        {/* Divider */}
         <div className="mx-3 border-t" style={{ borderColor: 'var(--t-border-light)' }} />
 
         {/* Navigation */}
-        <nav className="flex-1 py-3 px-2 overflow-y-auto">
-          {/* Main Section */}
+        <nav className="flex-1 py-3 overflow-y-auto">
           <div className="space-y-0.5">
             {!sidebarCollapsed && (
-              <p className="px-3 py-2 text-[10px] uppercase flex items-center gap-2" style={{ color: 'var(--t-text-muted)', fontFamily: MONO, letterSpacing: '0.16em' }}>
+              <p
+                className="px-4 py-2 flex items-center gap-2"
+                style={{
+                  color: 'var(--t-text-muted)',
+                  fontFamily: MONO,
+                  fontSize: 9.5,
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                }}
+              >
                 <span style={{ opacity: 0.5 }}>{'//'}</span>
-                Main Menu
+                main menu
               </p>
             )}
             {mainNavigation.map((item) => {
@@ -614,7 +763,6 @@ export function Layout({ children }: { children?: React.ReactNode }) {
                 <NavItem
                   key={item.name}
                   item={scopedItem}
-                  pathname={pathname}
                   collapsed={sidebarCollapsed}
                   isActive={isActive}
                   count={count}
@@ -623,16 +771,23 @@ export function Layout({ children }: { children?: React.ReactNode }) {
             })}
           </div>
 
-          {/* System Section */}
           <div className="mt-6 space-y-0.5">
             {!sidebarCollapsed && (
-              <p className="px-3 py-2 text-[10px] uppercase flex items-center gap-2" style={{ color: 'var(--t-text-muted)', fontFamily: MONO, letterSpacing: '0.16em' }}>
+              <p
+                className="px-4 py-2 flex items-center gap-2"
+                style={{
+                  color: 'var(--t-text-muted)',
+                  fontFamily: MONO,
+                  fontSize: 9.5,
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                }}
+              >
                 <span style={{ opacity: 0.5 }}>{'//'}</span>
-                System
+                system
               </p>
             )}
             {systemNavigation.map((item) => {
-              // Project-scoped system pages live under /p/{projectId}/...
               const scopedHref = item.projectScoped ? `${projectPrefix}${item.href}` : item.href;
               const scopedItem = item.projectScoped ? { ...item, href: scopedHref } : item;
               const isActive = pathname.endsWith(item.href) || pathname.includes(`${item.href}/`);
@@ -640,7 +795,6 @@ export function Layout({ children }: { children?: React.ReactNode }) {
                 <NavItem
                   key={item.name}
                   item={scopedItem}
-                  pathname={pathname}
                   collapsed={sidebarCollapsed}
                   isActive={isActive}
                 />
@@ -648,19 +802,33 @@ export function Layout({ children }: { children?: React.ReactNode }) {
             })}
           </div>
         </nav>
+
+        <SidebarFooter collapsed={sidebarCollapsed} />
       </aside>
 
-      {/* Spacer for fixed sidebar */}
-      <div className={`flex-shrink-0 transition-all duration-200 ${sidebarCollapsed ? 'w-16' : 'w-52'}`} />
+      {/* Sidebar spacer */}
+      <div className={`flex-shrink-0 transition-all duration-200 ${sidebarCollapsed ? 'w-16' : 'w-56'}`} />
 
-      {/* ===== Main Content ===== */}
-      <main className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: 'var(--t-bg)' }}>
-        {/* ===== Header (Orch.io style) ===== */}
+      {/* ===== Main ===== */}
+      <main className="flex-1 flex flex-col overflow-hidden relative" style={{ backgroundColor: 'var(--t-bg)' }}>
+        {/* Atmospheric backdrop — positioned within the main scroll
+            container so it scrolls with the grid, but content sits
+            above it via z-index. */}
+        <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+          <ControlBackdrop />
+        </div>
+
+        {/* ===== Header (control strip) ===== */}
         <header
-          style={{ fontFamily: FONT, backgroundColor: 'var(--t-header)', borderColor: 'var(--t-border-light)' }}
-          className="h-14 border-b flex items-center px-4 sticky top-0 z-20 transition-colors"
+          style={{
+            fontFamily: SANS,
+            backgroundColor: 'color-mix(in srgb, var(--t-header) 85%, transparent)',
+            borderColor: 'var(--t-border-light)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+          }}
+          className="h-14 border-b flex items-center px-4 sticky top-0 z-30 transition-colors"
         >
-          {/* Left: Toggle + Breadcrumb */}
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -673,15 +841,15 @@ export function Layout({ children }: { children?: React.ReactNode }) {
             <Breadcrumb />
           </div>
 
-          {/* Right Actions */}
           <div className="flex items-center gap-2 ml-auto">
-            {/* Engine status + clock — telemetry strip */}
+            {/* Telemetry strip — sits right where eyes land after the breadcrumb */}
             <div
               className="hidden md:flex items-center gap-3 pr-3 mr-1"
               style={{ borderRight: '1px solid var(--t-border-light)', height: 24 }}
             >
               <EngineDot />
               <UtcClock />
+              <CronTicker />
             </div>
 
             {/* Search */}
@@ -716,7 +884,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
               </div>
             </div>
 
-            {/* New Button — run-action style */}
+            {/* New button — "run action" style */}
             <button
               onClick={() => router.push(`${projectPrefix}/flows/new`)}
               style={{
@@ -728,13 +896,13 @@ export function Layout({ children }: { children?: React.ReactNode }) {
                 letterSpacing: '0.1em',
                 borderRadius: 2,
               }}
-              className="h-8 px-3 border hover:border-[var(--t-accent)] hover:text-[var(--t-accent)] font-medium flex items-center gap-2 transition-all uppercase"
+              className="h-8 px-3 border hover:border-[var(--t-accent)] hover:text-[var(--t-accent)] font-medium flex items-center gap-1.5 transition-all uppercase"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <span style={{ opacity: 0.5 }}>$</span>
               <span className="hidden sm:inline">new</span>
+              <span className="opacity-60 hidden sm:inline">→</span>
             </button>
 
-            {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
               style={{ color: 'var(--t-text-muted)', borderRadius: 2 }}
@@ -744,7 +912,6 @@ export function Layout({ children }: { children?: React.ReactNode }) {
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
 
-            {/* Notifications */}
             <div className="relative" ref={notificationsRef}>
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
@@ -752,88 +919,180 @@ export function Layout({ children }: { children?: React.ReactNode }) {
                 className="relative h-8 w-8 flex items-center justify-center hover:text-[var(--t-accent)] transition-colors"
               >
                 <Bell className="w-4 h-4" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-[var(--t-header)]"></span>
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-[var(--t-header)]" />
               </button>
 
-              {/* Notifications Dropdown */}
               {showNotifications && (
-                <div style={{ backgroundColor: 'var(--t-panel)', borderColor: 'var(--t-border)', borderRadius: 2 }} className="absolute right-0 top-full mt-2 w-72 border shadow-xl py-2">
-                  <div className="px-3 py-2 border-b flex items-center justify-between" style={{ borderColor: 'var(--t-border)' }}>
-                    <span className="font-medium text-[13px]" style={{ color: 'var(--t-text)' }}>Notifications</span>
-                    <button className="text-[11px] text-[#60A5FA] hover:text-[#3B82F6]">Mark all read</button>
+                <div
+                  style={{ backgroundColor: 'var(--t-panel)', borderColor: 'var(--t-border)', borderRadius: 2 }}
+                  className="absolute right-0 top-full mt-2 w-72 border shadow-xl py-2"
+                >
+                  <div
+                    className="px-3 py-2 border-b flex items-center justify-between"
+                    style={{ borderColor: 'var(--t-border)' }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: MONO,
+                        fontSize: 10,
+                        letterSpacing: '0.16em',
+                        color: 'var(--t-text-muted)',
+                      }}
+                    >
+                      {'//'} NOTIFICATIONS
+                    </span>
+                    <button
+                      style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.04em' }}
+                      className="text-[var(--t-accent)] hover:opacity-80"
+                    >
+                      mark all read
+                    </button>
                   </div>
                   <div className="max-h-60 overflow-auto">
-                    <div className="px-3 py-2.5 hover:bg-[var(--t-panel-hover)] cursor-pointer border-b last:border-0" style={{ borderColor: 'var(--t-border)' }}>
+                    <div
+                      className="px-3 py-2.5 hover:bg-[var(--t-panel-hover)] cursor-pointer border-b last:border-0"
+                      style={{ borderColor: 'var(--t-border)' }}
+                    >
                       <div className="flex gap-2">
-                        <div className="w-1.5 h-1.5 bg-[#60A5FA] rounded-full mt-1.5 flex-shrink-0"></div>
+                        <div className="w-1.5 h-1.5 bg-[var(--t-accent)] rounded-full mt-1.5 flex-shrink-0" />
                         <div>
                           <p className="text-[12px]" style={{ color: 'var(--t-text)' }}>Scheduler run completed</p>
-                          <p className="text-[11px] mt-1" style={{ color: 'var(--t-text-muted)' }}>2 minutes ago</p>
+                          <p
+                            className="mt-1"
+                            style={{
+                              fontFamily: MONO,
+                              fontSize: 10,
+                              color: 'var(--t-text-muted)',
+                              letterSpacing: '0.04em',
+                            }}
+                          >
+                            2m ago
+                          </p>
                         </div>
                       </div>
                     </div>
-                    <div className="px-3 py-2.5 hover:bg-[var(--t-panel-hover)] cursor-pointer border-b last:border-0" style={{ borderColor: 'var(--t-border)' }}>
+                    <div
+                      className="px-3 py-2.5 hover:bg-[var(--t-panel-hover)] cursor-pointer border-b last:border-0"
+                      style={{ borderColor: 'var(--t-border)' }}
+                    >
                       <div className="flex gap-2">
-                        <div className="w-1.5 h-1.5 bg-[#10B981] rounded-full mt-1.5 flex-shrink-0"></div>
+                        <div className="w-1.5 h-1.5 bg-[#10B981] rounded-full mt-1.5 flex-shrink-0" />
                         <div>
                           <p className="text-[12px]" style={{ color: 'var(--t-text)' }}>Flow executed successfully</p>
-                          <p className="text-[11px] mt-1" style={{ color: 'var(--t-text-muted)' }}>15 minutes ago</p>
+                          <p
+                            className="mt-1"
+                            style={{
+                              fontFamily: MONO,
+                              fontSize: 10,
+                              color: 'var(--t-text-muted)',
+                              letterSpacing: '0.04em',
+                            }}
+                          >
+                            15m ago
+                          </p>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="px-3 py-2 border-t" style={{ borderColor: 'var(--t-border)' }}>
-                    <button className="text-[12px] text-[#60A5FA] hover:text-[#3B82F6]">View all notifications</button>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* User Menu */}
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 style={{ color: 'var(--t-text-muted)', borderRadius: 2 }}
                 className="flex items-center gap-2 h-8 px-2 hover:text-[var(--t-accent)] transition-colors"
               >
-                <div style={{ backgroundColor: 'var(--t-panel)', borderColor: 'var(--t-border)' }} className="w-7 h-7 rounded-full border flex items-center justify-center text-[#60A5FA] text-xs font-medium">
+                <div
+                  style={{
+                    backgroundColor: 'var(--t-panel)',
+                    borderColor: 'var(--t-border)',
+                    fontFamily: MONO,
+                    borderRadius: 2,
+                  }}
+                  className="w-7 h-7 border flex items-center justify-center text-[var(--t-accent)] text-xs font-medium uppercase"
+                >
                   {user?.name?.charAt(0) || user?.email?.charAt(0) || 'A'}
                 </div>
                 <ChevronDown className={`w-4 h-4 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
               </button>
 
-              {/* User Dropdown */}
               {showUserMenu && (
-                <div style={{ backgroundColor: 'var(--t-panel)', borderColor: 'var(--t-border)', borderRadius: 2 }} className="absolute right-0 top-full mt-2 w-52 border shadow-xl py-2">
+                <div
+                  style={{ backgroundColor: 'var(--t-panel)', borderColor: 'var(--t-border)', borderRadius: 2 }}
+                  className="absolute right-0 top-full mt-2 w-56 border shadow-xl py-2"
+                >
                   <div className="px-3 py-2.5 border-b" style={{ borderColor: 'var(--t-border)' }}>
-                    <p className="font-medium text-[13px]" style={{ color: 'var(--t-text)' }}>{user?.name || user?.email || 'Admin User'}</p>
-                    <p className="text-[11px] mt-0.5" style={{ color: 'var(--t-text-muted)' }}>{user?.email || 'admin@runloop.io'}</p>
+                    <p
+                      className="font-medium"
+                      style={{ fontFamily: MONO, fontSize: 12, color: 'var(--t-text)', letterSpacing: '0.02em' }}
+                    >
+                      {user?.name || user?.email || 'admin'}
+                    </p>
+                    <p
+                      className="mt-0.5"
+                      style={{
+                        fontFamily: MONO,
+                        fontSize: 10,
+                        color: 'var(--t-text-muted)',
+                        letterSpacing: '0.02em',
+                      }}
+                    >
+                      {user?.email || 'admin@runloop.io'}
+                    </p>
                   </div>
                   <div className="py-1">
-                    <button style={{ color: 'var(--t-text-secondary)' }} className="w-full px-3 py-2 text-left text-[13px] hover:text-[var(--t-text)] hover:bg-[var(--t-panel-hover)] flex items-center gap-2 transition-colors">
-                      <User className="w-4 h-4" />
-                      Profile
+                    <button
+                      style={{
+                        color: 'var(--t-text-secondary)',
+                        fontFamily: MONO,
+                        fontSize: 11,
+                        letterSpacing: '0.1em',
+                      }}
+                      className="w-full px-3 py-2 text-left hover:text-[var(--t-text)] hover:bg-[var(--t-panel-hover)] flex items-center gap-2 uppercase"
+                    >
+                      <User className="w-3.5 h-3.5" />
+                      profile
                     </button>
                     <button
                       onClick={() => router.push('/settings')}
-                      style={{ color: 'var(--t-text-secondary)' }}
-                      className="w-full px-3 py-2 text-left text-[13px] hover:text-[var(--t-text)] hover:bg-[var(--t-panel-hover)] flex items-center gap-2 transition-colors"
+                      style={{
+                        color: 'var(--t-text-secondary)',
+                        fontFamily: MONO,
+                        fontSize: 11,
+                        letterSpacing: '0.1em',
+                      }}
+                      className="w-full px-3 py-2 text-left hover:text-[var(--t-text)] hover:bg-[var(--t-panel-hover)] flex items-center gap-2 uppercase"
                     >
-                      <Settings className="w-4 h-4" />
-                      Settings
+                      <Settings className="w-3.5 h-3.5" />
+                      settings
                     </button>
-                    <button style={{ color: 'var(--t-text-secondary)' }} className="w-full px-3 py-2 text-left text-[13px] hover:text-[var(--t-text)] hover:bg-[var(--t-panel-hover)] flex items-center gap-2 transition-colors">
-                      <HelpCircle className="w-4 h-4" />
-                      Help & Support
+                    <button
+                      style={{
+                        color: 'var(--t-text-secondary)',
+                        fontFamily: MONO,
+                        fontSize: 11,
+                        letterSpacing: '0.1em',
+                      }}
+                      className="w-full px-3 py-2 text-left hover:text-[var(--t-text)] hover:bg-[var(--t-panel-hover)] flex items-center gap-2 uppercase"
+                    >
+                      <HelpCircle className="w-3.5 h-3.5" />
+                      help &amp; support
                     </button>
                   </div>
                   <div className="border-t py-1 mt-1" style={{ borderColor: 'var(--t-border)' }}>
                     <button
                       onClick={handleLogout}
-                      className="w-full px-3 py-2 text-left text-[13px] text-red-400 hover:text-red-300 hover:bg-red-500/10 flex items-center gap-2 transition-colors"
+                      style={{
+                        fontFamily: MONO,
+                        fontSize: 11,
+                        letterSpacing: '0.1em',
+                      }}
+                      className="w-full px-3 py-2 text-left text-red-400 hover:text-red-300 hover:bg-red-500/10 flex items-center gap-2 uppercase"
                     >
-                      <LogOut className="w-4 h-4" />
-                      Sign out
+                      <LogOut className="w-3.5 h-3.5" />
+                      sign out
                     </button>
                   </div>
                 </div>
@@ -842,13 +1101,13 @@ export function Layout({ children }: { children?: React.ReactNode }) {
           </div>
         </header>
 
-        {/* Page Content */}
-        <div className="flex-1 overflow-auto p-4">
+        {/* Page content — sits above the backdrop via z-index */}
+        <div className="flex-1 overflow-auto p-4 relative" style={{ zIndex: 1 }}>
           {children}
         </div>
       </main>
 
-      {/* Global keyframes for the chrome telemetry bits. */}
+      {/* Global keyframes */}
       <style jsx global>{`
         @keyframes rl-engine-pulse {
           0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, #10B981 18%, transparent); }

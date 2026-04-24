@@ -203,29 +203,145 @@ export function SharpButton({
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// CornerTicks — L-shaped tick marks at each corner of an element. Lives
+// in ControlChrome so any page panel can frame itself as a technical
+// drawing the same way the login form does. Wrap the target with
+// `position: relative` and drop <CornerTicks /> inside.
+// ─────────────────────────────────────────────────────────────────────────
+export function CornerTicks({
+  color,
+  size = 10,
+  offset = -1,
+}: {
+  color?: string;   // defaults to the accent color
+  size?: number;
+  offset?: number;  // negative pulls ticks slightly outside the border
+}) {
+  const lineColor = color ?? 'var(--t-accent)';
+  const base: React.CSSProperties = {
+    position: 'absolute',
+    width: size,
+    height: size,
+    pointerEvents: 'none',
+  };
+  return (
+    <>
+      <span style={{ ...base, top: offset, left: offset }}>
+        <span style={{ position: 'absolute', top: 0, left: 0, width: size, height: 1, background: lineColor }} />
+        <span style={{ position: 'absolute', top: 0, left: 0, width: 1, height: size, background: lineColor }} />
+      </span>
+      <span style={{ ...base, top: offset, right: offset }}>
+        <span style={{ position: 'absolute', top: 0, right: 0, width: size, height: 1, background: lineColor }} />
+        <span style={{ position: 'absolute', top: 0, right: 0, width: 1, height: size, background: lineColor }} />
+      </span>
+      <span style={{ ...base, bottom: offset, left: offset }}>
+        <span style={{ position: 'absolute', bottom: 0, left: 0, width: size, height: 1, background: lineColor }} />
+        <span style={{ position: 'absolute', bottom: 0, left: 0, width: 1, height: size, background: lineColor }} />
+      </span>
+      <span style={{ ...base, bottom: offset, right: offset }}>
+        <span style={{ position: 'absolute', bottom: 0, right: 0, width: size, height: 1, background: lineColor }} />
+        <span style={{ position: 'absolute', bottom: 0, right: 0, width: 1, height: size, background: lineColor }} />
+      </span>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // SchematicPanel — sharp-corner content panel with optional corner ticks.
 // Use instead of rounded cards for framed content in the control-room
-// aesthetic.
+// aesthetic. Pass `ticked` to auto-frame the panel with CornerTicks —
+// the same treatment the login form uses.
 // ─────────────────────────────────────────────────────────────────────────
 export function SchematicPanel({
   children,
   className = '',
   padded = true,
+  ticked = false,
 }: {
   children: React.ReactNode;
   className?: string;
   padded?: boolean;
+  ticked?: boolean;
 }) {
   return (
     <div
       className={className}
       style={{
+        position: ticked ? 'relative' : undefined,
         background: 'var(--t-panel)',
         border: '1px solid var(--t-border)',
         borderRadius: 2,
         padding: padded ? 16 : 0,
       }}
     >
+      {ticked && <CornerTicks />}
+      {children}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// MonoNumber — a numeric readout in the same monospace + tabular
+// settings as login. Use for counts, durations, IDs — anywhere the eye
+// needs to scan telemetry fast.
+// ─────────────────────────────────────────────────────────────────────────
+export function MonoNumber({
+  children,
+  size = 14,
+  muted = false,
+  accent = false,
+}: {
+  children: React.ReactNode;
+  size?: number;
+  muted?: boolean;
+  accent?: boolean;
+}) {
+  return (
+    <span
+      style={{
+        fontFamily: MONO,
+        fontSize: size,
+        fontVariantNumeric: 'tabular-nums',
+        letterSpacing: '0.02em',
+        color: accent
+          ? 'var(--t-accent)'
+          : muted
+            ? 'var(--t-text-muted)'
+            : 'var(--t-text)',
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// SectionLabel — a `// SECTION_NAME` marker used in sidebars and panel
+// headers. Mirrors the login page's mono metadata style so the eye
+// recognizes structural cues across the whole app.
+// ─────────────────────────────────────────────────────────────────────────
+export function SectionLabel({
+  children,
+  className = '',
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={className}
+      style={{
+        fontFamily: MONO,
+        fontSize: 10,
+        letterSpacing: '0.16em',
+        color: 'var(--t-text-muted)',
+        textTransform: 'uppercase',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+      }}
+    >
+      <span style={{ opacity: 0.5 }}>{'//'}</span>
       {children}
     </div>
   );
