@@ -61,9 +61,12 @@ metadata:
   name: runloop-engine
   namespace: community
 spec:
+  # NodePort — external Apache proxies /runloop/rl → this NodePort.
+  # Port is pinned so ops config doesn't break on re-apply.
+  type: NodePort
   selector: { app: runloop-engine }
   ports:
     - name: http
       port: 8092
       targetPort: 8092
-  type: ClusterIP
+      nodePort: 31157
