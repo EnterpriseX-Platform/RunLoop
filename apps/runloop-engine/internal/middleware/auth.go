@@ -98,8 +98,14 @@ func JWTMiddleware(cfg *config.Config, database *db.Postgres) fiber.Handler {
 				}
 			}
 
-			// Store user info in context
-			c.Locals("userID", claims["sub"])
+			// Store user info in context. The Next.js login route signs
+			// JWTs with `userId` + `email` + `role`; accept either `userId`
+			// or the standard `sub` claim to stay compatible.
+			var userID any = claims["sub"]
+			if userID == nil || userID == "" {
+				userID = claims["userId"]
+			}
+			c.Locals("userID", userID)
 			c.Locals("userEmail", claims["email"])
 			c.Locals("userRole", claims["role"])
 
