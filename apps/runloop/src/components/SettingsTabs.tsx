@@ -92,18 +92,6 @@ export function SettingsTabs() {
         fontFamily: "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif",
       }}
     >
-      <span
-        style={{
-          fontSize: 13,
-          fontWeight: 600,
-          color: 'var(--t-text)',
-          marginRight: 20,
-          letterSpacing: '-0.01em',
-        }}
-        className="whitespace-nowrap"
-      >
-        Settings
-      </span>
       {TABS.map((tab) => {
         const active = tab.match(pathname);
         // Next.js basePath ('/runloop') is auto-prepended by Link — do NOT include it here

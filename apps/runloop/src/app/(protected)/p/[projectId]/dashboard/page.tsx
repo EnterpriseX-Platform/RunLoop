@@ -148,44 +148,10 @@ export default function DashboardPage() {
 
   return (
     <div style={{ fontFamily: FONT, minHeight: '100%' }}>
-      {/* Page Header — schematic breadcrumb-style lead-in + actions */}
-      <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
+      <div className="flex items-end justify-between mb-6 gap-4 flex-wrap">
         <div>
-          <div
-            style={{
-              fontFamily: MONO,
-              fontSize: 10,
-              letterSpacing: '0.18em',
-              color: THEME.text.muted,
-              marginBottom: 8,
-            }}
-            className="uppercase flex items-center gap-2"
-          >
-            <span style={{ opacity: 0.5 }}>{'//'}</span>
-            control plane / overview
-            <span
-              style={{
-                marginLeft: 6,
-                padding: '1px 6px',
-                border: `1px solid ${THEME.border}`,
-                color: THEME.text.secondary,
-                letterSpacing: '0.04em',
-              }}
-            >
-              node.dashboard
-            </span>
-          </div>
-          <h1
-            style={{
-              fontFamily: MONO,
-              fontSize: 26,
-              fontWeight: 500,
-              color: THEME.text.primary,
-              letterSpacing: '-0.015em',
-              lineHeight: 1.1,
-            }}
-          >
-            {selectedProject ? selectedProject.name : 'dashboard'}
+          <h1 style={{ fontSize: 24, fontWeight: 600, color: THEME.text.primary, letterSpacing: '-0.02em' }}>
+            {selectedProject ? selectedProject.name : 'Dashboard'}
           </h1>
           <p style={{ fontSize: 13, color: THEME.text.muted, marginTop: 6 }}>
             {selectedProject ? 'Project overview' : 'Overview of RunLoop system'}
@@ -351,28 +317,15 @@ export default function DashboardPage() {
               className="flex items-center justify-between px-4 py-2.5"
               style={{ borderBottom: `1px solid ${THEME.border}`, background: 'var(--t-input)' }}
             >
-              <div className="flex items-center gap-2">
-                <span
-                  style={{
-                    fontFamily: MONO,
-                    fontSize: 10,
-                    letterSpacing: '0.16em',
-                    color: THEME.text.muted,
-                  }}
-                  className="uppercase"
-                >
-                  {'//'} recent executions
-                </span>
-                <span
-                  style={{
-                    fontFamily: MONO, fontSize: 9, letterSpacing: '0.08em',
-                    padding: '1px 5px', border: `1px solid ${THEME.border}`,
-                    color: THEME.text.secondary,
-                  }}
-                >
-                  tail -n 5
-                </span>
-              </div>
+              <span
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: THEME.text.primary,
+                }}
+              >
+                Recent executions
+              </span>
               <Link
                 href={`/p/${projectId}/executions`}
                 className="flex items-center gap-1"
@@ -449,7 +402,7 @@ export default function DashboardPage() {
                     }}
                     className="uppercase"
                   >
-                    {'//'} no executions in log
+                    No executions yet
                   </p>
                   <Link
                     href={`/p/${projectId}/schedulers/new`}
@@ -482,7 +435,7 @@ export default function DashboardPage() {
                 }}
                 className="uppercase"
               >
-                {'//'} recent flows
+                Recent flows
               </span>
               <Link
                 href={`/p/${projectId}/flows`}
@@ -545,7 +498,7 @@ export default function DashboardPage() {
                     style={{ fontFamily: MONO, fontSize: 11, color: THEME.text.muted, letterSpacing: '0.08em', marginBottom: 12 }}
                     className="uppercase"
                   >
-                    {'//'} no flows registered
+                    No flows yet
                   </p>
                   <Link
                     href={`/p/${projectId}/flows/new`}
@@ -576,7 +529,7 @@ export default function DashboardPage() {
               }}
               className="uppercase"
             >
-              {'//'} quick actions
+              Quick actions
             </div>
             <div className="space-y-1.5">
               {quickActions.map((action) => (
@@ -622,7 +575,7 @@ export default function DashboardPage() {
                 }}
                 className="uppercase"
               >
-                {'//'} system
+                System
               </span>
               <span
                 className="flex items-center gap-1.5"
@@ -673,7 +626,7 @@ export default function DashboardPage() {
                 letterSpacing: '0.1em',
               }}
             >
-              {'//'} engine: fiber+gocron &middot; base:/rl
+              engine: fiber+gocron · base: /rl
             </div>
           </div>
 
@@ -686,7 +639,7 @@ export default function DashboardPage() {
               }}
               className="uppercase"
             >
-              {'//'} shortcuts
+              Shortcuts
             </div>
             <div>
               {[

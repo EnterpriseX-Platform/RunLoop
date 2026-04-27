@@ -100,6 +100,28 @@ func (d *DatabaseConnector) Metadata() ConnectorMetadata {
 	}
 }
 
+// normalizeDBType collapses the various names callers use ("postgres",
+// "postgresql", "pg", "mysql") into a single canonical value used internally.
+// Returns "" for unsupported types.
+func normalizeDBType(raw string) string {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "postgres", "postgresql", "pg":
+		return "postgresql"
+	case "mysql", "mariadb":
+		return "mysql"
+	}
+	return ""
+}
+
+// driverName maps the canonical type to the database/sql driver name actually
+// registered by the imported driver package.
+func driverName(dbType string) string {
+	if dbType == "postgresql" {
+		return "postgres" // lib/pq registers as "postgres"
+	}
+	return dbType
+}
+
 // ValidateConfig validates the configuration
 func (d *DatabaseConnector) ValidateConfig(config map[string]interface{}) error {
 	required := []string{"type", "host", "database", "username", "password"}
@@ -108,12 +130,11 @@ func (d *DatabaseConnector) ValidateConfig(config map[string]interface{}) error 
 			return fmt.Errorf("%s is required", field)
 		}
 	}
-	
-	dbType := config["type"].(string)
-	if dbType != "postgresql" && dbType != "mysql" {
-		return fmt.Errorf("unsupported database type: %s", dbType)
+
+	if normalizeDBType(config["type"].(string)) == "" {
+		return fmt.Errorf("unsupported database type: %s (supported: postgres, postgresql, pg, mysql, mariadb)", config["type"])
 	}
-	
+
 	return nil
 }
 
@@ -123,10 +144,10 @@ func (d *DatabaseConnector) Initialize(ctx context.Context, config map[string]in
 		return err
 	}
 
-	d.dbType = config["type"].(string)
+	d.dbType = normalizeDBType(config["type"].(string))
 	d.connStr = d.buildConnectionString(config)
-	
-	db, err := sql.Open(d.dbType, d.connStr)
+
+	db, err := sql.Open(driverName(d.dbType), d.connStr)
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}

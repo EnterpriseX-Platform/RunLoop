@@ -19,7 +19,18 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o runloop-engine ma
 # Final stage
 FROM alpine:latest
 
-RUN apk --no-cache add ca-certificates
+# Runtimes for executor nodes: Python, Node.js, Docker CLI, Bash for Shell
+# (see internal/executor — Python/NodeJS/Docker spawn the respective binary
+# in $PATH; without these the node fails immediately with "executable not
+# found"). docker-cli only — the daemon must be reached via mounted socket.
+RUN apk --no-cache add \
+        ca-certificates \
+        bash \
+        python3 \
+        py3-pip \
+        nodejs \
+        npm \
+        docker-cli
 
 WORKDIR /root/
 

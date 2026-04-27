@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 
 // ControlChrome — the small set of mono/schematic primitives that give
 // every internal page the same "control-room for a workflow engine" feel.
@@ -382,10 +383,12 @@ export function SharpButton({
   };
   const style = styleByVariant[variant];
   if (href) {
+    // Use next/link so Next.js basePath ('/runloop') is auto-prepended.
+    // Plain <a href> bypasses the router and 404s under the basePath.
     return (
-      <a href={href} style={style} className={`hover:opacity-90 ${className}`}>
+      <Link href={href} style={style} className={`hover:opacity-90 ${className}`}>
         {children}
-      </a>
+      </Link>
     );
   }
   return (

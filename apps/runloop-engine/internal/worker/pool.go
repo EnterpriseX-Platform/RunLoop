@@ -292,12 +292,31 @@ func (p *Pool) executeTask(task *Task) {
 		res.Error = fmt.Errorf("executor returned nil result")
 		res.Logs = "Executor returned nil result without error"
 	} else {
-		res.Success = true
+		// Respect result.Success — a flow executor can return (result, nil) with
+		// Success=false when individual nodes fail. Treating "no Go error" as
+		// "task succeeded" hides those failures from execution.status, the DLQ,
+		// retry logic, and dashboard metrics.
+		res.Success = result.Success
 		res.Output = result.Output
 		res.Logs = result.Logs
-		logger.Info().
-			Dur("duration", duration).
-			Msg("Task completed successfully")
+		if !result.Success {
+			if result.ErrorMessage != nil {
+				res.Error = fmt.Errorf("%s", *result.ErrorMessage)
+			} else {
+				res.Error = fmt.Errorf("flow execution reported failure")
+			}
+			logger.Warn().
+				Err(res.Error).
+				Dur("duration", duration).
+				Msg("Task reported failure via JobResult")
+			if task.RetryAttempt < task.RetryCount {
+				res.RetryAfter = time.Duration(task.RetryDelay) * time.Second
+			}
+		} else {
+			logger.Info().
+				Dur("duration", duration).
+				Msg("Task completed successfully")
+		}
 	}
 
 	// Send result

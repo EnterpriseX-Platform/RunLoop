@@ -116,3 +116,19 @@ Enums: `JobType` (HTTP/DATABASE/SHELL/PYTHON/NODEJS/DOCKER), `TriggerType` (SCHE
 - **Naming transition**: Codebase is mid-rename from "Scheduler" to "RunLoop". DB/Prisma still uses `Scheduler`, TypeScript types alias `Scheduler` → `RunLoop`, some UI says "RunLoops".
 - **WebSocket port**: `useWebSocket.ts` hardcodes port 8081; actual engine runs on 8092.
 - **ENGINE_URL default**: `next.config.js` defaults to `http://localhost:8081`; `.env.development` overrides to 8092.
+- **Go toolchain**: `go.mod` requires Go ≥ 1.25. `apps/runloop-engine/Dockerfile` must stay on `golang:1.25-alpine` or newer — older base images break `go mod download`.
+- **Direct-mode schedulers bypass DLQ**: schedulers without an attached flow run via `jobExecutor`, not `FlowExecutor`, so failures do not produce `DeadLetterQueueEntry` rows. Only flow-attached (DAG/SIMPLE) executions populate the DLQ.
+- **Production secrets**: `SECRET_ENCRYPTION_KEY` (64 hex chars) is required in production for both the web and engine deployments. The engine's `internal/secret/store.go` matches Next.js `src/lib/encryption.ts` byte-for-byte (AES-256-GCM, 16-byte IV, 16-byte tag, scrypt fallback in dev).
+
+## Deployment
+
+- **Jenkins**: parameterized pipeline at `apps/runloop/.jenkins/Jenkinsfile.deploy` (params: `NAMESPACE`, `DOMAIN`, `INGRESS_RESOLVE_IP`, `KUBECONFIG_CRED_ID`, `APPLY_MANIFESTS`). Root `Jenkinsfile` fans out to `DEPLOY_TARGETS` with `propagate: false`.
+- **Image rollout**: uses `kubectl patch ... --type=strategic` to update both the `migrate` initContainer and the `web` container atomically — never `kubectl set image` (it can't address initContainers by name in this layout).
+- **Smoke test**: deliberately soft (`sh(returnStatus: true) ... || true`) — some clusters don't expose Apache on :80 from the build agent, so a probe failure must not fail the deploy.
+- See `docs/deployment/COMMERCIAL.md` for the COMMUNITY → COMMERCIAL replication runbook.
+
+## Further Reading
+
+- `README.md` — quick start, Docker deployment.
+- `AGENTS.md` — overlapping agent guide; if it conflicts with this file, this file is authoritative (more recently maintained).
+- `docs/architecture/OVERVIEW.md`, `docs/development/SETUP.md`, `docs/deployment/`.

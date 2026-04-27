@@ -225,21 +225,25 @@ func (s *SlackConnector) GetActions() []ActionDefinition {
 // ExecuteAction executes an action
 func (s *SlackConnector) ExecuteAction(ctx context.Context, action string, params map[string]interface{}) (*ActionResult, error) {
 	switch action {
-	case "send_message":
+	case "send", "send_message", "message":
 		return s.sendMessage(ctx, params)
-	case "send_notification":
+	case "send_notification", "notification":
 		return s.sendNotification(ctx, params)
 	default:
-		return nil, fmt.Errorf("unknown action: %s", action)
+		return nil, fmt.Errorf("unknown action: %s (expected send, send_message, send_notification)", action)
 	}
 }
 
 func (s *SlackConnector) sendMessage(ctx context.Context, params map[string]interface{}) (*ActionResult, error) {
 	payload := map[string]interface{}{}
 
-	// Add text or blocks
+	// Add text or blocks. Accept "message" as an alias for "text" — flow nodes
+	// (and most users) reach for "message" first; treating it as a synonym
+	// avoids silent empty-text payloads.
 	if text, ok := params["text"].(string); ok && text != "" {
 		payload["text"] = text
+	} else if msg, ok := params["message"].(string); ok && msg != "" {
+		payload["text"] = msg
 	}
 
 	if blocksStr, ok := params["blocks"].(string); ok && blocksStr != "" {
