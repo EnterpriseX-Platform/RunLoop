@@ -53,6 +53,38 @@ interface Stats {
   oldestPendingSec: number;
 }
 
+// Threshold logic: a queue is "alerting" when ANY of these is true.
+// Tuned to be quiet: a healthy production queue should have 0 alerts,
+// any single trigger means an operator should look. Tweak per queue
+// later if specific queues run hot by design.
+function alertsFor(q: QueueRow, s: Stats): { level: 'critical' | 'warn'; label: string }[] {
+  const alerts: { level: 'critical' | 'warn'; label: string }[] = [];
+  const pending = s.counts?.PENDING || 0;
+  const dlq = s.counts?.DLQ || 0;
+  const oldest = s.oldestPendingSec || 0;
+
+  if (dlq > 0) alerts.push({ level: 'critical', label: `${dlq} dead` });
+
+  // Backed-up: pending > 10× concurrency means workers can't keep up.
+  const backlogLimit = Math.max(20, q.concurrency * 10);
+  if (pending > backlogLimit) {
+    alerts.push({ level: 'critical', label: `backlog ${pending}` });
+  } else if (pending > backlogLimit / 2) {
+    alerts.push({ level: 'warn', label: `pending ${pending}` });
+  }
+
+  // Stale: oldest pending message hasn't been picked in 5 min.
+  if (oldest > 300) {
+    alerts.push({ level: 'critical', label: `stale ${Math.round(oldest / 60)}m` });
+  } else if (oldest > 120) {
+    alerts.push({ level: 'warn', label: `stale ${Math.round(oldest / 60)}m` });
+  }
+
+  if (!q.enabled) alerts.push({ level: 'warn', label: 'disabled' });
+
+  return alerts;
+}
+
 export default function QueuesPage() {
   const params = useParams();
   const projectId = params.projectId as string;
@@ -127,6 +159,13 @@ export default function QueuesPage() {
   const MONO = "'IBM Plex Mono', ui-monospace, monospace";
   const totalPending = queues.reduce((n, q) => n + (statsMap[q.name]?.counts?.PENDING || 0), 0);
   const totalDlq = queues.reduce((n, q) => n + (statsMap[q.name]?.counts?.DLQ || 0), 0);
+  // How many queues currently have at least one critical alert? Drives
+  // the "alerts" chip in the hero so an operator can see the situation
+  // before scrolling.
+  const criticalQueueCount = queues.reduce((n, q) => {
+    const s = statsMap[q.name] || { counts: {}, oldestPendingSec: 0 };
+    return n + (alertsFor(q, s).some((a) => a.level === 'critical') ? 1 : 0);
+  }, 0);
 
   return (
     <div style={{ fontFamily: FONT }}>
@@ -137,6 +176,9 @@ export default function QueuesPage() {
           <MetricChip label="queues"  value={String(queues.length).padStart(2, '0')} />
           <MetricChip label="pending" value={String(totalPending).padStart(3, '0')} accent={totalPending > 0 ? '#F59E0B' : undefined} />
           {totalDlq > 0 && <MetricChip label="dlq" value={String(totalDlq).padStart(2, '0')} accent="#EF4444" />}
+          {criticalQueueCount > 0 && (
+            <MetricChip label="alerts" value={String(criticalQueueCount).padStart(2, '0')} accent="#EF4444" />
+          )}
         </>}
         right={
           <SharpButton href={`/p/${projectId}/queues/new`}>
@@ -171,6 +213,8 @@ export default function QueuesPage() {
             const processing = s.counts?.PROCESSING || 0;
             const completed = s.counts?.COMPLETED || 0;
             const dlq = s.counts?.DLQ || 0;
+            const queueAlerts = alertsFor(q, s);
+            const hasCritical = queueAlerts.some((a) => a.level === 'critical');
 
             return (
               <Link
@@ -178,8 +222,11 @@ export default function QueuesPage() {
                 href={`/p/${projectId}/queues/${encodeURIComponent(q.name)}`}
                 style={{
                   background: THEME.panel,
-                  border: `1px solid ${THEME.border}`,
+                  border: `1px solid ${hasCritical ? 'color-mix(in srgb, #EF4444 45%, transparent)' : THEME.border}`,
                   borderRadius: 2,
+                  // Critical queues get a thin red rail on the left so
+                  // they're impossible to miss in a list of 30.
+                  boxShadow: hasCritical ? 'inset 3px 0 0 #EF4444' : 'none',
                 }}
                 className="flex items-center gap-4 px-4 py-3 hover:bg-[var(--t-panel-hover)] transition group"
               >
@@ -218,6 +265,26 @@ export default function QueuesPage() {
                         DISABLED
                       </span>
                     )}
+                    {queueAlerts
+                      .filter((a) => !(a.label === 'disabled')) // already shown above
+                      .map((a) => {
+                        const c = a.level === 'critical' ? '#EF4444' : '#F59E0B';
+                        return (
+                          <span
+                            key={a.label}
+                            style={{
+                              fontFamily: MONO, fontSize: 9.5, fontWeight: 600,
+                              color: c,
+                              background: `color-mix(in srgb, ${c} 14%, transparent)`,
+                              border: `1px solid color-mix(in srgb, ${c} 45%, transparent)`,
+                              padding: '1px 6px', borderRadius: 2,
+                              letterSpacing: '0.08em', textTransform: 'uppercase',
+                            }}
+                          >
+                            {a.label}
+                          </span>
+                        );
+                      })}
                   </div>
                   <div style={{ fontFamily: MONO, fontSize: 10.5, color: THEME.text.muted, marginTop: 2, letterSpacing: '0.02em' }}>
                     concurrency={q.concurrency} · max_attempts={q.maxAttempts}

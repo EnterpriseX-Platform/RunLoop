@@ -100,15 +100,47 @@ func main() {
 	retentionJob := maintenance.NewRetentionJob(database, 90, 24*time.Hour)
 	backfillRunner := maintenance.NewBackfillRunner(database, schedulerManager.TriggerJob, 5)
 
+	// DLQ stale escalator — leader-only background job that flips PENDING
+	// entries older than 30 min into REVIEWING so they surface in a
+	// dedicated tab instead of rotting in the default backlog.
+	dlqStore := executor.NewDeadLetterQueue(database)
+	dlqEscalatorStop := make(chan struct{})
+	startDLQEscalator := func(ctx context.Context) {
+		go func() {
+			t := time.NewTicker(5 * time.Minute)
+			defer t.Stop()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-dlqEscalatorStop:
+					return
+				case <-t.C:
+					n, err := dlqStore.EscalateStale(ctx, 30*time.Minute)
+					if err != nil {
+						log.Warn().Err(err).Msg("DLQ escalator: tick failed")
+					} else if n > 0 {
+						log.Info().Int64("escalated", n).Msg("DLQ escalator: PENDING → REVIEWING")
+					}
+				}
+			}
+		}()
+	}
+
 	leader.OnBecomeLeader(func(ctx context.Context) {
-		log.Info().Msg("Leader responsibilities: starting retention + backfill")
+		log.Info().Msg("Leader responsibilities: starting retention + backfill + dlq escalator")
 		retentionJob.Start(ctx)
 		// Backfill once on leader take-over
 		backfillRunner.Run(ctx)
+		startDLQEscalator(ctx)
 	})
 	leader.OnLoseLeader(func() {
 		log.Warn().Msg("Leader responsibilities released")
 		retentionJob.Stop()
+		select {
+		case dlqEscalatorStop <- struct{}{}:
+		default:
+		}
 	})
 	leader.Run(rootCtx)
 	defer leader.Stop()

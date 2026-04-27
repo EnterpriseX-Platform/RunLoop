@@ -346,6 +346,30 @@ func (dlq *DeadLetterQueue) MarkAsReplayed(
 	return nil
 }
 
+// EscalateStale flips PENDING entries older than `staleAfter` into
+// REVIEWING. Items left untouched for too long aren't really "pending
+// triage" anymore — surface them under a dedicated tab so they don't
+// get lost. Returns the number of rows escalated.
+//
+// Called periodically by the engine's background ticker; safe to run
+// concurrently because the WHERE clause filters status=PENDING and
+// the UPDATE is atomic per row.
+func (dlq *DeadLetterQueue) EscalateStale(ctx context.Context, staleAfter time.Duration) (int64, error) {
+	const q = `
+		UPDATE dead_letter_queue
+		SET status = 'REVIEWING',
+		    resolved_by = COALESCE(NULLIF(resolved_by,''), 'auto-escalator'),
+		    updated_at = NOW()
+		WHERE status = 'PENDING'
+		  AND created_at < NOW() - $1::interval
+	`
+	tag, err := dlq.db.Pool.Exec(ctx, q, fmt.Sprintf("%d seconds", int(staleAfter.Seconds())))
+	if err != nil {
+		return 0, fmt.Errorf("escalate stale dlq: %w", err)
+	}
+	return tag.RowsAffected(), nil
+}
+
 // MarkAsReviewing flips a PENDING entry to REVIEWING. Used when an
 // operator opens the entry to investigate; it removes the item from
 // the default backlog without resolving it.
