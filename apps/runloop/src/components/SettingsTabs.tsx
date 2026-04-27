@@ -10,6 +10,7 @@ import {
   ScrollText,
   Users,
   Blocks,
+  Sparkles,
   LucideIcon,
 } from 'lucide-react';
 
@@ -66,6 +67,13 @@ const TABS: SettingsTab[] = [
     icon: Blocks,
     buildHref: () => '/settings/plugins',
     match: (p) => p.startsWith('/settings/plugins'),
+  },
+  {
+    key: 'integrations',
+    label: 'Integrations',
+    icon: Sparkles,
+    buildHref: () => '/settings/integrations',
+    match: (p) => p.startsWith('/settings/integrations'),
   },
 ];
 

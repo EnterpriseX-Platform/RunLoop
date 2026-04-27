@@ -25,6 +25,7 @@ import {
   Activity,
   Inbox,
   BellRing,
+  BookOpen,
   FolderKanban,
   Layers,
   X,
@@ -72,7 +73,8 @@ const mainNavigation: NavItemType[] = [
 ];
 
 const systemNavigation: NavItemType[] = [
-  { name: 'Settings', href: '/settings', icon: Settings, countKey: null },
+  { name: 'API Docs', href: '/docs/api', icon: BookOpen, countKey: null },
+  { name: 'Settings', href: '/settings',  icon: Settings, countKey: null },
 ];
 
 /* ==================== Breadcrumb ==================== */

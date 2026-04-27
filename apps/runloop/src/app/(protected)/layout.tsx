@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useProject } from '@/context/ProjectContext';
 import { Layout } from '@/components/Layout';
+import { AIAssistant } from '@/components/AIAssistant';
 
 export default function ProtectedLayout({
   children,
@@ -39,5 +40,10 @@ export default function ProtectedLayout({
     return null;
   }
 
-  return <Layout>{children}</Layout>;
+  return (
+    <Layout>
+      {children}
+      <AIAssistant />
+    </Layout>
+  );
 }
