@@ -4,11 +4,43 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/runloop/runloop-engine/internal/db"
 	"github.com/runloop/runloop-engine/internal/models"
 )
+
+// secretLeakPatterns covers the obvious shapes of secrets that might
+// land in execution.input after Next.js pre-resolved them — long
+// hex/base64 tokens, AKIA-style AWS keys, eyJ JWT prefixes, etc.
+// We replace the *value* with a marker but keep the key so operators
+// can tell which field was scrubbed.
+var secretLeakPatterns = []*regexp.Regexp{
+	regexp.MustCompile(`(?i)\bAKIA[0-9A-Z]{16}\b`),                             // AWS access key
+	regexp.MustCompile(`\beyJ[A-Za-z0-9_\-]{20,}\.[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}\b`), // JWTs
+	regexp.MustCompile(`\b[a-f0-9]{40,}\b`),                                    // long hex (api keys, hashes)
+	regexp.MustCompile(`\bsk-[A-Za-z0-9]{20,}\b`),                              // OpenAI-style sk- keys
+	regexp.MustCompile(`\bghp_[A-Za-z0-9]{30,}\b`),                             // GitHub PAT
+	regexp.MustCompile(`\bxox[bopas]-[A-Za-z0-9-]{20,}\b`),                     // Slack tokens
+}
+
+// redactSecretsInJSON best-effort scrubs likely-secret values out of a
+// JSON blob before persisting it into the DLQ. This is *defence in depth*
+// — once SecretStore is engine-side these blobs only contain placeholders,
+// but legacy executions that resolved on the Next.js side still flow
+// through here. Returning the original bytes on any failure is fine; we
+// prefer "wrote a possibly-leaky DLQ entry" over "lost the failure".
+func redactSecretsInJSON(raw []byte) []byte {
+	if len(raw) == 0 {
+		return raw
+	}
+	out := raw
+	for _, re := range secretLeakPatterns {
+		out = re.ReplaceAll(out, []byte("[REDACTED]"))
+	}
+	return out
+}
 
 // DeadLetterReason defines why an execution was sent to DLQ
 type DeadLetterReason string
@@ -87,6 +119,7 @@ func (dlq *DeadLetterQueue) SendToDLQ(
 	if err != nil {
 		return fmt.Errorf("failed to marshal execution input: %w", err)
 	}
+	inputBytes = redactSecretsInJSON(inputBytes)
 
 	entry := &DeadLetterEntry{
 		ID:            generateDLQID(),

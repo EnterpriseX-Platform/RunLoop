@@ -23,6 +23,7 @@ import (
 	"github.com/runloop/runloop-engine/internal/notification"
 	"github.com/runloop/runloop-engine/internal/queue"
 	"github.com/runloop/runloop-engine/internal/scheduler"
+	"github.com/runloop/runloop-engine/internal/secret"
 	"github.com/runloop/runloop-engine/internal/tracing"
 	"github.com/runloop/runloop-engine/internal/webhook"
 	ws "github.com/runloop/runloop-engine/internal/websocket"
@@ -53,12 +54,16 @@ func main() {
 	hub := ws.NewHub()
 	go hub.Run()
 
-	// Initialize executor and flow executor (with parallel DAG scheduling)
+	// Initialize executor and flow executor (with parallel DAG scheduling).
 	jobExecutor := executor.NewJobExecutor()
-	// FlowExecutor needs SecretStore; use nil for now (secret resolution
-	// happens at the Next.js layer via ${{secrets.X}} interpolation before
-	// submission). logAggregator is optional.
-	flowExecutor := executor.NewFlowExecutor(jobExecutor, database, nil, nil)
+	// SecretStore decrypts ${{secrets.NAME}} placeholders against the
+	// shared `secrets` table (same AES-256-GCM format Next.js uses). Without
+	// this wired, the engine treats placeholders as literal strings.
+	secretStore, err := secret.New(database)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to initialise SecretStore")
+	}
+	flowExecutor := executor.NewFlowExecutor(jobExecutor, database, nil, secretStore)
 	jobExecutor.SetFlowExecutor(flowExecutor)
 
 	// Initialize worker pool with WebSocket hub
