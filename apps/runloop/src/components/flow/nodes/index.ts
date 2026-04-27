@@ -19,13 +19,14 @@ import { SetVarNode } from './SetVarNode';
 import { SubFlowNode } from './SubFlowNode';
 import { WebhookNode } from './WebhookNode';
 import { WaitWebhookNode } from './WaitWebhookNode';
+import { EnqueueNode } from './EnqueueNode';
 import { PluginNode } from './PluginNode';
 
 export {
   StartNode, EndNode, HttpNode, DatabaseNode, ShellNode, PythonNode,
   NodejsNode, DockerNode, SlackNode, EmailNode, ConditionNode, DelayNode,
   LoopNode, TransformNode, MergeNode, SwitchNode,
-  LogNode, SetVarNode, SubFlowNode, WebhookNode, WaitWebhookNode, PluginNode,
+  LogNode, SetVarNode, SubFlowNode, WebhookNode, WaitWebhookNode, EnqueueNode, PluginNode,
 };
 
 export const nodeTypes = {
@@ -50,5 +51,6 @@ export const nodeTypes = {
   subflowNode: SubFlowNode,
   webhookNode: WebhookNode,
   waitWebhookNode: WaitWebhookNode,
+  enqueueNode: EnqueueNode,
   pluginNode: PluginNode,
 };

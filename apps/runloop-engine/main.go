@@ -157,6 +157,12 @@ func main() {
 	// are wired.
 	queueManager := queue.NewManager(database, flowExecutor)
 
+	// Wire the queue producer back into the flow executor so the ENQUEUE
+	// node can publish jobs from inside a flow. The adapter sheds the
+	// concrete *queue.EnqueueRequest / *queue.EnqueueResult types behind a
+	// plain interface, keeping the executor free of the queue import.
+	flowExecutor.SetQueueProducer(&queueProducerAdapter{p: queueManager.Producer()})
+
 	// Load plugin registry from DB before wiring handlers so startup reflects
 	// the installed set. Reload happens again on every install/uninstall.
 	pluginRegistry := flowExecutor.PluginRegistry()
@@ -356,4 +362,22 @@ func setupRoutes(app *fiber.App, handler *api.Handler, webhookHandler *webhook.H
 	apiGroup.Delete("/node-templates/:id", handler.DeleteTemplate)
 
 	log.Info().Msg("Routes configured")
+}
+
+// queueProducerAdapter adapts queue.Producer to executor.QueueProducer so
+// the executor doesn't have to import the queue package.
+type queueProducerAdapter struct {
+	p *queue.Producer
+}
+
+func (a *queueProducerAdapter) Enqueue(ctx context.Context, queueName string, payload map[string]interface{}, idempotencyKey string, priority int) (string, bool, error) {
+	res, err := a.p.Enqueue(ctx, queueName, queue.EnqueueRequest{
+		Payload:        payload,
+		IdempotencyKey: idempotencyKey,
+		Priority:       priority,
+	})
+	if err != nil {
+		return "", false, err
+	}
+	return res.JobID, res.Duplicate, nil
 }

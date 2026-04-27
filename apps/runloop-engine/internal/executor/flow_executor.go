@@ -36,6 +36,7 @@ type FlowExecutor struct {
 	logAggregator *logging.LogAggregator
 	cbManager     *CircuitBreakerManager
 	secretStore   SecretStore
+	queueProducer QueueProducer
 	dlq           *DeadLetterQueue
 	plugins       *PluginRegistry
 }
@@ -43,6 +44,13 @@ type FlowExecutor struct {
 // SecretStore resolves ${{secrets.NAME}} placeholders.
 type SecretStore interface {
 	GetSecret(ctx context.Context, name string, projectID string) (string, error)
+}
+
+// QueueProducer is the minimal surface FlowExecutor needs to power the
+// ENQUEUE node — kept as an interface so the executor doesn't import the
+// queue package (avoids a cycle and keeps the executor unit-testable).
+type QueueProducer interface {
+	Enqueue(ctx context.Context, queueName string, payload map[string]interface{}, idempotencyKey string, priority int) (jobID string, duplicate bool, err error)
 }
 
 // NewFlowExecutor wires up the executor.
@@ -62,6 +70,11 @@ func NewFlowExecutor(
 		plugins:       NewPluginRegistry(db),
 	}
 }
+
+// SetQueueProducer wires the queue producer after construction. main.go
+// builds the queue manager *after* the flow executor (because the queue
+// manager itself uses the executor as the worker), so we need a setter.
+func (fe *FlowExecutor) SetQueueProducer(p QueueProducer) { fe.queueProducer = p }
 
 // PluginRegistry exposes the registry so main.go can Reload() on startup
 // and install/uninstall handlers can refresh after mutating the table.
@@ -588,7 +601,7 @@ func isFlowShapeNode(t models.JobType) bool {
 		models.JobTypeMerge, models.JobTypeSwitch,
 		models.JobTypeLog, models.JobTypeSetVar,
 		models.JobTypeSubFlow, models.JobTypeWebhook,
-		models.JobTypeWaitHook:
+		models.JobTypeWaitHook, models.JobTypeEnqueue:
 		return true
 	}
 	return false
@@ -661,9 +674,59 @@ func (fe *FlowExecutor) executeFlowShapeNode(
 
 	case models.JobTypeWaitHook:
 		return fe.executeWaitWebhookNode(ctx, config)
+
+	case models.JobTypeEnqueue:
+		return fe.executeEnqueueNode(ctx, config)
 	}
 
 	return nil, false, fmt.Errorf("unknown flow-shape node type: %s", node.Type)
+}
+
+// executeEnqueueNode pushes a job to a named queue from inside a flow.
+//
+// Required config:
+//   queue:   string — queue name (must exist in the same project)
+//   payload: map    — JSON object passed to the bound flow as input
+// Optional:
+//   idempotencyKey: string — dedupe key
+//   priority:       int    — backend-specific
+//
+// Returns immediately on enqueue (does NOT wait for the consumer flow to
+// finish). Output exposes jobId, duplicate, queue.
+func (fe *FlowExecutor) executeEnqueueNode(
+	ctx context.Context,
+	config models.JSONMap,
+) (models.JSONMap, bool, error) {
+	if fe.queueProducer == nil {
+		return nil, false, fmt.Errorf("enqueue: queue producer not configured on engine")
+	}
+	queueName, _ := config["queue"].(string)
+	if queueName == "" {
+		return nil, false, fmt.Errorf("enqueue: 'queue' is required")
+	}
+	payload, _ := config["payload"].(map[string]interface{})
+	if payload == nil {
+		// Allow string (JSON) or empty payload — normalize to empty map.
+		if raw, ok := config["payload"].(string); ok && raw != "" {
+			if err := json.Unmarshal([]byte(raw), &payload); err != nil {
+				return nil, false, fmt.Errorf("enqueue: payload is not valid JSON: %w", err)
+			}
+		} else {
+			payload = map[string]interface{}{}
+		}
+	}
+	idem, _ := config["idempotencyKey"].(string)
+	priority := toInt(config["priority"], 0)
+
+	jobID, duplicate, err := fe.queueProducer.Enqueue(ctx, queueName, payload, idem, priority)
+	if err != nil {
+		return nil, false, fmt.Errorf("enqueue: %w", err)
+	}
+	return models.JSONMap{
+		"jobId":     jobID,
+		"duplicate": duplicate,
+		"queue":     queueName,
+	}, true, nil
 }
 
 // executeTransform evaluates config.expression. Two modes:

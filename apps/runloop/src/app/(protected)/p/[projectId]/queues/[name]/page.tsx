@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -252,6 +252,124 @@ export default function QueueDetailPage() {
           </div>
         </SchematicPanel>
       )}
+
+      {/* Lifecycle diagram — explains how a job actually moves through the
+          system. Live counters fed from `stats` so you can see backlog flow. */}
+      <div
+        className="mb-4 p-4"
+        style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 2 }}
+      >
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            color: T.textMuted,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            marginBottom: 12,
+          }}
+        >
+          Lifecycle
+        </div>
+        <div className="flex items-stretch gap-2 overflow-x-auto">
+          {[
+            {
+              title: 'Producer',
+              sub: 'POST /api/queues/' + def.Name + '/jobs',
+              note: 'or Enqueue node in another flow',
+              count: null as number | null,
+              color: T.textSec,
+            },
+            {
+              title: 'Queue',
+              sub: def.Backend + ' · concurrency ' + def.Concurrency,
+              note: 'pending + scheduled',
+              count: (stats.PENDING || 0),
+              color: STATUS_META.PENDING.color,
+            },
+            {
+              title: 'Worker',
+              sub: 'pulls up to ' + def.Concurrency + ' at a time',
+              note: 'in-flight',
+              count: (stats.PROCESSING || 0),
+              color: STATUS_META.PROCESSING.color,
+            },
+            {
+              title: 'Flow run',
+              sub: 'execution of bound flow per job',
+              note: 'see Executions for traces',
+              count: null,
+              color: T.accent,
+            },
+            {
+              title: 'Result',
+              sub: 'success → done, fail → retry → DLQ',
+              note: 'DLQ = ' + (stats.DLQ || 0) + ' · failed = ' + (stats.FAILED || 0),
+              count: (stats.COMPLETED || 0),
+              color: STATUS_META.COMPLETED.color,
+            },
+          ].map((step, i, arr) => (
+            <React.Fragment key={step.title}>
+              <div
+                className="flex-1 min-w-0 p-3"
+                style={{
+                  border: `1px solid ${T.border}`,
+                  background: T.input,
+                  borderRadius: 2,
+                  minWidth: 160,
+                }}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{step.title}</span>
+                  {step.count !== null && (
+                    <span
+                      style={{
+                        fontFamily: MONO, fontSize: 14, fontWeight: 700,
+                        color: step.count > 0 ? step.color : T.textMuted,
+                      }}
+                    >
+                      {step.count}
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: 10.5, color: T.textMuted, marginBottom: 4 }}>
+                  {step.sub}
+                </div>
+                <div style={{ fontSize: 10, color: T.textMuted, opacity: 0.8 }}>
+                  {step.note}
+                </div>
+              </div>
+              {i < arr.length - 1 && (
+                <div
+                  className="flex items-center"
+                  style={{ color: T.textMuted, fontFamily: MONO, fontSize: 14 }}
+                  aria-hidden
+                >
+                  →
+                </div>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+        <div className="mt-3" style={{ fontSize: 11, color: T.textMuted, lineHeight: 1.5 }}>
+          Each enqueued job triggers a separate execution of flow{' '}
+          <Link
+            href={`/p/${projectId}/flows/${def.FlowID}`}
+            style={{ color: T.accent, textDecoration: 'underline', textUnderlineOffset: 2 }}
+          >
+            {def.FlowID}
+          </Link>
+          {'. '}
+          Failed jobs retry up to {def.MaxAttempts} times, then move to{' '}
+          <Link
+            href={`/p/${projectId}/executions?filter=needs_review`}
+            style={{ color: T.accent, textDecoration: 'underline', textUnderlineOffset: 2 }}
+          >
+            DLQ (Needs Review)
+          </Link>
+          .
+        </div>
+      </div>
 
       {/* Stats strip — five sharp cells reading like instrument dials */}
       <div className="grid grid-cols-5 gap-2 mb-4">

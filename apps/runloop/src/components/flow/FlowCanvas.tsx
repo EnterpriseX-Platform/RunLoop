@@ -24,7 +24,7 @@ import 'reactflow/dist/style.css';
 import {
   Play, Square, Globe, Database, Terminal, Code2, Hash,
   Container as Docker, Slack, Mail, GitBranch, Clock, RotateCcw, Variable,
-  GitMerge, Split, FileText, PenLine, Workflow, Webhook, Hourglass,
+  GitMerge, Split, FileText, PenLine, Workflow, Webhook, Hourglass, Inbox,
   Save, TestTube2, Wand2, Plus, Settings, X, AlertCircle, Search, ChevronDown,
 } from 'lucide-react';
 import { nodeTypes as importedNodeTypes } from './nodes';
@@ -61,6 +61,7 @@ const PALETTE = [
     { type: 'setVarNode', label: 'Set Variable', nodeType: 'set_variable', icon: PenLine, color: '#0D9488' },
     { type: 'subflowNode', label: 'Sub-flow', nodeType: 'subflow', icon: Workflow, color: '#7C3AED' },
     { type: 'waitWebhookNode', label: 'Wait Webhook', nodeType: 'wait_webhook', icon: Hourglass, color: '#FB923C' },
+    { type: 'enqueueNode', label: 'Enqueue', nodeType: 'enqueue', icon: Inbox, color: '#0EA5E9' },
   ]},
 ];
 
