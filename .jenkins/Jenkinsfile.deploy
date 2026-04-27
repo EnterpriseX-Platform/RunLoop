@@ -85,12 +85,28 @@ pipeline {
     stage('Roll web + engine') {
       steps {
         withCredentials([file(credentialsId: "${params.KUBECONFIG_CRED_ID}", variable: 'KUBECONFIG')]) {
+          // Web has both an `init` container "migrate" (prisma db push) and
+          // the main container "web". `kubectl set image` doesn't touch
+          // init containers reliably across all k8s versions, so we patch
+          // both via a strategic merge instead — one rollout, both updated.
           sh """
             set -e
+
             kubectl -n ${params.NAMESPACE} set image deployment/runloop-engine \
               engine=${ENG_IMAGE}
-            kubectl -n ${params.NAMESPACE} set image deployment/runloop-web \
-              web=${WEB_IMAGE} migrate=${WEB_IMAGE}
+
+            kubectl -n ${params.NAMESPACE} patch deployment runloop-web --type=strategic --patch '
+            spec:
+              template:
+                spec:
+                  initContainers:
+                  - name: migrate
+                    image: ${WEB_IMAGE}
+                  containers:
+                  - name: web
+                    image: ${WEB_IMAGE}
+            '
+
             kubectl -n ${params.NAMESPACE} rollout status deployment/runloop-engine --timeout=180s
             kubectl -n ${params.NAMESPACE} rollout status deployment/runloop-web    --timeout=300s
           """
