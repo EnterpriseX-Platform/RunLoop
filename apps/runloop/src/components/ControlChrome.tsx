@@ -212,13 +212,13 @@ export function MetricChip({
 //
 // ─────────────────────────────────────────────────────────────────────────
 export function HeroHeader({
-  prompt,
+  prompt: _prompt,
   title,
   subtitle,
   metrics,
   right,
 }: {
-  prompt: string;       // e.g. "$ rl.flows · list"
+  prompt?: string;
   title: string;
   subtitle?: string;
   metrics?: React.ReactNode;
@@ -227,41 +227,22 @@ export function HeroHeader({
   return (
     <div className="flex items-end justify-between mb-6 gap-4">
       <div className="min-w-0 flex-1">
-        <div
-          style={{
-            fontFamily: MONO, fontSize: 10.5, letterSpacing: '0.14em',
-            color: 'var(--t-text-muted)', textTransform: 'uppercase',
-            marginBottom: 6,
-          }}
-        >
-          <span style={{ color: 'var(--t-accent)', opacity: 0.85 }}>{prompt}</span>
-        </div>
         <h1
           style={{
-            fontFamily: MONO, fontSize: 28, fontWeight: 500, lineHeight: 1.1,
+            fontSize: 24, fontWeight: 600, lineHeight: 1.2,
             color: 'var(--t-text)', letterSpacing: '-0.02em',
-            display: 'flex', alignItems: 'center', gap: 4,
           }}
         >
           {title}
-          <span
-            aria-hidden
-            style={{
-              display: 'inline-block', width: 11, height: 22, marginLeft: 2,
-              background: 'var(--t-accent)',
-              animation: 'rl-ph-blink 1.2s steps(2, end) infinite',
-            }}
-          />
         </h1>
         {subtitle && (
           <p
             style={{
-              fontFamily: MONO, fontSize: 12, color: 'var(--t-text-muted)',
-              marginTop: 10, letterSpacing: '0.02em',
-              display: 'flex', alignItems: 'center', gap: 8,
+              fontSize: 13, color: 'var(--t-text-muted)',
+              marginTop: 8, letterSpacing: 0,
+              maxWidth: 640,
             }}
           >
-            <span style={{ opacity: 0.5 }}>{'//'}</span>
             {subtitle}
           </p>
         )}

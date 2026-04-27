@@ -101,9 +101,29 @@ function queueNameFromSchedulerId(id?: string): string | null {
   return null;
 }
 
-// "Needs Review" replaces the old Dead Letter Queue page — it's just a
-// pre-filter for failed executions with retry/discard actions inline.
+// "Needs Review" reads from the dead_letter_queue table, not from
+// executions: items end up there only after exhausting retries / hitting
+// the circuit breaker. Operators can replay (re-enqueue or re-trigger
+// the source scheduler) or discard.
 const STATUS_TABS = ['All', 'Running', 'Success', 'Failed', 'Pending', 'Needs Review'] as const;
+
+interface DLQEntry {
+  id: string;
+  execution_id: string;
+  scheduler_id: string;
+  project_id: string;
+  reason: string;
+  error_message: string;
+  error_details?: string;
+  retry_count: number;
+  original_input?: unknown;
+  node_id?: string;
+  node_type?: string;
+  status: 'PENDING' | 'REVIEWING' | 'RESOLVED' | 'DISCARDED' | 'REPLAYED';
+  replayed: boolean;
+  new_execution_id?: string;
+  created_at: string;
+}
 
 export default function ExecutionsPage() {
   const params = useParams();
@@ -121,6 +141,59 @@ export default function ExecutionsPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // DLQ state — populated when the "Needs Review" tab is active.
+  const [dlqEntries, setDlqEntries] = useState<DLQEntry[]>([]);
+  const [dlqLoading, setDlqLoading] = useState(false);
+  const [dlqActingOn, setDlqActingOn] = useState<string | null>(null);
+
+  const fetchDLQ = useCallback(async () => {
+    if (!projectId) return;
+    setDlqLoading(true);
+    try {
+      const res = await fetch(`/runloop/api/dlq?projectId=${projectId}&status=PENDING&limit=200`);
+      if (res.ok) {
+        const data = await res.json();
+        setDlqEntries(data.data || []);
+      }
+    } finally {
+      setDlqLoading(false);
+    }
+  }, [projectId]);
+
+  const replayDLQ = async (id: string) => {
+    setDlqActingOn(id);
+    try {
+      const res = await fetch(`/runloop/api/dlq/${id}/replay`, { method: 'POST' });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(`Replay failed: ${err.error || res.statusText}`);
+        return;
+      }
+      await fetchDLQ();
+    } finally {
+      setDlqActingOn(null);
+    }
+  };
+
+  const discardDLQ = async (id: string) => {
+    if (!confirm('Discard this entry? It will be removed from Needs Review.')) return;
+    setDlqActingOn(id);
+    try {
+      const res = await fetch(`/runloop/api/dlq/${id}/discard`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: 'discarded by operator' }),
+      });
+      if (!res.ok) {
+        alert('Discard failed');
+        return;
+      }
+      await fetchDLQ();
+    } finally {
+      setDlqActingOn(null);
+    }
+  };
 
   // Bulk actions
   const toggleSelection = (id: string) => {
@@ -203,6 +276,11 @@ export default function ExecutionsPage() {
     fetchExecutions();
   }, [fetchExecutions]);
 
+  // Refetch DLQ whenever the user lands on Needs Review.
+  useEffect(() => {
+    if (filterStatus === 'Needs Review') fetchDLQ();
+  }, [filterStatus, fetchDLQ]);
+
   useEffect(() => {
     if (autoRefresh) {
       intervalRef.current = setInterval(fetchExecutions, 5000);
@@ -276,26 +354,7 @@ export default function ExecutionsPage() {
   const MONO = "'IBM Plex Mono', ui-monospace, monospace";
   return (
     <div style={{ fontFamily: FONT }}>
-      {/* Schematic breadcrumb — consistent with Dashboard/Flows chrome */}
-      <div
-        className="flex items-center gap-2 mb-2"
-        style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.14em', color: THEME.text.muted }}
-      >
-        <span>// CONTROL PLANE / EXECUTIONS</span>
-        <span
-          className="px-1.5 py-0.5"
-          style={{ background: THEME.input, border: `1px solid ${THEME.border}`, color: THEME.text.secondary, borderRadius: 2 }}
-        >
-          NODE.EXEC
-        </span>
-        <span className="ml-auto flex items-center gap-1.5">
-          <span style={{ width: 5, height: 5, borderRadius: 999, background: '#10B981' }} aria-hidden />
-          STREAMING
-        </span>
-      </div>
-
       <HeroHeader
-        prompt="$ rl.executions · tail"
         title="Executions"
         subtitle="Every run, every node, every millisecond — the raw log of what the engine actually did."
         metrics={<>
@@ -306,132 +365,6 @@ export default function ExecutionsPage() {
         </>}
       />
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
-        {/* Total Executions */}
-        <div
-          style={{
-            background: THEME.panel,
-            border: `1px solid ${THEME.border}`,
-            borderRadius: 10,
-            padding: '16px 18px',
-          }}
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <div
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: 7,
-                background: `${THEME.colors.blue}14`,
-                border: `1px solid ${THEME.colors.blue}30`,
-              }}
-              className="flex items-center justify-center"
-            >
-              <Activity style={{ width: 14, height: 14, color: THEME.colors.blue }} />
-            </div>
-            <span style={{ fontSize: 11, fontWeight: 500, color: THEME.text.muted, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Total Executions
-            </span>
-          </div>
-          <div style={{ fontSize: 26, fontWeight: 700, color: THEME.text.primary, lineHeight: 1 }}>
-            {totalCount}
-          </div>
-        </div>
-
-        {/* Success Rate */}
-        <div
-          style={{
-            background: THEME.panel,
-            border: `1px solid ${THEME.border}`,
-            borderRadius: 10,
-            padding: '16px 18px',
-          }}
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <div
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: 7,
-                background: `${THEME.colors.emerald}14`,
-                border: `1px solid ${THEME.colors.emerald}30`,
-              }}
-              className="flex items-center justify-center"
-            >
-              <TrendingUp style={{ width: 14, height: 14, color: THEME.colors.emerald }} />
-            </div>
-            <span style={{ fontSize: 11, fontWeight: 500, color: THEME.text.muted, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Success Rate
-            </span>
-          </div>
-          <div style={{ fontSize: 26, fontWeight: 700, color: THEME.colors.emerald, lineHeight: 1 }}>
-            {successRate}%
-          </div>
-        </div>
-
-        {/* Failed */}
-        <div
-          style={{
-            background: THEME.panel,
-            border: `1px solid ${THEME.border}`,
-            borderRadius: 10,
-            padding: '16px 18px',
-          }}
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <div
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: 7,
-                background: `${THEME.colors.red}14`,
-                border: `1px solid ${THEME.colors.red}30`,
-              }}
-              className="flex items-center justify-center"
-            >
-              <XCircle style={{ width: 14, height: 14, color: THEME.colors.red }} />
-            </div>
-            <span style={{ fontSize: 11, fontWeight: 500, color: THEME.text.muted, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Failed
-            </span>
-          </div>
-          <div style={{ fontSize: 26, fontWeight: 700, color: THEME.colors.red, lineHeight: 1 }}>
-            {failedCount}
-          </div>
-        </div>
-
-        {/* Avg Duration */}
-        <div
-          style={{
-            background: THEME.panel,
-            border: `1px solid ${THEME.border}`,
-            borderRadius: 10,
-            padding: '16px 18px',
-          }}
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <div
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: 7,
-                background: `${THEME.colors.purple}14`,
-                border: `1px solid ${THEME.colors.purple}30`,
-              }}
-              className="flex items-center justify-center"
-            >
-              <Timer style={{ width: 14, height: 14, color: THEME.colors.purple }} />
-            </div>
-            <span style={{ fontSize: 11, fontWeight: 500, color: THEME.text.muted, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Avg Duration
-            </span>
-          </div>
-          <div style={{ fontSize: 26, fontWeight: 700, color: THEME.text.primary, lineHeight: 1 }}>
-            {formatDuration(avgDuration)}
-          </div>
-        </div>
-      </div>
 
       {/* Filter Bar */}
       <div className="flex items-center gap-3 mb-4">
@@ -454,11 +387,11 @@ export default function ExecutionsPage() {
                 style={{
                   background: isActive ? THEME.accent : 'transparent',
                   color: isActive ? '#fff' : THEME.text.secondary,
-                  borderRadius: 7,
-                  padding: '5px 14px',
+                  border: `1px solid ${isActive ? THEME.accent : THEME.border}`,
+                  borderRadius: 2,
+                  padding: '5px 12px',
                   fontSize: 12,
                   fontWeight: 500,
-                  border: 'none',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
@@ -608,8 +541,156 @@ export default function ExecutionsPage() {
         </div>
       )}
 
-      {/* Execution List */}
-      {filtered.length === 0 ? (
+      {/* Needs Review — DLQ-backed list with replay/discard actions. */}
+      {isReviewMode ? (
+        dlqLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-5 h-5 animate-spin" style={{ color: THEME.accent }} />
+            <span className="ml-2" style={{ fontSize: 13, color: THEME.text.muted }}>
+              Loading dead-letter queue…
+            </span>
+          </div>
+        ) : dlqEntries.length === 0 ? (
+          <div className="text-center py-16">
+            <div
+              style={{
+                width: 56, height: 56,
+                background: THEME.panel,
+                border: `1px solid ${THEME.border}`,
+                borderRadius: 12,
+              }}
+              className="mx-auto mb-4 flex items-center justify-center"
+            >
+              <CheckCircle2 className="w-7 h-7" style={{ color: THEME.colors.emerald }} />
+            </div>
+            <h3 style={{ fontSize: 15, fontWeight: 600, color: THEME.text.primary, marginBottom: 4 }}>
+              Nothing to review
+            </h3>
+            <p style={{ fontSize: 13, color: THEME.text.muted }}>
+              Items appear here when an execution exhausts retries or trips a circuit breaker.
+            </p>
+          </div>
+        ) : (
+          <div
+            style={{
+              background: THEME.panel,
+              border: `1px solid ${THEME.border}`,
+              borderRadius: 12,
+              overflow: 'hidden',
+            }}
+          >
+            {dlqEntries.map((entry, i) => {
+              const sourceLabel = entry.scheduler_id?.startsWith('queue:')
+                ? `queue · ${entry.scheduler_id.slice(6)}`
+                : `scheduler · ${entry.scheduler_id}`;
+              const acting = dlqActingOn === entry.id;
+              return (
+                <div
+                  key={entry.id}
+                  className="px-4 py-3 flex items-start gap-3"
+                  style={{
+                    borderBottom: i < dlqEntries.length - 1 ? `1px solid ${THEME.borderLight}` : 'none',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 32, height: 32,
+                      background: `${THEME.colors.red}18`,
+                      border: `1px solid ${THEME.colors.red}30`,
+                      borderRadius: 6,
+                      flexShrink: 0,
+                    }}
+                    className="flex items-center justify-center"
+                  >
+                    <AlertCircle className="w-4 h-4" style={{ color: THEME.colors.red }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span
+                        style={{
+                          fontFamily: MONO, fontSize: 10.5,
+                          padding: '2px 6px',
+                          background: `${THEME.colors.red}14`,
+                          color: THEME.colors.red,
+                          border: `1px solid ${THEME.colors.red}30`,
+                          letterSpacing: '0.04em',
+                        }}
+                      >
+                        {entry.reason}
+                      </span>
+                      <span style={{ fontSize: 13, fontWeight: 500, color: THEME.text.primary }}>
+                        {entry.node_id ? `node: ${entry.node_id}` : 'flow run'}
+                      </span>
+                      {entry.node_type && (
+                        <span
+                          style={{
+                            fontFamily: MONO, fontSize: 10,
+                            color: THEME.text.muted,
+                            padding: '1px 5px',
+                            border: `1px solid ${THEME.border}`,
+                          }}
+                        >
+                          {entry.node_type}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 12, color: THEME.text.secondary, marginBottom: 4 }}>
+                      {entry.error_message || '—'}
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: MONO, fontSize: 10.5,
+                        color: THEME.text.muted, letterSpacing: '0.02em',
+                      }}
+                      className="flex items-center gap-3 flex-wrap"
+                    >
+                      <span>{sourceLabel}</span>
+                      <span>retries: {entry.retry_count}</span>
+                      <span>{relativeTime(entry.created_at)}</span>
+                      <Link
+                        href={`/p/${projectId}/executions/${entry.execution_id}`}
+                        style={{ color: THEME.accent }}
+                      >
+                        view execution →
+                      </Link>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => replayDLQ(entry.id)}
+                      disabled={acting}
+                      style={{
+                        background: THEME.accent, color: '#fff',
+                        fontSize: 12, fontWeight: 500,
+                        borderRadius: 2, padding: '6px 12px',
+                        opacity: acting ? 0.6 : 1,
+                      }}
+                      className="flex items-center gap-1.5"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      Replay
+                    </button>
+                    <button
+                      onClick={() => discardDLQ(entry.id)}
+                      disabled={acting}
+                      style={{
+                        background: 'transparent',
+                        color: THEME.text.muted,
+                        fontSize: 12,
+                        border: `1px solid ${THEME.border}`,
+                        borderRadius: 2, padding: '6px 12px',
+                        opacity: acting ? 0.6 : 1,
+                      }}
+                    >
+                      Discard
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )
+      ) : filtered.length === 0 ? (
         <div className="text-center py-16">
           <div
             style={{
@@ -954,7 +1035,7 @@ export default function ExecutionsPage() {
       )}
 
       {/* Footer count */}
-      {filtered.length > 0 && (
+      {!isReviewMode && filtered.length > 0 && (
         <div style={{ fontSize: 11, color: THEME.text.muted, marginTop: 10, textAlign: 'right' }}>
           Showing {filtered.length} of {totalCount} execution{totalCount !== 1 ? 's' : ''}
           {autoRefresh && (

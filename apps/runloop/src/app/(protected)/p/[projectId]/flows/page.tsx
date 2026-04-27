@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useProject } from '@/context/ProjectContext';
 import type { Flow, FlowStatus, FlowType, JobType } from '@/types';
-import { HeroHeader, MetricChip } from '@/components/ControlChrome';
+import { HeroHeader, MetricChip, SharpButton } from '@/components/ControlChrome';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
@@ -129,22 +129,7 @@ export default function FlowsPage() {
 
   return (
     <div style={{ fontFamily: FONT }}>
-      {/* Schematic breadcrumb — echoes the Dashboard's control-plane header */}
-      <div
-        className="flex items-center gap-2 mb-2"
-        style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.14em', color: THEME.text.muted }}
-      >
-        <span>// CONTROL PLANE / FLOWS</span>
-        <span
-          className="px-1.5 py-0.5"
-          style={{ background: THEME.input, border: `1px solid ${THEME.border}`, color: THEME.text.secondary, borderRadius: 2 }}
-        >
-          NODE.FLOWS
-        </span>
-      </div>
-
       <HeroHeader
-        prompt="$ rl.flows · list"
         title="Flows"
         subtitle="Build and manage workflow pipelines — drag nodes, wire edges, schedule runs."
         metrics={<>
@@ -153,13 +138,9 @@ export default function FlowsPage() {
           <MetricChip label="total"  value={String(activeCount + draftCount).padStart(2, '0')} />
         </>}
         right={
-          <Link
-            href={`/p/${projectId}/flows/new`}
-            style={{ background: THEME.accent, color: '#fff', fontFamily: MONO, borderRadius: 2 }}
-            className="flex items-center gap-2 px-4 py-2 text-[12px] font-medium tracking-wide hover:opacity-90 transition"
-          >
-            <Plus className="w-3.5 h-3.5" /> $ NEW FLOW →
-          </Link>
+          <SharpButton href={`/p/${projectId}/flows/new`}>
+            <Plus className="w-3.5 h-3.5" /> New Flow
+          </SharpButton>
         }
       />
 

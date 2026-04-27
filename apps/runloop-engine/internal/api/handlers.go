@@ -41,6 +41,7 @@ type Handler struct {
 	hub        *websocket.Hub
 	queue      *queue.Manager
 	plugins    *executor.PluginRegistry
+	dlq        *executor.DeadLetterQueue
 }
 
 // NewHandler creates a new API handler
@@ -53,6 +54,7 @@ func NewHandler(database *db.Postgres, sched *scheduler.Manager, wp *worker.Pool
 		hub:        hub,
 		queue:      qm,
 		plugins:    plugins,
+		dlq:        executor.NewDeadLetterQueue(database),
 	}
 }
 

@@ -567,6 +567,37 @@ enum ExecutionStatus {
   TIMEOUT
 }
 
+// Failed work that exceeded retries / tripped a circuit breaker / hit a
+// permanent error. Operators triage these via the "Needs Review" tab on
+// the executions page: replay (re-enqueue or re-trigger source), discard,
+// or resolve. The Go engine writes/reads this table directly via raw SQL.
+model DeadLetterQueueEntry {
+  id              String    @id
+  executionId     String    @map("execution_id")
+  schedulerId     String    @map("scheduler_id")
+  projectId       String    @map("project_id")
+  reason          String
+  errorMessage    String    @map("error_message")
+  errorDetails    String    @default("") @map("error_details")
+  retryCount      Int       @default(0) @map("retry_count")
+  originalInput   Json?     @map("original_input")
+  nodeId          String    @default("") @map("node_id")
+  nodeType        String    @default("") @map("node_type")
+  status          String    @default("PENDING")
+  resolvedAt      DateTime? @map("resolved_at")
+  resolvedBy      String    @default("") @map("resolved_by")
+  resolution      String    @default("")
+  replayed        Boolean   @default(false)
+  replayedAt      DateTime? @map("replayed_at")
+  newExecutionId  String    @default("") @map("new_execution_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([projectId, status, createdAt(sort: Desc)])
+  @@index([executionId])
+  @@map("dead_letter_queue")
+}
+
 enum WebhookStatus {
   ACTIVE
   INACTIVE

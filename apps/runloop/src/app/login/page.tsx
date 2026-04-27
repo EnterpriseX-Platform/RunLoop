@@ -448,27 +448,73 @@ function CopyableCred({ label, onUse }: { label: string; onUse: () => void }) {
 }
 
 // -- LogoMark ---------------------------------------------------------------
-// Tiny SVG mark: two nodes joined by an edge that loops — a literal
-// "run loop". Better than a generic rounded square.
+// Spinner-arc mark — faint track ring + rotating arc with a fading tail
+// and bright leading dot + a glowing core. Mirrors the sidebar mark so
+// the brand reads the same everywhere.
 function LogoMark() {
   return (
-    <svg width={18} height={18} viewBox="0 0 18 18" aria-hidden>
-      <defs>
-        <linearGradient id="rl-mark-g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="var(--t-accent)" />
-          <stop offset="100%" stopColor="var(--t-accent)" stopOpacity="0.6" />
-        </linearGradient>
-      </defs>
-      <path
-        d="M4 9 Q 4 4 9 4 Q 14 4 14 9 Q 14 14 9 14"
-        fill="none"
-        stroke="url(#rl-mark-g)"
-        strokeWidth={1.8}
-        strokeLinecap="round"
+    <span
+      className="flex items-center justify-center relative"
+      style={{
+        width: 22,
+        height: 22,
+        filter:
+          'drop-shadow(0 0 5px color-mix(in srgb, var(--t-accent) 45%, transparent))',
+      }}
+      aria-hidden
+    >
+      <svg
+        width={22} height={22} viewBox="0 0 34 34"
+        style={{ position: 'absolute', inset: 0 }}
+      >
+        <circle
+          cx={17} cy={17} r={13}
+          fill="none"
+          stroke="var(--t-accent)"
+          strokeOpacity={0.14}
+          strokeWidth={1.25}
+        />
+      </svg>
+      <svg
+        width={22} height={22} viewBox="0 0 34 34"
+        style={{
+          position: 'absolute', inset: 0,
+          animation: 'rl-logomark-spin 1.8s cubic-bezier(0.7, 0, 0.3, 1) infinite',
+        }}
+      >
+        <defs>
+          <linearGradient id="rl-lm-grad" x1="1" y1="0.7" x2="0.5" y2="0">
+            <stop offset="0%"   stopColor="var(--t-accent)" stopOpacity="0" />
+            <stop offset="40%"  stopColor="var(--t-accent)" stopOpacity="0.55" />
+            <stop offset="100%" stopColor="var(--t-accent)" stopOpacity="1" />
+          </linearGradient>
+        </defs>
+        <path
+          d="M 28.26 10.5 A 13 13 0 0 0 17 4"
+          fill="none"
+          stroke="url(#rl-lm-grad)"
+          strokeWidth={2.4}
+          strokeLinecap="round"
+        />
+        <circle cx={17} cy={4} r={1.9} fill="var(--t-accent)" />
+      </svg>
+      <span
+        style={{
+          position: 'relative',
+          width: 4,
+          height: 4,
+          borderRadius: '50%',
+          background: 'var(--t-accent)',
+          boxShadow: '0 0 5px color-mix(in srgb, var(--t-accent) 85%, transparent)',
+        }}
       />
-      <circle cx={4} cy={9} r={2} fill="var(--t-accent)" />
-      <circle cx={14} cy={9} r={2} fill="var(--t-accent)" opacity={0.55} />
-    </svg>
+      <style jsx global>{`
+        @keyframes rl-logomark-spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+      `}</style>
+    </span>
   );
 }
 

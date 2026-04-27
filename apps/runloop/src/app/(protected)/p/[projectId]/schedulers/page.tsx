@@ -19,7 +19,7 @@ import {
   Check,
   X,
 } from 'lucide-react';
-import { HeroHeader, MetricChip } from '@/components/ControlChrome';
+import { HeroHeader, MetricChip, SharpButton } from '@/components/ControlChrome';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const THEME = {
@@ -325,26 +325,7 @@ export default function SchedulersPage() {
     <div style={{ fontFamily: FONT }}>
       <Toast toast={toast} onClose={() => setToast(prev => ({ ...prev, visible: false }))} />
 
-      {/* Schematic breadcrumb */}
-      <div
-        className="flex items-center gap-2 mb-2"
-        style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.14em', color: THEME.text.muted }}
-      >
-        <span>// CONTROL PLANE / SCHEDULERS</span>
-        <span
-          className="px-1.5 py-0.5"
-          style={{ background: THEME.input, border: `1px solid ${THEME.border}`, color: THEME.text.secondary, borderRadius: 2 }}
-        >
-          NODE.CRON
-        </span>
-        <span className="ml-auto flex items-center gap-1.5">
-          <span style={{ width: 5, height: 5, borderRadius: 999, background: runningCount > 0 ? '#10B981' : '#6B7280' }} aria-hidden />
-          {runningCount > 0 ? 'ACTIVE' : 'IDLE'}
-        </span>
-      </div>
-
       <HeroHeader
-        prompt="$ rl.schedulers · list"
         title="Schedulers"
         subtitle="Cron, webhook, and manual triggers — decide when and how each flow fires."
         metrics={<>
@@ -353,13 +334,9 @@ export default function SchedulersPage() {
           <MetricChip label="total"  value={String(runningCount + pausedCount).padStart(2, '0')} />
         </>}
         right={
-          <Link
-            href={`/p/${projectId}/schedulers/new`}
-            style={{ background: THEME.accent, color: '#fff', fontFamily: MONO, borderRadius: 2 }}
-            className="flex items-center gap-2 px-4 py-2 text-[12px] font-medium tracking-wide hover:opacity-90 transition"
-          >
-            <Plus className="w-3.5 h-3.5" /> $ NEW SCHEDULER →
-          </Link>
+          <SharpButton href={`/p/${projectId}/schedulers/new`}>
+            <Plus className="w-3.5 h-3.5" /> New Scheduler
+          </SharpButton>
         }
       />
 

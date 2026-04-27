@@ -64,6 +64,15 @@ const nextConfig = {
         source: '/api/queues/:path*',
         destination: `${engineUrl}/rl/api/queues/:path*`,
       },
+      // Internal API: Dead Letter Queue → Go Engine
+      {
+        source: '/api/dlq',
+        destination: `${engineUrl}/rl/api/dlq`,
+      },
+      {
+        source: '/api/dlq/:path*',
+        destination: `${engineUrl}/rl/api/dlq/:path*`,
+      },
       // Plugin + node-template APIs (SDK extension nodes)
       {
         source: '/api/plugins',

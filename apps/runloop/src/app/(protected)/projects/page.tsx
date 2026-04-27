@@ -7,7 +7,7 @@ import { Plus, FolderKanban, Users, Clock, Loader2, AlertCircle, ChevronRight, S
 import { useProject } from '@/context/ProjectContext';
 import type { Project } from '@/types';
 import {
-  ControlBreadcrumb, PageHeader, SharpButton, MONO, TableHeaderRow,
+  HeroHeader, MetricChip, SharpButton, MONO, TableHeaderRow,
 } from '@/components/ControlChrome';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
@@ -104,22 +104,16 @@ export default function ProjectsPage() {
 
   return (
     <div style={{ fontFamily: FONT }}>
-      <ControlBreadcrumb
-        path="PROJECTS"
-        node="NODE.TENANT"
-        right={
-          <span style={{ color: THEME.text.muted }}>
-            {filtered.length} / {projects.length} TOTAL
-          </span>
-        }
-      />
-
-      <PageHeader
+      <HeroHeader
         title="Projects"
-        subtitle="Manage your RunLoop projects"
+        subtitle="Tenant workspaces — each project gets its own flows, schedulers, queues, and secret vault."
+        metrics={<>
+          <MetricChip label="total" value={String(projects.length).padStart(2, '0')} />
+          <MetricChip label="shown" value={String(filtered.length).padStart(2, '0')} accent={searchQuery ? '#F59E0B' : undefined} />
+        </>}
         right={
           <SharpButton onClick={() => setIsCreating(true)}>
-            <Plus className="w-3.5 h-3.5" /> $ NEW PROJECT →
+            <Plus className="w-3.5 h-3.5" /> New Project
           </SharpButton>
         }
       />

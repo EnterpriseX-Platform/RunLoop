@@ -7,7 +7,7 @@ import {
   Plus, Inbox, AlertCircle, Loader2, ChevronRight,
   Database as DatabaseIcon, Radio, Rabbit, Waves,
 } from 'lucide-react';
-import { HeroHeader, MetricChip } from '@/components/ControlChrome';
+import { HeroHeader, MetricChip, SharpButton } from '@/components/ControlChrome';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const THEME = {
@@ -118,9 +118,7 @@ export default function QueuesPage() {
           <AlertCircle className="w-10 h-10 mx-auto mb-3" style={{ color: THEME.colors.red }} />
           <h3 style={{ fontSize: 16, fontWeight: 600, color: THEME.text.primary }}>Failed to load queues</h3>
           <p style={{ fontSize: 13, color: THEME.text.muted, marginBottom: 12 }}>{error}</p>
-          <button onClick={fetchAll} style={{ background: THEME.accent, color: '#fff', borderRadius: 8, padding: '6px 16px', fontSize: 13 }}>
-            Try Again
-          </button>
+          <SharpButton onClick={fetchAll}>Try Again</SharpButton>
         </div>
       </div>
     );
@@ -132,32 +130,7 @@ export default function QueuesPage() {
 
   return (
     <div style={{ fontFamily: FONT }}>
-      {/* Schematic breadcrumb */}
-      <div
-        className="flex items-center gap-2 mb-2"
-        style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.14em', color: THEME.text.muted }}
-      >
-        <span>// CONTROL PLANE / QUEUES</span>
-        <span
-          className="px-1.5 py-0.5"
-          style={{ background: THEME.input, border: `1px solid ${THEME.border}`, color: THEME.text.secondary, borderRadius: 2 }}
-        >
-          NODE.INBOX
-        </span>
-        <span className="ml-auto flex items-center gap-3">
-          <span>
-            <span style={{ color: '#F59E0B' }}>●</span> {totalPending} PENDING
-          </span>
-          {totalDlq > 0 && (
-            <span>
-              <span style={{ color: '#EF4444' }}>●</span> {totalDlq} DLQ
-            </span>
-          )}
-        </span>
-      </div>
-
       <HeroHeader
-        prompt="$ rl.queues · list"
         title="Queues"
         subtitle="Durable job inboxes — Postgres, Redis, RabbitMQ, Kafka. Producers push, workers pull, retries cascade into DLQ."
         metrics={<>
@@ -166,13 +139,9 @@ export default function QueuesPage() {
           {totalDlq > 0 && <MetricChip label="dlq" value={String(totalDlq).padStart(2, '0')} accent="#EF4444" />}
         </>}
         right={
-          <Link
-            href={`/p/${projectId}/queues/new`}
-            style={{ background: THEME.accent, color: '#fff', fontFamily: MONO, borderRadius: 2 }}
-            className="flex items-center gap-2 px-4 py-2 text-[12px] font-medium tracking-wide hover:opacity-90 transition"
-          >
-            <Plus className="w-3.5 h-3.5" /> $ NEW QUEUE →
-          </Link>
+          <SharpButton href={`/p/${projectId}/queues/new`}>
+            <Plus className="w-3.5 h-3.5" /> New Queue
+          </SharpButton>
         }
       />
 
@@ -188,13 +157,9 @@ export default function QueuesPage() {
           <p style={{ fontSize: 13, color: THEME.text.muted, marginBottom: 12 }}>
             Create a queue to bind a flow to a durable job inbox
           </p>
-          <Link
-            href={`/p/${projectId}/queues/new`}
-            style={{ background: THEME.accent, color: '#fff', borderRadius: 8, padding: '6px 16px', fontSize: 13 }}
-            className="inline-flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" /> New Queue
-          </Link>
+          <SharpButton href={`/p/${projectId}/queues/new`}>
+            <Plus className="w-3.5 h-3.5" /> New Queue
+          </SharpButton>
         </div>
       ) : (
         <div className="space-y-2">

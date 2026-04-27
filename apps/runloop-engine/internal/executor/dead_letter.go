@@ -313,6 +313,23 @@ func (dlq *DeadLetterQueue) MarkAsReplayed(
 	return nil
 }
 
+// MarkAsReviewing flips a PENDING entry to REVIEWING. Used when an
+// operator opens the entry to investigate; it removes the item from
+// the default backlog without resolving it.
+func (dlq *DeadLetterQueue) MarkAsReviewing(ctx context.Context, id string, reviewer string) error {
+	now := time.Now()
+	query := `
+		UPDATE dead_letter_queue
+		SET status = $1, resolved_by = $2, updated_at = $3
+		WHERE id = $4 AND status = 'PENDING'
+	`
+	_, err := dlq.db.Pool.Exec(ctx, query, DLQReviewing, reviewer, now, id)
+	if err != nil {
+		return fmt.Errorf("failed to mark DLQ entry as reviewing: %w", err)
+	}
+	return nil
+}
+
 // Discard marks a DLQ entry as discarded
 func (dlq *DeadLetterQueue) Discard(ctx context.Context, id string, reason string) error {
 	now := time.Now()

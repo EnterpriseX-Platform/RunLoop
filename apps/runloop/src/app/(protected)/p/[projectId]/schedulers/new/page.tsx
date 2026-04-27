@@ -48,8 +48,8 @@ export default function NewSchedulerPage() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    triggerType: 'MANUAL' as TriggerType,
-    schedule: '',
+    triggerType: 'SCHEDULE' as TriggerType,
+    schedule: '*/5 * * * *',
     timezone: 'Asia/Bangkok',
     timeout: 300,
     retryCount: 0,
@@ -171,17 +171,22 @@ export default function NewSchedulerPage() {
 
   return (
     <div className="max-w-6xl" style={{ fontFamily: FONT }}>
-      <ControlBreadcrumb path="SCHEDULERS / NEW" node="NODE.CRON.INIT" />
-
       <Link
         href={`/p/${projectId}/schedulers`}
-        className="inline-flex items-center gap-1.5 mb-3 hover:opacity-80"
-        style={{ fontFamily: MONO, fontSize: 11, color: T.textMuted, letterSpacing: '0.08em' }}
+        className="inline-flex items-center gap-1.5 mb-4 hover:opacity-80"
+        style={{ fontSize: 12, color: T.textMuted }}
       >
-        <ArrowLeft className="w-3.5 h-3.5" /> ← BACK TO SCHEDULERS
+        <ArrowLeft className="w-3.5 h-3.5" /> Back to Schedulers
       </Link>
 
-      <PageHeader title="Create Schedule" subtitle="Define when and how to run your flows" />
+      <div className="mb-6">
+        <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>
+          New Scheduler
+        </h1>
+        <p style={{ fontSize: 13, color: T.textMuted, marginTop: 6 }}>
+          Define when and how to run your flows.
+        </p>
+      </div>
 
       {submitError && (
         <div
@@ -360,10 +365,10 @@ Body: { "input": {...} }`}
             <div className="flex items-center gap-2 pt-2">
               <SharpButton type="submit" disabled={isSubmitting || !formData.name}>
                 {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-                {isSubmitting ? '$ CREATING…' : '$ CREATE SCHEDULE →'}
+                {isSubmitting ? 'Creating…' : 'Create Scheduler'}
               </SharpButton>
               <SharpButton variant="ghost" href={`/p/${projectId}/schedulers`}>
-                ✕ CANCEL
+                Cancel
               </SharpButton>
             </div>
           </div>

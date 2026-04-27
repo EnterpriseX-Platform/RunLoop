@@ -410,25 +410,38 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
   }
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative w-full" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        style={{ borderRadius: 2 }}
-        className="flex items-center gap-1 px-1 py-0.5 transition-all hover:bg-[var(--t-panel-hover)] max-w-full"
+        style={{
+          borderRadius: 2,
+          border: '1px solid var(--t-border)',
+          background: 'var(--t-panel)',
+        }}
+        className="w-full flex items-center gap-2 px-2 py-1.5 transition-all hover:border-[var(--t-accent)]"
         title={selectedProject?.name || 'Select Project'}
       >
-        <span style={{ fontFamily: MONO, fontSize: 9, color: 'var(--t-text-muted)', opacity: 0.7, letterSpacing: '0.12em' }}>
-          project:
-        </span>
         <span
-          className="truncate max-w-[100px]"
-          style={{ fontFamily: MONO, fontSize: 10.5, color: 'var(--t-text-secondary)', letterSpacing: '0.02em' }}
+          className="flex-shrink-0"
+          style={{
+            width: 8, height: 8,
+            background: selectedProject?.color || 'var(--t-text-muted)',
+          }}
+        />
+        <span
+          className="truncate flex-1 text-left"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 600,
+            color: 'var(--t-text)',
+            letterSpacing: '-0.005em',
+          }}
         >
-          {selectedProject?.name || 'all'}
+          {selectedProject?.name || 'All projects'}
         </span>
         <ChevronDown className="w-3 h-3 flex-shrink-0" style={{ color: 'var(--t-text-muted)' }} />
       </button>
-      {isOpen && dropdownMenu('absolute left-0 top-full mt-1 w-48')}
+      {isOpen && dropdownMenu('absolute left-0 top-full mt-1 w-full')}
     </div>
   );
 }
@@ -438,32 +451,86 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
 // The run-loop mark — two nodes joined by a curved edge. Same mark used
 // on /login so the brand reads consistently.
 function SidebarMark() {
+  // Spiral / galaxy-arm mark — two curved arms sweep from the core
+  // outward, the whole figure rotates slowly. One color, one motion,
+  // but the spiral itself has visual rhythm.
   return (
     <div
-      className="flex items-center justify-center flex-shrink-0"
+      className="flex items-center justify-center flex-shrink-0 relative"
       style={{
-        width: 28,
-        height: 28,
-        border: '1px solid color-mix(in srgb, var(--t-accent) 40%, transparent)',
-        background: 'color-mix(in srgb, var(--t-accent) 10%, transparent)',
-        borderRadius: 2,
+        width: 34,
+        height: 34,
+        filter: 'drop-shadow(0 0 6px color-mix(in srgb, var(--t-accent) 40%, transparent))',
       }}
       aria-hidden
     >
-      <svg width={16} height={16} viewBox="0 0 18 18">
-        <path
-          d="M4 9 Q 4 4 9 4 Q 14 4 14 9 Q 14 14 9 14"
+      {/* Static thin ring — the "track" */}
+      <svg
+        width={34}
+        height={34}
+        viewBox="0 0 34 34"
+        style={{ position: 'absolute', inset: 0 }}
+      >
+        <circle
+          cx={17} cy={17} r={13}
           fill="none"
           stroke="var(--t-accent)"
-          strokeWidth={1.6}
+          strokeOpacity={0.14}
+          strokeWidth={1.25}
+        />
+      </svg>
+
+      {/* Rotating arc with fading tail */}
+      <svg
+        width={34}
+        height={34}
+        viewBox="0 0 34 34"
+        style={{
+          position: 'absolute', inset: 0,
+          animation: 'rl-mark-spiral 1.8s cubic-bezier(0.7, 0, 0.3, 1) infinite',
+        }}
+      >
+        <defs>
+          <linearGradient id="rl-arc-grad" x1="1" y1="0.7" x2="0.5" y2="0">
+            <stop offset="0%"   stopColor="var(--t-accent)" stopOpacity="0" />
+            <stop offset="40%"  stopColor="var(--t-accent)" stopOpacity="0.55" />
+            <stop offset="100%" stopColor="var(--t-accent)" stopOpacity="1" />
+          </linearGradient>
+        </defs>
+        {/* Arc — tail fades BEHIND the bright head.
+            Path drawn from right (tail) → top (head) so gradient aligns. */}
+        <path
+          d="M 28.26 10.5 A 13 13 0 0 0 17 4"
+          fill="none"
+          stroke="url(#rl-arc-grad)"
+          strokeWidth={2.4}
           strokeLinecap="round"
         />
-        <circle cx={4} cy={9} r={1.8} fill="var(--t-accent)" />
-        <circle cx={14} cy={9} r={1.8} fill="var(--t-accent)" opacity={0.55} />
+        {/* Leading bright head dot */}
+        <circle cx={17} cy={4} r={1.9} fill="var(--t-accent)" />
       </svg>
+
+      {/* Static core — tiny bright disc with soft halo */}
+      <span
+        style={{
+          position: 'relative',
+          width: 5,
+          height: 5,
+          borderRadius: '50%',
+          background: 'var(--t-accent)',
+          boxShadow: '0 0 6px color-mix(in srgb, var(--t-accent) 85%, transparent)',
+        }}
+      />
+      <style jsx global>{`
+        @keyframes rl-mark-spiral {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
+
 
 // Live UTC clock — the kind of detail a DevOps panel would show.
 function UtcClock() {
@@ -600,7 +667,7 @@ function SidebarFooter({ collapsed }: { collapsed: boolean }) {
       }}
     >
       <div className="flex items-center justify-between">
-        <span style={{ color: 'var(--t-text-muted)' }}>{'//'} STATUS</span>
+        <span style={{ color: 'var(--t-text-muted)' }}>STATUS</span>
       </div>
       <div className="flex items-center gap-1.5" style={{ color: 'var(--t-text-secondary)' }}>
         <span
@@ -623,8 +690,8 @@ function SidebarFooter({ collapsed }: { collapsed: boolean }) {
         CLOCK
         <span style={{ marginLeft: 'auto' }}>{t}</span>
       </div>
-      <div style={{ color: 'var(--t-text-muted)', opacity: 0.7, paddingTop: 4 }}>
-        {'//'} fiber+gocron
+      <div style={{ color: 'var(--t-text-muted)', opacity: 0.55, paddingTop: 4 }}>
+        fiber · gocron
       </div>
     </div>
   );
@@ -702,37 +769,54 @@ export function Layout({ children }: { children?: React.ReactNode }) {
           sidebarCollapsed ? 'w-16' : 'w-56'
         }`}
       >
-        {/* Brand + project selector */}
-        <div className={`h-14 flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'px-3'}`}>
+        {/* Brand */}
+        <div className={`flex items-center ${sidebarCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-4'}`}>
           <SidebarMark />
           {!sidebarCollapsed && (
-            <div className="flex flex-col ml-2.5 min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <span
-                  style={{ color: 'var(--t-text)', fontFamily: MONO, letterSpacing: '-0.01em' }}
-                  className="text-[13px] font-medium leading-none"
-                >
-                  runloop
-                </span>
-                <span
-                  style={{
-                    fontFamily: MONO,
-                    fontSize: 8.5,
-                    letterSpacing: '0.1em',
-                    color: 'var(--t-accent)',
-                    borderColor: 'color-mix(in srgb, var(--t-accent) 35%, transparent)',
-                    borderRadius: 0,
-                  }}
-                  className="px-1 py-[1px] border font-medium leading-none uppercase"
-                >
-                  beta
-                </span>
-              </div>
-              <ProjectSelector collapsed={false} />
+            <div className="flex items-center gap-2 ml-2.5 min-w-0 flex-1">
+              <span
+                style={{ color: 'var(--t-text)', letterSpacing: '-0.01em' }}
+                className="text-[15px] font-semibold leading-none"
+              >
+                RunLoop
+              </span>
+              <span
+                style={{
+                  fontFamily: MONO,
+                  fontSize: 8.5,
+                  letterSpacing: '0.1em',
+                  color: 'var(--t-accent)',
+                  borderColor: 'color-mix(in srgb, var(--t-accent) 35%, transparent)',
+                }}
+                className="px-1 py-[1px] border font-medium leading-none uppercase"
+              >
+                beta
+              </span>
             </div>
           )}
-          {sidebarCollapsed && <ProjectSelector collapsed={true} />}
         </div>
+
+        {/* Project selector — now a prominent row under the brand */}
+        {!sidebarCollapsed && (
+          <div className="px-3 pb-3">
+            <p
+              className="pb-1.5"
+              style={{
+                fontFamily: MONO, fontSize: 9,
+                letterSpacing: '0.18em', textTransform: 'uppercase',
+                color: 'var(--t-text-muted)',
+              }}
+            >
+              project
+            </p>
+            <ProjectSelector collapsed={false} />
+          </div>
+        )}
+        {sidebarCollapsed && (
+          <div className="px-2 pb-3 flex justify-center">
+            <ProjectSelector collapsed={true} />
+          </div>
+        )}
 
         <div className="mx-3 border-t" style={{ borderColor: 'var(--t-border-light)' }} />
 
@@ -741,7 +825,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
           <div className="space-y-0.5">
             {!sidebarCollapsed && (
               <p
-                className="px-4 py-2 flex items-center gap-2"
+                className="px-4 py-2"
                 style={{
                   color: 'var(--t-text-muted)',
                   fontFamily: MONO,
@@ -750,7 +834,6 @@ export function Layout({ children }: { children?: React.ReactNode }) {
                   textTransform: 'uppercase',
                 }}
               >
-                <span style={{ opacity: 0.5 }}>{'//'}</span>
                 main menu
               </p>
             )}
@@ -774,7 +857,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
           <div className="mt-6 space-y-0.5">
             {!sidebarCollapsed && (
               <p
-                className="px-4 py-2 flex items-center gap-2"
+                className="px-4 py-2"
                 style={{
                   color: 'var(--t-text-muted)',
                   fontFamily: MONO,
@@ -783,7 +866,6 @@ export function Layout({ children }: { children?: React.ReactNode }) {
                   textTransform: 'uppercase',
                 }}
               >
-                <span style={{ opacity: 0.5 }}>{'//'}</span>
                 system
               </p>
             )}
@@ -884,23 +966,22 @@ export function Layout({ children }: { children?: React.ReactNode }) {
               </div>
             </div>
 
-            {/* New button — "run action" style */}
+            {/* New flow shortcut */}
             <button
               onClick={() => router.push(`${projectPrefix}/flows/new`)}
               style={{
-                backgroundColor: 'var(--t-panel)',
-                borderColor: 'var(--t-border)',
-                color: 'var(--t-text-secondary)',
-                fontFamily: MONO,
-                fontSize: 11,
-                letterSpacing: '0.1em',
+                background: 'var(--t-accent)',
+                color: '#fff',
+                fontSize: 12,
+                fontWeight: 500,
+                letterSpacing: '0.02em',
                 borderRadius: 2,
+                padding: '0 12px',
               }}
-              className="h-8 px-3 border hover:border-[var(--t-accent)] hover:text-[var(--t-accent)] font-medium flex items-center gap-1.5 transition-all uppercase"
+              className="h-8 flex items-center gap-1.5 hover:opacity-90 transition-opacity"
             >
-              <span style={{ opacity: 0.5 }}>$</span>
-              <span className="hidden sm:inline">new</span>
-              <span className="opacity-60 hidden sm:inline">→</span>
+              <Plus className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">New Flow</span>
             </button>
 
             <button

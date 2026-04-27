@@ -257,6 +257,17 @@ func setupRoutes(app *fiber.App, handler *api.Handler, webhookHandler *webhook.H
 	apiGroup.Post("/executions/bulk-retry", handler.BulkRetryExecutions)
 	apiGroup.Get("/executions/:id/logs/realtime", handler.GetRealtimeLogs)
 
+	// Dead Letter Queue — failed executions parked here after exceeding
+	// retries / circuit-breaker / timeout. Operators can review, replay
+	// (re-enqueue or re-trigger scheduler), discard, or resolve.
+	apiGroup.Get("/dlq",                handler.ListDLQ)
+	apiGroup.Get("/dlq/stats",          handler.GetDLQStats) // before /:id
+	apiGroup.Get("/dlq/:id",            handler.GetDLQEntry)
+	apiGroup.Post("/dlq/:id/review",    handler.ReviewDLQ)
+	apiGroup.Post("/dlq/:id/replay",    handler.ReplayDLQ)
+	apiGroup.Post("/dlq/:id/discard",   handler.DiscardDLQ)
+	apiGroup.Post("/dlq/:id/resolve",   handler.ResolveDLQ)
+
 	// Flows
 	apiGroup.Get("/flows", handler.ListFlows)
 	apiGroup.Get("/flows/:id", handler.GetFlow)
