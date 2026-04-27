@@ -798,9 +798,9 @@ export function Layout({ children }: { children?: React.ReactNode }) {
 
         {/* Project selector — now a prominent row under the brand */}
         {!sidebarCollapsed && (
-          <div className="px-3 pb-3">
+          <div className="px-3 pb-2">
             <p
-              className="pb-1.5"
+              className="pb-1"
               style={{
                 fontFamily: MONO, fontSize: 9,
                 letterSpacing: '0.18em', textTransform: 'uppercase',
@@ -813,7 +813,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
           </div>
         )}
         {sidebarCollapsed && (
-          <div className="px-2 pb-3 flex justify-center">
+          <div className="px-2 pb-2 flex justify-center">
             <ProjectSelector collapsed={true} />
           </div>
         )}
@@ -821,11 +821,11 @@ export function Layout({ children }: { children?: React.ReactNode }) {
         <div className="mx-3 border-t" style={{ borderColor: 'var(--t-border-light)' }} />
 
         {/* Navigation */}
-        <nav className="flex-1 py-3 overflow-y-auto">
+        <nav className="flex-1 pt-2 pb-3 overflow-y-auto">
           <div className="space-y-0.5">
             {!sidebarCollapsed && (
               <p
-                className="px-4 py-2"
+                className="px-4 pt-1 pb-1.5"
                 style={{
                   color: 'var(--t-text-muted)',
                   fontFamily: MONO,
@@ -854,10 +854,10 @@ export function Layout({ children }: { children?: React.ReactNode }) {
             })}
           </div>
 
-          <div className="mt-6 space-y-0.5">
+          <div className="mt-3 space-y-0.5">
             {!sidebarCollapsed && (
               <p
-                className="px-4 py-2"
+                className="px-4 pt-1 pb-1.5"
                 style={{
                   color: 'var(--t-text-muted)',
                   fontFamily: MONO,
