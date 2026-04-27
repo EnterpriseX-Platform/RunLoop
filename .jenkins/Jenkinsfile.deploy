@@ -1,17 +1,21 @@
-// RunLoop — Deploy to Kubernetes (community namespace).
+// RunLoop — Deploy to Kubernetes (parametrised).
 //
-// Job location: http://10.1.102.52:32552/job/COMMUNITY/job/deploy-runloop-to-kube/
-// Triggered by: /COMMUNITY/runloop (on successful image push)
-// Accepts:      IMAGE_TAG (string parameter; default = latest)
+// One Jenkinsfile, multiple jobs. Each Jenkins job hard-codes its
+// target environment via parameters (defaults below) so an operator
+// only needs to choose IMAGE_TAG.
 //
-// Uses `withCredentials([file(...)])` pattern (same as other BB deploy
-// jobs). Expects a Jenkins "Secret file" credential with ID
-// `kubeconfig-community` containing a kubeconfig authorized to
-// read/write in the `community` namespace.
+// Existing jobs:
+//   /COMMUNITY/deploy-runloop-to-kube         → community  ns, community.oneweb.tech/runloop
+//   /COMMERCIAL/deploy-runloop-to-kube        → commercial ns, commercial.oneweb.tech/runloop
 //
-// One-time manifest bootstrap (namespace, PV, secret, postgres,
-// ingress) is done OUTSIDE this pipeline — see docs/deployment/DEPLOYMENT.md.
-// This pipeline only rolls the web + engine deployments to a new tag.
+// Each job overrides defaults via the "This project is parameterized"
+// section of the job config (NAMESPACE, DOMAIN, KUBECONFIG_CRED_ID,
+// INGRESS_RESOLVE_IP). Defaults below match the COMMUNITY job for
+// backwards compatibility.
+//
+// Triggered by: /<FOLDER>/runloop (on successful image push).
+// One-time bootstrap (namespace, PV, secret, postgres, ingress) is done
+// OUTSIDE this pipeline — see docs/deployment/DEPLOYMENT.md.
 
 pipeline {
   agent any
@@ -22,6 +26,26 @@ pipeline {
       defaultValue: 'latest',
       description: 'Image tag to deploy (matches avalantglobal/runloop-*:<tag>)',
     )
+    string(
+      name: 'NAMESPACE',
+      defaultValue: 'community',
+      description: 'Target Kubernetes namespace (community | commercial | …)',
+    )
+    string(
+      name: 'DOMAIN',
+      defaultValue: 'community.oneweb.tech',
+      description: 'External domain used for the smoke-test curl',
+    )
+    string(
+      name: 'INGRESS_RESOLVE_IP',
+      defaultValue: '10.1.102.89',
+      description: 'IP that DOMAIN should resolve to during smoke test (cluster ingress / Apache front-door)',
+    )
+    string(
+      name: 'KUBECONFIG_CRED_ID',
+      defaultValue: 'bf9208b3-bbdb-49f1-aeac-e11c197a68a9',
+      description: 'Jenkins "Secret file" credential id holding the kubeconfig with rights in NAMESPACE',
+    )
     booleanParam(
       name: 'APPLY_MANIFESTS',
       defaultValue: false,
@@ -30,7 +54,6 @@ pipeline {
   }
 
   environment {
-    NAMESPACE  = 'community'
     WEB_IMAGE  = "avalantglobal/runloop-web:${params.IMAGE_TAG}"
     ENG_IMAGE  = "avalantglobal/runloop-engine:${params.IMAGE_TAG}"
   }
@@ -48,28 +71,28 @@ pipeline {
     stage('Apply manifests (optional)') {
       when { expression { return params.APPLY_MANIFESTS } }
       steps {
-        withCredentials([file(credentialsId: 'bf9208b3-bbdb-49f1-aeac-e11c197a68a9', variable: 'KUBECONFIG')]) {
-          sh '''
+        withCredentials([file(credentialsId: "${params.KUBECONFIG_CRED_ID}", variable: 'KUBECONFIG')]) {
+          sh """
             set -e
-            kubectl apply -f k8s/30-engine.yaml
-            kubectl apply -f k8s/40-web.yaml
-            kubectl apply -f k8s/50-ingress.yaml
-          '''
+            kubectl -n ${params.NAMESPACE} apply -f k8s/30-engine.yaml
+            kubectl -n ${params.NAMESPACE} apply -f k8s/40-web.yaml
+            kubectl -n ${params.NAMESPACE} apply -f k8s/50-ingress.yaml
+          """
         }
       }
     }
 
     stage('Roll web + engine') {
       steps {
-        withCredentials([file(credentialsId: 'bf9208b3-bbdb-49f1-aeac-e11c197a68a9', variable: 'KUBECONFIG')]) {
+        withCredentials([file(credentialsId: "${params.KUBECONFIG_CRED_ID}", variable: 'KUBECONFIG')]) {
           sh """
             set -e
-            kubectl -n ${NAMESPACE} set image deployment/runloop-engine \
+            kubectl -n ${params.NAMESPACE} set image deployment/runloop-engine \
               engine=${ENG_IMAGE}
-            kubectl -n ${NAMESPACE} set image deployment/runloop-web \
+            kubectl -n ${params.NAMESPACE} set image deployment/runloop-web \
               web=${WEB_IMAGE} migrate=${WEB_IMAGE}
-            kubectl -n ${NAMESPACE} rollout status deployment/runloop-engine --timeout=180s
-            kubectl -n ${NAMESPACE} rollout status deployment/runloop-web    --timeout=300s
+            kubectl -n ${params.NAMESPACE} rollout status deployment/runloop-engine --timeout=180s
+            kubectl -n ${params.NAMESPACE} rollout status deployment/runloop-web    --timeout=300s
           """
         }
       }
@@ -77,29 +100,29 @@ pipeline {
 
     stage('Smoke test') {
       steps {
-        sh '''
+        sh """
           set +e
           echo "→ ingress health (host header)"
           curl -s -o /dev/null -w "ingress /runloop      → %{http_code}\\n" \
-            --resolve community.oneweb.tech:80:10.1.102.89 \
-            http://community.oneweb.tech/runloop
+            --resolve ${params.DOMAIN}:80:${params.INGRESS_RESOLVE_IP} \
+            http://${params.DOMAIN}/runloop
           echo "→ engine health"
           curl -s -o /dev/null -w "engine /rl/health     → %{http_code}\\n" \
-            --resolve community.oneweb.tech:80:10.1.102.89 \
-            http://community.oneweb.tech/runloop/rl/health
-        '''
+            --resolve ${params.DOMAIN}:80:${params.INGRESS_RESOLVE_IP} \
+            http://${params.DOMAIN}/runloop/rl/health
+        """
       }
     }
   }
 
   post {
-    success { echo "✅ Deployed ${params.IMAGE_TAG} to ${NAMESPACE}" }
+    success { echo "✅ Deployed ${params.IMAGE_TAG} to ${params.NAMESPACE} (${params.DOMAIN})" }
     failure {
-      echo "❌ Deploy failed — rolling back"
-      withCredentials([file(credentialsId: 'bf9208b3-bbdb-49f1-aeac-e11c197a68a9', variable: 'KUBECONFIG')]) {
+      echo "❌ Deploy failed — rolling back ${params.NAMESPACE}"
+      withCredentials([file(credentialsId: "${params.KUBECONFIG_CRED_ID}", variable: 'KUBECONFIG')]) {
         sh """
-          kubectl -n ${NAMESPACE} rollout undo deployment/runloop-web    || true
-          kubectl -n ${NAMESPACE} rollout undo deployment/runloop-engine || true
+          kubectl -n ${params.NAMESPACE} rollout undo deployment/runloop-web    || true
+          kubectl -n ${params.NAMESPACE} rollout undo deployment/runloop-engine || true
         """
       }
     }

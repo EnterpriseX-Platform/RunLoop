@@ -1,7 +1,12 @@
 // RunLoop — Build & push images to Docker Hub.
 //
-// Job location:  http://10.1.102.52:32552/job/COMMUNITY/job/runloop/
-// On success:    triggers job/COMMUNITY/job/deploy-runloop-to-kube/
+// Job locations (one build job per Jenkins folder; both fan out to the
+// same image tag):
+//   http://10.1.102.52:32552/job/COMMUNITY/job/runloop/
+//   http://10.1.102.52:32552/job/COMMERCIAL/job/runloop/
+//
+// On success: triggers each downstream deploy job in DEPLOY_TARGETS
+// (default = the deploy job in the same folder).
 //
 // Publishes two images per build:
 //   avalantglobal/runloop-web:<TAG>
@@ -10,6 +15,14 @@
 
 pipeline {
   agent any
+
+  parameters {
+    string(
+      name: 'DEPLOY_TARGETS',
+      defaultValue: './deploy-runloop-to-kube',
+      description: 'Comma-separated Jenkins job paths to trigger after a successful push. Use "/COMMUNITY/deploy-runloop-to-kube,/COMMERCIAL/deploy-runloop-to-kube" to fan out to multiple environments. Set blank to skip auto-deploy.',
+    )
+  }
 
   environment {
     REGISTRY   = 'avalantglobal'
@@ -80,10 +93,23 @@ pipeline {
     }
 
     stage('Trigger deploy') {
+      when { expression { return params.DEPLOY_TARGETS?.trim() } }
       steps {
-        build job: '/COMMUNITY/deploy-runloop-to-kube',
-              parameters: [string(name: 'IMAGE_TAG', value: "${TAG}")],
-              wait: false
+        script {
+          // Fan out to every configured downstream deploy. They run in
+          // parallel (wait:false) — if one env is broken it shouldn't
+          // block the others. Each deploy job picks up its own NAMESPACE
+          // / DOMAIN / KUBECONFIG_CRED_ID from its own job-level params,
+          // so we only need to pass the image tag.
+          def targets = params.DEPLOY_TARGETS.split(',').collect{ it.trim() }.findAll{ it }
+          targets.each { target ->
+            echo "→ triggering ${target}"
+            build job: target,
+                  parameters: [string(name: 'IMAGE_TAG', value: "${TAG}")],
+                  wait: false,
+                  propagate: false
+          }
+        }
       }
     }
   }
