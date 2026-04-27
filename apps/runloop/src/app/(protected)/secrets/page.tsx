@@ -212,31 +212,17 @@ export default function SecretsPage() {
         style={{ background: `${THEME.bg}cc`, borderBottom: `1px solid ${THEME.border}` }}
       >
         <div className="max-w-7xl mx-auto px-6 pt-4 pb-3">
-          <ControlBreadcrumb
-            path="SECRETS"
-            node="NODE.VAULT"
-            right={
-              <>
-                <span className="flex items-center gap-1.5">
-                  <StatusDot color={THEME.colors.emerald} soft /> {secrets.length} SECRETS
-                </span>
-                <span className="flex items-center gap-1.5 ml-3">
-                  <StatusDot color={THEME.colors.blue} soft />
-                  {secrets.filter((s) => s.scope === 'GLOBAL').length} GLOBAL
-                </span>
-              </>
-            }
-          />
-
-          <PageHeader
-            title="Secrets"
-            subtitle="Manage encrypted credentials and API keys"
-            right={
-              <SharpButton onClick={() => setShowCreateModal(true)}>
-                <Plus className="w-3.5 h-3.5" /> $ NEW SECRET →
-              </SharpButton>
-            }
-          />
+          <div className="flex items-end justify-between mb-6 gap-4">
+            <div>
+              <h1 style={{ fontSize: 24, fontWeight: 600, color: THEME.text.primary, letterSpacing: '-0.02em' }}>Secrets</h1>
+              <p style={{ fontSize: 13, color: THEME.text.muted, marginTop: 6 }}>
+                Encrypted credentials and API keys. Reference inside flows as <code style={{fontFamily:MONO,fontSize:12}}>{'${{secrets.NAME}}'}</code>.
+              </p>
+            </div>
+            <SharpButton onClick={() => setShowCreateModal(true)}>
+              <Plus className="w-3.5 h-3.5" /> New Secret
+            </SharpButton>
+          </div>
 
           {/* Filters */}
           <div className="flex items-center justify-between mt-2">

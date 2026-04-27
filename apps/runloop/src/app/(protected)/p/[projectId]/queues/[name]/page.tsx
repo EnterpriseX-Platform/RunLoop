@@ -179,59 +179,48 @@ export default function QueueDetailPage() {
         </div>
       )}
 
-      <ControlBreadcrumb
-        path={`QUEUES / ${def.Name}`}
-        node={`NODE.${def.Backend}`}
-        right={
-          <>
-            <span className="flex items-center gap-1.5">
-              <StatusDot color="#F59E0B" soft /> {totalPending} PENDING
-            </span>
-            {totalDlq > 0 && (
-              <span className="flex items-center gap-1.5 ml-3">
-                <StatusDot color="#EF4444" soft /> {totalDlq} DLQ
-              </span>
-            )}
-          </>
-        }
-      />
-
       <Link
         href={`/p/${projectId}/queues`}
-        className="inline-flex items-center gap-1.5 mb-3 hover:opacity-80"
-        style={{ fontFamily: MONO, fontSize: 11, color: T.textMuted, letterSpacing: '0.08em' }}
+        className="inline-flex items-center gap-1.5 mb-4 hover:opacity-80"
+        style={{ fontSize: 12, color: T.textMuted }}
       >
-        <ArrowLeft className="w-3.5 h-3.5" /> ← BACK TO QUEUES
+        <ArrowLeft className="w-3.5 h-3.5" /> Back to Queues
       </Link>
 
-      <PageHeader
-        title={def.Name}
-        subtitle={`Flow ${def.FlowID} · concurrency=${def.Concurrency} · max_attempts=${def.MaxAttempts} · visibility=${def.VisibilitySec}s`}
-        right={
-          <>
+      <div className="flex items-end justify-between mb-6 gap-4 flex-wrap">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>
+              {def.Name}
+            </h1>
             <MonoTag tone="accent">{def.Backend}</MonoTag>
             {!def.Enabled && <MonoTag tone="danger">DISABLED</MonoTag>}
+          </div>
+          <p style={{ fontSize: 13, color: T.textMuted }}>
+            Flow {def.FlowID} · concurrency={def.Concurrency} · max_attempts={def.MaxAttempts} · visibility={def.VisibilitySec}s
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
             <SharpButton onClick={() => setEnqueueOpen((v) => !v)}>
-              <Send className="w-3.5 h-3.5" /> $ ENQUEUE JOB →
+              <Send className="w-3.5 h-3.5" /> Enqueue Job
             </SharpButton>
             <SharpButton variant="danger" size="sm" onClick={deleteQueue}>
               <Trash2 className="w-3.5 h-3.5" />
             </SharpButton>
-          </>
-        }
-      />
+        </div>
+      </div>
 
       {enqueueOpen && (
         <SchematicPanel className="mb-4">
           <div className="flex items-center justify-between mb-2">
-            <span style={{ fontFamily: MONO, fontSize: 11, color: T.textMuted, letterSpacing: '0.12em' }}>
-              // ENQUEUE :: PAYLOAD
+            <span style={{ fontSize: 12, fontWeight: 600, color: T.textSec }}>
+              Enqueue payload
             </span>
             <button
               onClick={() => setEnqueueOpen(false)}
-              style={{ fontFamily: MONO, fontSize: 11, color: T.textMuted, letterSpacing: '0.08em' }}
+              style={{ fontSize: 12, color: T.textMuted }}
             >
-              ✕ CLOSE
+              Close
             </button>
           </div>
           <textarea

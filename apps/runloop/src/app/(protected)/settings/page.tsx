@@ -352,17 +352,18 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-4" style={{ fontFamily: FONT, maxWidth: 820 }}>
-      <ControlBreadcrumb path="SETTINGS" node="NODE.CONFIG" />
-      <PageHeader
-        title="Settings"
-        subtitle="Manage your RunLoop platform configuration"
-        right={
-          <SharpButton onClick={handleSave} disabled={saving}>
-            {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-            {saving ? '$ SAVING…' : '$ SAVE CHANGES →'}
-          </SharpButton>
-        }
-      />
+      <div className="flex items-end justify-between mb-6 gap-4">
+        <div>
+          <h1 style={{ fontSize: 24, fontWeight: 600, color: THEME.text.primary, letterSpacing: '-0.02em' }}>General</h1>
+          <p style={{ fontSize: 13, color: THEME.text.muted, marginTop: 6 }}>
+            Manage your RunLoop platform configuration.
+          </p>
+        </div>
+        <SharpButton onClick={handleSave} disabled={saving}>
+          {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+          {saving ? 'Saving…' : 'Save Changes'}
+        </SharpButton>
+      </div>
 
       {/* General Settings */}
       <div className="" style={{ background: THEME.panel, border: `1px solid ${THEME.border}`, padding: 24 }}>

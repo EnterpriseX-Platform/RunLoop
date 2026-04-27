@@ -318,46 +318,41 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
     <div style={{ fontFamily: FONT }}>
       {ToastEl}
 
-      <ControlBreadcrumb
-        path={`SCHEDULERS / ${scheduler.name}`}
-        node={`NODE.${scheduler.triggerType}`}
-        right={
-          <span className="flex items-center gap-1.5">
-            <StatusDot color={statusColor} soft />
-            {scheduler.status}
-          </span>
-        }
-      />
-
       <Link
         href={`/p/${projectId}/schedulers`}
-        className="inline-flex items-center gap-1.5 mb-3 hover:opacity-80"
-        style={{ fontFamily: MONO, fontSize: 11, color: THEME.text.muted, letterSpacing: '0.08em' }}
+        className="inline-flex items-center gap-1.5 mb-4 hover:opacity-80"
+        style={{ fontSize: 12, color: THEME.text.muted }}
       >
-        <ArrowLeft className="w-3.5 h-3.5" /> ← BACK TO SCHEDULERS
+        <ArrowLeft className="w-3.5 h-3.5" /> Back to Schedulers
       </Link>
 
-      <PageHeader
-        title={scheduler.name}
-        subtitle={scheduler.description || 'No description'}
-        right={
-          <>
+      <div className="flex items-end justify-between mb-6 gap-4 flex-wrap">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h1 style={{ fontSize: 24, fontWeight: 600, color: THEME.text.primary, letterSpacing: '-0.02em' }}>
+              {scheduler.name}
+            </h1>
             <MonoTag tone={scheduler.status === 'ACTIVE' ? 'success' : 'warn'}>
               {scheduler.status}
             </MonoTag>
-            <SharpButton onClick={handleTrigger} disabled={isTriggering}>
-              {isTriggering ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-              $ RUN NOW →
-            </SharpButton>
-            <SharpButton variant="ghost" onClick={handleToggleStatus}>
-              {scheduler.status === 'ACTIVE' ? <><Pause className="w-3.5 h-3.5" /> PAUSE</> : <><Play className="w-3.5 h-3.5" /> RESUME</>}
-            </SharpButton>
-            <SharpButton variant="danger" size="sm" onClick={handleDelete}>
-              <Trash2 className="w-3.5 h-3.5" />
-            </SharpButton>
-          </>
-        }
-      />
+          </div>
+          <p style={{ fontSize: 13, color: THEME.text.muted }}>
+            {scheduler.description || 'No description'}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <SharpButton onClick={handleTrigger} disabled={isTriggering}>
+            {isTriggering ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+            Run Now
+          </SharpButton>
+          <SharpButton variant="ghost" onClick={handleToggleStatus}>
+            {scheduler.status === 'ACTIVE' ? <><Pause className="w-3.5 h-3.5" /> Pause</> : <><Play className="w-3.5 h-3.5" /> Resume</>}
+          </SharpButton>
+          <SharpButton variant="danger" size="sm" onClick={handleDelete}>
+            <Trash2 className="w-3.5 h-3.5" />
+          </SharpButton>
+        </div>
+      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4 mb-5">

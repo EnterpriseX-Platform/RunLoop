@@ -94,16 +94,15 @@ export function SettingsTabs() {
     >
       <span
         style={{
-          fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
-          fontSize: 9.5,
-          letterSpacing: '0.18em',
-          color: 'var(--t-text-muted)',
-          marginRight: 16,
-          opacity: 0.6,
+          fontSize: 13,
+          fontWeight: 600,
+          color: 'var(--t-text)',
+          marginRight: 20,
+          letterSpacing: '-0.01em',
         }}
-        className="uppercase whitespace-nowrap"
+        className="whitespace-nowrap"
       >
-        {'//'} settings
+        Settings
       </span>
       {TABS.map((tab) => {
         const active = tab.match(pathname);

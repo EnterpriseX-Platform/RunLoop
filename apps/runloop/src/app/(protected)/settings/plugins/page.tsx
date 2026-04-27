@@ -132,39 +132,23 @@ export default function PluginsPage() {
         </div>
       )}
 
-      {/* Schematic breadcrumb — same pattern as every other internal page */}
-      <div
-        className="flex items-center gap-2 mb-2"
-        style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.14em', color: T.textMuted }}
-      >
-        <span>// CONTROL PLANE / SETTINGS / PLUGINS</span>
-        <span
-          className="px-1.5 py-0.5"
-          style={{ background: T.input, border: `1px solid ${T.border}`, color: T.textSec, borderRadius: 2 }}
-        >
-          NODE.SDK
-        </span>
-        <span className="ml-auto flex items-center gap-3">
-          <span>
-            <span style={{ color: '#10B981' }}>●</span> {enabledCount} ENABLED
-          </span>
-          <span>TOTAL {plugins.length}</span>
-        </span>
-      </div>
-
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-end justify-between mb-6 gap-4">
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: T.text }}>Plugins</h1>
-          <p style={{ fontSize: 13, color: T.textMuted, marginTop: 2 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>Plugins</h1>
+          <p style={{ fontSize: 13, color: T.textMuted, marginTop: 6 }}>
             Install third-party node types. Plugins run as HTTP handlers — they can be written in any language.
           </p>
         </div>
         <button
           onClick={() => { setInstallOpen(true); setError(null); }}
-          style={{ background: T.accent, color: '#fff', fontFamily: MONO, borderRadius: 2 }}
-          className="flex items-center gap-2 px-4 py-2 text-[12px] font-medium tracking-wide hover:opacity-90 transition"
+          style={{
+            background: T.accent, color: '#fff',
+            fontSize: 12, fontWeight: 500, letterSpacing: '0.02em',
+            padding: '7px 14px', borderRadius: 2,
+          }}
+          className="flex items-center gap-1.5 hover:opacity-90 transition"
         >
-          <Plus className="w-3.5 h-3.5" /> $ INSTALL PLUGIN →
+          <Plus className="w-3.5 h-3.5" /> Install Plugin
         </button>
       </div>
 

@@ -121,45 +121,20 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
 
   return (
     <div style={{ fontFamily: FONT }}>
-      <ControlBreadcrumb
-        path={`EXECUTIONS / ${execution.id.slice(0, 8)}`}
-        node="NODE.TRACE"
-        right={
-          <>
-            <span className="flex items-center gap-1.5">
-              <StatusDot color={getStatusColor(execution.status)} soft />
-              {execution.status}
-            </span>
-            {isActive && liveConnected && (
-              <span
-                className="flex items-center gap-1 ml-3"
-                style={{ color: THEME.colors.emerald }}
-              >
-                <Radio className="w-3 h-3 animate-pulse" />
-                LIVE
-              </span>
-            )}
-          </>
-        }
-      />
-
       <Link
         href={`/p/${projectId}/executions`}
-        className="inline-flex items-center gap-1.5 mb-3 hover:opacity-80"
-        style={{ fontFamily: MONO, fontSize: 11, color: THEME.text.muted, letterSpacing: '0.08em' }}
+        className="inline-flex items-center gap-1.5 mb-4 hover:opacity-80"
+        style={{ fontSize: 12, color: THEME.text.muted }}
       >
-        <ArrowLeft className="w-3.5 h-3.5" /> ← BACK TO EXECUTIONS
+        <ArrowLeft className="w-3.5 h-3.5" /> Back to Executions
       </Link>
 
-      <PageHeader
-        title={`Execution ${execution.id.slice(0, 8)}`}
-        subtitle={
-          execution.schedulerId?.startsWith('queue:')
-            ? `Queue: ${execution.schedulerId.slice(6)}`
-            : execution.schedulerName || execution.runloop?.name || 'Unknown RunLoop'
-        }
-        right={
-          <>
+      <div className="flex items-end justify-between mb-6 gap-4 flex-wrap">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <h1 style={{ fontSize: 24, fontWeight: 600, color: THEME.text.primary, letterSpacing: '-0.02em' }}>
+              Execution {execution.id.slice(0, 8)}
+            </h1>
             <MonoTag
               tone={
                 execution.status === 'SUCCESS' ? 'success'
@@ -170,31 +145,38 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
             >
               {execution.status}
             </MonoTag>
-            <span
-              style={{
-                fontFamily: MONO, fontSize: 11, color: THEME.text.muted,
-                letterSpacing: '0.06em',
-              }}
-            >
-              {execution.durationMs ? `${execution.durationMs}ms` : 'running…'}
-            </span>
-            {isActive && (
-              <SharpButton
-                variant="danger"
-                size="sm"
-                onClick={async () => {
-                  if (!confirm('Cancel this running execution?')) return;
-                  const res = await fetch(`/runloop/api/executions/${params.id}/cancel`, { method: 'POST' });
-                  if (res.ok) fetchExecution();
-                  else alert('Cancel failed');
-                }}
+            {isActive && liveConnected && (
+              <span
+                className="flex items-center gap-1 text-xs"
+                style={{ color: THEME.colors.emerald, fontFamily: MONO, letterSpacing: '0.08em' }}
               >
-                <Ban className="w-3.5 h-3.5" /> CANCEL
-              </SharpButton>
+                <Radio className="w-3 h-3 animate-pulse" /> LIVE
+              </span>
             )}
-          </>
-        }
-      />
+          </div>
+          <p style={{ fontSize: 13, color: THEME.text.muted }}>
+            {execution.schedulerId?.startsWith('queue:')
+              ? `Queue: ${execution.schedulerId.slice(6)}`
+              : execution.schedulerName || execution.runloop?.name || 'Unknown RunLoop'}
+            {' · '}
+            {execution.durationMs ? `${execution.durationMs}ms` : 'running…'}
+          </p>
+        </div>
+        {isActive && (
+          <SharpButton
+            variant="danger"
+            size="sm"
+            onClick={async () => {
+              if (!confirm('Cancel this running execution?')) return;
+              const res = await fetch(`/runloop/api/executions/${params.id}/cancel`, { method: 'POST' });
+              if (res.ok) fetchExecution();
+              else alert('Cancel failed');
+            }}
+          >
+            <Ban className="w-3.5 h-3.5" /> Cancel
+          </SharpButton>
+        )}
+      </div>
 
       {/* Timeline — mono timestamps, schematic progress bar. */}
       <div

@@ -108,20 +108,20 @@ export default function NewQueuePage() {
 
   return (
     <div style={{ fontFamily: FONT, maxWidth: 760 }}>
-      <ControlBreadcrumb path="QUEUES / NEW" node="NODE.INBOX.INIT" />
-
       <Link
         href={`/p/${projectId}/queues`}
-        className="inline-flex items-center gap-1.5 mb-3 hover:opacity-80"
-        style={{ fontFamily: MONO, fontSize: 11, color: T.textMuted, letterSpacing: '0.08em' }}
+        className="inline-flex items-center gap-1.5 mb-4 hover:opacity-80"
+        style={{ fontSize: 12, color: T.textMuted }}
       >
-        <ArrowLeft className="w-3.5 h-3.5" /> ← BACK TO QUEUES
+        <ArrowLeft className="w-3.5 h-3.5" /> Back to Queues
       </Link>
 
-      <PageHeader
-        title="New Queue"
-        subtitle="A queue binds a flow to a durable job inbox. Producers enqueue jobs; the engine processes them with retry + DLQ."
-      />
+      <div className="mb-6">
+        <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>New Queue</h1>
+        <p style={{ fontSize: 13, color: T.textMuted, marginTop: 6 }}>
+          A queue binds a flow to a durable job inbox. Producers enqueue jobs; the engine processes them with retry + DLQ.
+        </p>
+      </div>
 
       {error && (
         <div
@@ -234,10 +234,10 @@ export default function NewQueuePage() {
       <div className="flex items-center gap-2 pt-2">
         <SharpButton onClick={submit} disabled={submitting}>
           {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-          {submitting ? '$ CREATING…' : '$ CREATE QUEUE →'}
+          {submitting ? 'Creating…' : 'Create Queue'}
         </SharpButton>
         <SharpButton variant="ghost" href={`/p/${projectId}/queues`}>
-          ✕ CANCEL
+          Cancel
         </SharpButton>
       </div>
     </div>
@@ -249,11 +249,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     <SchematicPanel className="mb-3">
       <h3
         style={{
-          fontFamily: MONO, fontSize: 10, fontWeight: 600, color: T.textSec,
-          marginBottom: 14, letterSpacing: '0.14em', textTransform: 'uppercase',
+          fontSize: 12, fontWeight: 600, color: T.textSec,
+          marginBottom: 14, letterSpacing: '0.04em', textTransform: 'uppercase',
         }}
       >
-        // {title}
+        {title}
       </h3>
       <div className="space-y-3">{children}</div>
     </SchematicPanel>
