@@ -21,6 +21,7 @@ import (
 	"github.com/runloop/runloop-engine/internal/maintenance"
 	"github.com/runloop/runloop-engine/internal/middleware"
 	"github.com/runloop/runloop-engine/internal/notification"
+	"github.com/runloop/runloop-engine/internal/notify"
 	"github.com/runloop/runloop-engine/internal/queue"
 	"github.com/runloop/runloop-engine/internal/scheduler"
 	"github.com/runloop/runloop-engine/internal/secret"
@@ -163,6 +164,13 @@ func main() {
 	// plain interface, keeping the executor free of the queue import.
 	flowExecutor.SetQueueProducer(&queueProducerAdapter{p: queueManager.Producer()})
 
+	// Pub/sub hub for the NOTIFY node + /ws/channel/:name subscribers.
+	// In-memory and project-scoped; see internal/notify/hub.go for the
+	// design rationale.
+	notifyHub := notify.New()
+	flowExecutor.SetNotifyHub(notifyHub)
+	notifyAPI := notify.NewAPI(notifyHub)
+
 	// Load plugin registry from DB before wiring handlers so startup reflects
 	// the installed set. Reload happens again on every install/uninstall.
 	pluginRegistry := flowExecutor.PluginRegistry()
@@ -201,7 +209,7 @@ func main() {
 	}))
 
 	// Routes
-	setupRoutes(app, handler, webhookHandler, cfg, hub, database)
+	setupRoutes(app, handler, webhookHandler, cfg, hub, database, notifyHub, notifyAPI)
 
 	// Start queue consumers now that routes are declared. Each enabled queue
 	// in job_queues spins up its own consumer goroutine; the reaper + dedupe
@@ -247,7 +255,7 @@ func setupLogging(cfg *config.Config) {
 	}
 }
 
-func setupRoutes(app *fiber.App, handler *api.Handler, webhookHandler *webhook.Handler, cfg *config.Config, hub *ws.Hub, database *db.Postgres) {
+func setupRoutes(app *fiber.App, handler *api.Handler, webhookHandler *webhook.Handler, cfg *config.Config, hub *ws.Hub, database *db.Postgres, notifyHub *notify.Hub, notifyAPI *notify.API) {
 	// Get base path from config
 	basePath := cfg.BasePath
 
@@ -268,6 +276,14 @@ func setupRoutes(app *fiber.App, handler *api.Handler, webhookHandler *webhook.H
 		return fiber.ErrUpgradeRequired
 	})
 	app.Get(basePath+"/ws/executions/:id", websocket.New(ws.HandleWebSocket(hub)))
+
+	// Project-scoped pub/sub channel websocket. Auth happens via the
+	// existing JWT middleware applied to the upgrade request — by the
+	// time HandleWebSocket runs, c.Locals("projectID") is populated.
+	app.Get(basePath+"/ws/channel/:name",
+		middleware.JWTMiddleware(cfg, database),
+		websocket.New(notify.HandleWebSocket(notifyHub)),
+	)
 
 	// Protected routes (require JWT)
 	apiGroup := app.Group(basePath+"/api", middleware.JWTMiddleware(cfg, database))
@@ -360,6 +376,14 @@ func setupRoutes(app *fiber.App, handler *api.Handler, webhookHandler *webhook.H
 	apiGroup.Get("/node-templates", handler.ListTemplates)
 	apiGroup.Post("/node-templates", handler.CreateTemplate)
 	apiGroup.Delete("/node-templates/:id", handler.DeleteTemplate)
+
+	// Pub/sub notification channels (admin/test endpoints).
+	// Channel inspection: GET /api/channels — list active channels with
+	// subscriber counts.
+	// Test publish:       POST /api/channels/:name/publish — push a message
+	// without going through a flow. Useful for verifying subscriber
+	// connectivity from the UI.
+	notifyAPI.Register(apiGroup)
 
 	log.Info().Msg("Routes configured")
 }

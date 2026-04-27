@@ -24,6 +24,7 @@ import {
   HelpCircle,
   Activity,
   Inbox,
+  BellRing,
   FolderKanban,
   Layers,
   X,
@@ -67,6 +68,7 @@ const mainNavigation: NavItemType[] = [
   { name: 'Schedulers', href: '/schedulers', icon: Clock,           countKey: 'schedulers' },
   { name: 'Executions', href: '/executions', icon: Activity,        countKey: null },
   { name: 'Queues',     href: '/queues',     icon: Inbox,           countKey: null },
+  { name: 'Channels',   href: '/channels',   icon: BellRing,        countKey: null },
 ];
 
 const systemNavigation: NavItemType[] = [
@@ -82,6 +84,7 @@ const breadcrumbMap: Record<string, string> = {
   'schedulers': 'Schedulers',
   'executions': 'Executions',
   'queues': 'Queues',
+  'channels': 'Channels',
   'members': 'Members',
   'secrets': 'Secrets',
   'settings': 'Settings',
@@ -287,7 +290,7 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
     selectProject(project);
     setIsOpen(false);
     if (project) {
-      const sectionMatch = psPathname.match(/\/(dashboard|flows|schedulers|executions|queues)(\/.*)?$/);
+      const sectionMatch = psPathname.match(/\/(dashboard|flows|schedulers|executions|queues|channels)(\/.*)?$/);
       const section = sectionMatch ? sectionMatch[1] : 'dashboard';
       psRouter.push(`/p/${project.id}/${section}`);
     }

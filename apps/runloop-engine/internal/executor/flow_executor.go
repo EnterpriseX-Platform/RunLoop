@@ -37,6 +37,7 @@ type FlowExecutor struct {
 	cbManager     *CircuitBreakerManager
 	secretStore   SecretStore
 	queueProducer QueueProducer
+	notifyHub     NotifyHub
 	dlq           *DeadLetterQueue
 	plugins       *PluginRegistry
 }
@@ -51,6 +52,13 @@ type SecretStore interface {
 // queue package (avoids a cycle and keeps the executor unit-testable).
 type QueueProducer interface {
 	Enqueue(ctx context.Context, queueName string, payload map[string]interface{}, idempotencyKey string, priority int) (jobID string, duplicate bool, err error)
+}
+
+// NotifyHub is the minimal surface FlowExecutor needs to power the
+// NOTIFY node. Kept narrow so the executor doesn't import the notify
+// package's full surface.
+type NotifyHub interface {
+	Publish(channelKey string, payload map[string]interface{}) (delivered int, err error)
 }
 
 // NewFlowExecutor wires up the executor.
@@ -75,6 +83,9 @@ func NewFlowExecutor(
 // builds the queue manager *after* the flow executor (because the queue
 // manager itself uses the executor as the worker), so we need a setter.
 func (fe *FlowExecutor) SetQueueProducer(p QueueProducer) { fe.queueProducer = p }
+
+// SetNotifyHub wires the pub/sub hub used by the NOTIFY node.
+func (fe *FlowExecutor) SetNotifyHub(h NotifyHub) { fe.notifyHub = h }
 
 // PluginRegistry exposes the registry so main.go can Reload() on startup
 // and install/uninstall handlers can refresh after mutating the table.
@@ -601,7 +612,8 @@ func isFlowShapeNode(t models.JobType) bool {
 		models.JobTypeMerge, models.JobTypeSwitch,
 		models.JobTypeLog, models.JobTypeSetVar,
 		models.JobTypeSubFlow, models.JobTypeWebhook,
-		models.JobTypeWaitHook, models.JobTypeEnqueue:
+		models.JobTypeWaitHook, models.JobTypeEnqueue,
+		models.JobTypeNotify:
 		return true
 	}
 	return false
@@ -677,6 +689,9 @@ func (fe *FlowExecutor) executeFlowShapeNode(
 
 	case models.JobTypeEnqueue:
 		return fe.executeEnqueueNode(ctx, config)
+
+	case models.JobTypeNotify:
+		return fe.executeNotifyNode(task, config)
 	}
 
 	return nil, false, fmt.Errorf("unknown flow-shape node type: %s", node.Type)
@@ -726,6 +741,52 @@ func (fe *FlowExecutor) executeEnqueueNode(
 		"jobId":     jobID,
 		"duplicate": duplicate,
 		"queue":     queueName,
+	}, true, nil
+}
+
+// executeNotifyNode publishes a payload to a project-scoped pub/sub
+// channel. Subscribers (mobile apps, web dashboards, chat clients)
+// connected to /ws/channel/<name> receive the payload in real time.
+//
+// Required config:
+//   channel: string — channel name (project-scoped automatically)
+// Optional:
+//   payload: map    — JSON object delivered to subscribers
+//
+// Returns immediately. Output exposes how many subscribers received the
+// message — 0 is not an error (channel may have no live subscribers).
+func (fe *FlowExecutor) executeNotifyNode(
+	task *worker.Task,
+	config models.JSONMap,
+) (models.JSONMap, bool, error) {
+	if fe.notifyHub == nil {
+		return nil, false, fmt.Errorf("notify: hub not configured on engine")
+	}
+	channel, _ := config["channel"].(string)
+	if channel == "" {
+		return nil, false, fmt.Errorf("notify: 'channel' is required")
+	}
+	if task.ProjectID == "" {
+		return nil, false, fmt.Errorf("notify: task has no projectID — cannot scope channel")
+	}
+	payload, _ := config["payload"].(map[string]interface{})
+	if payload == nil {
+		if raw, ok := config["payload"].(string); ok && raw != "" {
+			if err := json.Unmarshal([]byte(raw), &payload); err != nil {
+				return nil, false, fmt.Errorf("notify: payload is not valid JSON: %w", err)
+			}
+		} else {
+			payload = map[string]interface{}{}
+		}
+	}
+	channelKey := task.ProjectID + ":" + channel
+	delivered, err := fe.notifyHub.Publish(channelKey, payload)
+	if err != nil {
+		return nil, false, fmt.Errorf("notify: %w", err)
+	}
+	return models.JSONMap{
+		"channel":   channel,
+		"delivered": delivered,
 	}, true, nil
 }
 

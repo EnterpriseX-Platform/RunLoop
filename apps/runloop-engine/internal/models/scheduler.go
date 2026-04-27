@@ -66,6 +66,7 @@ const (
 	JobTypeWebhook   JobType = "WEBHOOK_OUT"
 	JobTypeWaitHook  JobType = "WAIT_WEBHOOK"
 	JobTypeEnqueue   JobType = "ENQUEUE"
+	JobTypeNotify    JobType = "NOTIFY"
 )
 
 // JSONMap is a custom type for JSONB fields

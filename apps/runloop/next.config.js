@@ -73,6 +73,15 @@ const nextConfig = {
         source: '/api/dlq/:path*',
         destination: `${engineUrl}/rl/api/dlq/:path*`,
       },
+      // Internal API: Pub/Sub Channels → Go Engine
+      {
+        source: '/api/channels',
+        destination: `${engineUrl}/rl/api/channels`,
+      },
+      {
+        source: '/api/channels/:path*',
+        destination: `${engineUrl}/rl/api/channels/:path*`,
+      },
       // Plugin + node-template APIs (SDK extension nodes)
       {
         source: '/api/plugins',

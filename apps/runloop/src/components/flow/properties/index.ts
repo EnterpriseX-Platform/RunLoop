@@ -20,6 +20,7 @@ import { SubFlowNodeProperties } from './SubFlowNodeProperties';
 import { WebhookNodeProperties } from './WebhookNodeProperties';
 import { WaitWebhookNodeProperties } from './WaitWebhookNodeProperties';
 import { EnqueueNodeProperties } from './EnqueueNodeProperties';
+import { NotifyNodeProperties } from './NotifyNodeProperties';
 
 export {
   HttpNodeProperties, DatabaseNodeProperties, SlackNodeProperties, EmailNodeProperties,
@@ -27,7 +28,7 @@ export {
   PythonNodeProperties, NodejsNodeProperties, DockerNodeProperties, S3NodeProperties, RedisNodeProperties,
   MergeNodeProperties, SwitchNodeProperties,
   LogNodeProperties, SetVarNodeProperties, SubFlowNodeProperties,
-  WebhookNodeProperties, WaitWebhookNodeProperties, EnqueueNodeProperties,
+  WebhookNodeProperties, WaitWebhookNodeProperties, EnqueueNodeProperties, NotifyNodeProperties,
 };
 
 export const propertiesComponents: Record<string, React.ComponentType<any>> = {
@@ -52,4 +53,5 @@ export const propertiesComponents: Record<string, React.ComponentType<any>> = {
   webhook_out: WebhookNodeProperties,
   wait_webhook: WaitWebhookNodeProperties,
   enqueue: EnqueueNodeProperties,
+  notify: NotifyNodeProperties,
 };
