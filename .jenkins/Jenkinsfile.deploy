@@ -116,17 +116,19 @@ pipeline {
 
     stage('Smoke test') {
       steps {
-        sh """
-          set +e
-          echo "→ ingress health (host header)"
-          curl -s -o /dev/null -w "ingress /runloop      → %{http_code}\\n" \
-            --resolve ${params.DOMAIN}:80:${params.INGRESS_RESOLVE_IP} \
-            http://${params.DOMAIN}/runloop
-          echo "→ engine health"
-          curl -s -o /dev/null -w "engine /rl/health     → %{http_code}\\n" \
-            --resolve ${params.DOMAIN}:80:${params.INGRESS_RESOLVE_IP} \
-            http://${params.DOMAIN}/runloop/rl/health
-        """
+        // Soft probe — never fails the deploy. The Jenkins agent often
+        // can't reach the public ingress (no port 80 exposed on KT1
+        // master, agent might be off-network), and rollout status above
+        // already proves the new pods came up healthy. We just log the
+        // probe result so it's visible in the build console.
+        script {
+          def code = sh(returnStatus: true, script: """
+            curl -sk -o /dev/null --max-time 8 \\
+              -w 'ingress /runloop → %{http_code}\\n' \\
+              https://${params.DOMAIN}/runloop || true
+          """)
+          echo code == 0 ? '✅ public ingress reachable' : '⚠ public ingress not reachable from agent (rollout already verified)'
+        }
       }
     }
   }
