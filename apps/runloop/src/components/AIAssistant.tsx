@@ -9,11 +9,40 @@
 // Phase 1: minimal chat. Phase 2 will pull execution data, flow JSON,
 // scheduler config etc. into the system prompt automatically.
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useProject } from '@/context/ProjectContext';
 import { Sparkles, X, Send, Loader2, Settings } from 'lucide-react';
 import Link from 'next/link';
+
+type Provider = 'auto' | 'claude' | 'kimi' | 'openai';
+
+const PROVIDER_LABELS: Record<Provider, string> = {
+  auto: 'Auto',
+  claude: 'Claude',
+  openai: 'ChatGPT',
+  kimi: 'Kimi',
+};
+
+// Quick-start prompts shown when the chat is empty. Click → fills the
+// input. Picked to cover the four use cases I listed in the welcome card.
+const SUGGESTIONS = [
+  'Explain what this page does',
+  'Write a cron expression for "every weekday at 9am Bangkok time"',
+  'Draft an email payload for a welcome flow',
+  'Why does my last execution keep failing?',
+];
+
+function rotatingGreeting() {
+  const opts = [
+    'พร้อมช่วยแล้ว ✨',
+    'มีอะไรให้ช่วยมั้ย? 👀',
+    'ลุยเลย 🚀',
+    'ถามมาได้เลย 💬',
+    'ว่าไง? 😎',
+  ];
+  return opts[Math.floor(Math.random() * opts.length)];
+}
 
 const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
 
@@ -21,6 +50,8 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   error?: boolean;
+  provider?: 'claude' | 'kimi' | 'openai';
+  model?: string;
 }
 
 const SYSTEM_PROMPT = `You are RunLoop's in-app AI assistant. RunLoop is a job scheduling platform with flows (DAG of nodes), schedulers, queues, executions, secrets, and pub/sub channels. Help the user with:
@@ -39,7 +70,10 @@ export function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
+  const [provider, setProvider] = useState<Provider>('auto');
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const greeting = useMemo(() => rotatingGreeting(), []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -65,6 +99,10 @@ export function AIAssistant() {
           system: `${SYSTEM_PROMPT}\n\nThe user is currently on page: ${pathname}.`,
           messages: next.map((m) => ({ role: m.role, content: m.content })),
           maxTokens: 1024,
+          // 'auto' = let the server pick (Claude wins if both keys are set,
+          // otherwise whichever is configured). Explicit 'claude' / 'kimi'
+          // forces that provider.
+          ...(provider !== 'auto' ? { provider } : {}),
         }),
       });
       const d = await r.json();
@@ -78,7 +116,15 @@ export function AIAssistant() {
           },
         ]);
       } else {
-        setMessages((m) => [...m, { role: 'assistant', content: d.text || '(empty response)' }]);
+        setMessages((m) => [
+          ...m,
+          {
+            role: 'assistant',
+            content: d.text || '(empty response)',
+            provider: d.provider,
+            model: d.model,
+          },
+        ]);
       }
     } catch (e: any) {
       setMessages((m) => [
@@ -146,6 +192,24 @@ export function AIAssistant() {
               </span>
             </div>
             <div className="flex items-center gap-1">
+              <select
+                value={provider}
+                onChange={(e) => setProvider(e.target.value as Provider)}
+                title="LLM provider"
+                style={{
+                  fontSize: 11,
+                  padding: '3px 6px',
+                  background: 'var(--t-input)',
+                  border: '1px solid var(--t-border)',
+                  color: 'var(--t-text-secondary)',
+                  borderRadius: 4,
+                  marginRight: 4,
+                }}
+              >
+                {(['auto', 'claude', 'openai', 'kimi'] as Provider[]).map((p) => (
+                  <option key={p} value={p}>{PROVIDER_LABELS[p]}</option>
+                ))}
+              </select>
               <Link
                 href="/settings/integrations"
                 className="p-1.5 hover:opacity-70"
@@ -172,26 +236,65 @@ export function AIAssistant() {
             style={{ background: 'var(--t-bg)' }}
           >
             {messages.length === 0 && (
-              <div style={{ fontSize: 12.5, color: 'var(--t-text-muted)', lineHeight: 1.6 }}>
-                <p style={{ marginBottom: 8 }}>Hi 👋 — I can help with:</p>
-                <ul className="space-y-1 ml-4" style={{ listStyle: 'disc' }}>
-                  <li>Explain how a node or feature works</li>
-                  <li>Suggest configs (cron, JSON, transform expressions)</li>
-                  <li>Debug a failing execution</li>
-                  <li>Build a flow from a description</li>
-                </ul>
-                <p style={{ marginTop: 10, fontSize: 11.5 }}>
-                  Set your Claude API key in{' '}
+              <div className="flex flex-col h-full">
+                <div
+                  className="flex flex-col items-center justify-center text-center px-4 py-6 mb-3"
+                  style={{
+                    background: 'linear-gradient(180deg, color-mix(in srgb, var(--t-accent) 8%, transparent), transparent)',
+                    borderRadius: 6,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 44, height: 44, borderRadius: 999,
+                      background: 'var(--t-accent)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      marginBottom: 10,
+                    }}
+                  >
+                    <Sparkles className="w-5 h-5" style={{ color: '#fff' }} />
+                  </div>
+                  <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--t-text)' }}>
+                    {greeting}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--t-text-muted)', marginTop: 4 }}>
+                    Ask me anything about RunLoop — try one of these:
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 mb-3">
+                  {SUGGESTIONS.map((s, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setInput(s)}
+                      className="block w-full text-left px-3 py-2 hover:opacity-80 transition"
+                      style={{
+                        fontSize: 12.5, color: 'var(--t-text-secondary)',
+                        background: 'var(--t-input)',
+                        border: '1px solid var(--t-border)',
+                        borderRadius: 4,
+                      }}
+                    >
+                      <span style={{ color: 'var(--t-accent)', marginRight: 6 }}>›</span>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+
+                <p style={{ fontSize: 11, color: 'var(--t-text-muted)', textAlign: 'center' }}>
+                  No provider configured?{' '}
                   <Link href="/settings/integrations" style={{ color: 'var(--t-accent)' }}>
-                    Settings → Integrations
+                    Add one
                   </Link>{' '}
-                  if you haven&rsquo;t already.
+                  · Claude · ChatGPT · Kimi
                 </p>
               </div>
             )}
             {messages.map((m, i) => (
               <div key={i} className="mb-3">
                 <div
+                  className="flex items-center gap-2"
                   style={{
                     fontSize: 10,
                     fontWeight: 600,
@@ -202,6 +305,18 @@ export function AIAssistant() {
                   }}
                 >
                   {m.role === 'user' ? 'You' : 'Assistant'}
+                  {m.provider && (
+                    <span
+                      style={{
+                        fontSize: 9, padding: '1px 6px',
+                        background: 'var(--t-input)', borderRadius: 999,
+                        letterSpacing: '0.04em', textTransform: 'none',
+                        color: 'var(--t-text-secondary)', fontWeight: 500,
+                      }}
+                    >
+                      {PROVIDER_LABELS[m.provider as Provider]}{m.model ? ` · ${m.model}` : ''}
+                    </span>
+                  )}
                 </div>
                 <div
                   style={{

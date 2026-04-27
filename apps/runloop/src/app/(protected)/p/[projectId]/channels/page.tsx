@@ -137,7 +137,7 @@ export default function ChannelsPage() {
             Channels
           </h1>
           <p style={{ fontSize: 13, color: 'var(--t-text-muted)', marginTop: 6 }}>
-            Real-time pub/sub channels &mdash; flow nodes publish, mobile/web apps subscribe over WebSocket. In-memory, project-scoped.
+            Flow nodes publish, apps subscribe over WebSocket.
           </p>
         </div>
         <SharpButton onClick={refresh}>

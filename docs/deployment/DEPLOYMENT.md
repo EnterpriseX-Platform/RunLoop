@@ -261,6 +261,52 @@ ProxyPassReverse /runloop        http://10.1.102.89:31383/runloop
 If tests from master work but external still 503, check Apache error log —
 most likely cause is firewall blocking 10.1.102.89:3138x from the external host.
 
+### ❌ WebSocket connections close 1006 (Apache strips Upgrade)
+Symptom: `wss://community.oneweb.tech/runloop/rl/ws/...` connects and
+immediately closes with code 1006; HTTP `/runloop/rl/health` returns 200
+just fine. This means the vhost is reverse-proxying HTTP correctly but
+not handling the WebSocket Upgrade handshake.
+
+Two ways to fix; pick whichever matches the rest of the vhost. **Add
+without removing existing rules** — the WS rule must be evaluated *before*
+the regular HTTP rule because the first match wins:
+
+**(a) mod_proxy / `ProxyPass` style** — what's already shown above. Make
+sure the `ws://` line for `/runloop/rl/ws/` appears **above** the
+`http://` one for `/runloop/rl/` so Apache picks it for upgrade requests.
+Required Apache modules: `mod_proxy`, `mod_proxy_http`, `mod_proxy_wstunnel`.
+
+**(b) mod_rewrite style** — drop into the same `<VirtualHost>` (or
+`<Location /runloop>`):
+
+```apache
+RewriteEngine On
+# WebSocket upgrade — must come BEFORE any /runloop/rl rule that targets http://
+RewriteCond %{HTTP:Upgrade} =websocket [NC]
+RewriteRule ^/runloop/rl/(.*) ws://10.1.102.89:31157/rl/$1 [P,L]
+```
+
+After editing the vhost, reload Apache (graceful — does not interrupt
+existing connections):
+
+```bash
+sudo apachectl -t            # syntax check
+sudo apachectl graceful      # reload without dropping
+```
+
+Verify from a host that can reach the public domain:
+
+```bash
+# Should print "HTTP/1.1 101 Switching Protocols"
+curl -i -N -H "Connection: Upgrade" -H "Upgrade: websocket" \
+     -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" \
+     -H "Sec-WebSocket-Version: 13" \
+     https://community.oneweb.tech/runloop/rl/ws/executions/ping | head -5
+```
+
+Once the 101 handshake works, the in-app live execution stream and the
+Channels Tap subscriber (and any browser WS subscriber) will all flow.
+
 ---
 
 ## 8. File map

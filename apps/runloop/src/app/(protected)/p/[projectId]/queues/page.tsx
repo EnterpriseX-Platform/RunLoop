@@ -171,7 +171,7 @@ export default function QueuesPage() {
     <div style={{ fontFamily: FONT }}>
       <HeroHeader
         title="Queues"
-        subtitle="Durable job inboxes — Postgres, Redis, RabbitMQ, Kafka. Producers push, workers pull, retries cascade into DLQ."
+        subtitle="Producers push jobs, workers pull and run the bound flow."
         metrics={<>
           <MetricChip label="queues"  value={String(queues.length).padStart(2, '0')} />
           <MetricChip label="pending" value={String(totalPending).padStart(3, '0')} accent={totalPending > 0 ? '#F59E0B' : undefined} />
