@@ -91,7 +91,7 @@ export function NotifyNodeProperties({ config, onChange }: BasePropertiesProps) 
           background: 'var(--t-input)', border: '1px solid var(--t-border)',
           color: 'var(--t-text-secondary)', overflowX: 'auto',
         }}>{`const ws = new WebSocket(
-  'wss://<host>/runloop/proxy/engine/ws/channel/${config.channel || '<name>'}',
+  'wss://<host>/runloop/rl/ws/channel/${config.channel || '<name>'}',
   // Authenticate with a project-scoped API key (Settings → API Keys).
   // Pass it as Authorization header via a server-side proxy, or use
   // the cookie-based session if you load the websocket from a browser

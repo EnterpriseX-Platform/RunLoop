@@ -107,7 +107,7 @@ const ENDPOINTS: EndpointDef[] = [
   {
     group: 'Channels (Pub/Sub)',
     method: 'GET',
-    path: '/proxy/engine/ws/channel/{name}',
+    path: '/rl/ws/channel/{name}',
     summary: 'WebSocket subscribe. Server → client only. Each message is `{ channel, timestamp, payload }`.',
     notes: 'Subscriber must authenticate (session cookie or Bearer token). Project-scoped automatically.',
   },
@@ -379,7 +379,7 @@ curl "$RUNLOOP_BASE/api/projects" \\
           <CodeBlock
             lang="js"
             code={`const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-const ws = new WebSocket(\`\${proto}//\${location.host}/runloop/proxy/engine/ws/channel/orders\`);
+const ws = new WebSocket(\`\${proto}//\${location.host}/runloop/rl/ws/channel/orders\`);
 ws.onmessage = (e) => {
   const { channel, timestamp, payload } = JSON.parse(e.data);
   console.log(channel, payload);
@@ -394,7 +394,7 @@ ws.onmessage = (e) => {
           <CodeBlock
             lang="js"
             code={`import WebSocket from 'ws';
-const ws = new WebSocket('${baseUrl.replace(/^https?:/, 'wss:')}/proxy/engine/ws/channel/orders', {
+const ws = new WebSocket('${baseUrl.replace(/^https?:/, 'wss:')}/rl/ws/channel/orders', {
   headers: { Authorization: \`Bearer \${process.env.RUNLOOP_API_KEY}\` },
 });
 ws.on('message', (raw) => {

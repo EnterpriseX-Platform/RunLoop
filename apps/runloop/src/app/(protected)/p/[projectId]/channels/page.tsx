@@ -88,10 +88,13 @@ export default function ChannelsPage() {
     }
     setTapMessages([]);
     setTapStatus('connecting');
-    // Subscriber connects through the same /runloop/proxy/engine path the
-    // main UI uses; the cookie session authenticates the upgrade.
+    // WebSocket upgrades don't pass through Next.js rewrites in production.
+    // The ingress has a carve-out at /runloop/rl/* that goes straight to the
+    // engine container — that's also what useWebSocket uses for execution
+    // streams. The session cookie (Path=/runloop) is sent on the upgrade
+    // and JWTMiddleware reads it from c.Cookies("token").
     const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const url = `${proto}//${window.location.host}/runloop/proxy/engine/ws/channel/${encodeURIComponent(tapName)}`;
+    const url = `${proto}//${window.location.host}/runloop/rl/ws/channel/${encodeURIComponent(tapName)}`;
     const ws = new WebSocket(url);
     ws.onopen = () => setTapStatus('open');
     ws.onerror = () => setTapStatus('error');
