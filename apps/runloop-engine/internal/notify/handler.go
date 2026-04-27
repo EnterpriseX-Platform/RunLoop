@@ -20,10 +20,17 @@ func HandleWebSocket(hub *Hub) func(*websocket.Conn) {
 			conn.Close()
 			return
 		}
+		// Project scope. API-key tokens populate Locals("projectID"); session
+		// JWT users (browser cookie auth) don't, so they pass ?projectId= on
+		// the upgrade URL. Same pattern as the REST endpoints.
 		projectID, _ := conn.Locals("projectID").(string)
 		if projectID == "" {
-			// Locals not set means auth middleware was skipped or failed.
-			// Refuse to subscribe rather than join an unprotected channel.
+			projectID = conn.Query("projectId")
+			if projectID == "" {
+				projectID = conn.Query("projectID")
+			}
+		}
+		if projectID == "" {
 			conn.Close()
 			return
 		}

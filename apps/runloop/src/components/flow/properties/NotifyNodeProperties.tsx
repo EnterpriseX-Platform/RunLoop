@@ -17,7 +17,7 @@ export function NotifyNodeProperties({ config, onChange }: BasePropertiesProps) 
   // Pull live channel list so the user gets autocomplete + subscriber visibility.
   useEffect(() => {
     if (!projectId) return;
-    fetch('/runloop/api/channels')
+    fetch(`/runloop/api/channels?projectId=${encodeURIComponent(projectId)}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => setChannels(d?.data || []))
       .catch(() => {});

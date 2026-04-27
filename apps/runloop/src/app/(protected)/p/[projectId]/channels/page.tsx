@@ -33,8 +33,9 @@ export default function ChannelsPage() {
   const [tapSocket, setTapSocket] = useState<WebSocket | null>(null);
 
   const refresh = useCallback(async () => {
+    if (!projectId) return;
     try {
-      const r = await fetch('/runloop/api/channels');
+      const r = await fetch(`/runloop/api/channels?projectId=${encodeURIComponent(projectId)}`);
       if (!r.ok) throw new Error(String(r.status));
       const d = await r.json();
       setChannels(d.data || []);
@@ -44,7 +45,7 @@ export default function ChannelsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [projectId]);
 
   useEffect(() => {
     refresh();
@@ -70,7 +71,7 @@ export default function ChannelsPage() {
       const r = await fetch(`/runloop/api/channels/${encodeURIComponent(testChannel)}/publish`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ payload }),
+        body: JSON.stringify({ projectId, payload }),
       });
       const d = await r.json();
       flash(r.ok ? `delivered to ${d.delivered} subscriber${d.delivered === 1 ? '' : 's'}` : (d.error || 'publish failed'));
@@ -94,7 +95,7 @@ export default function ChannelsPage() {
     // streams. The session cookie (Path=/runloop) is sent on the upgrade
     // and JWTMiddleware reads it from c.Cookies("token").
     const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const url = `${proto}//${window.location.host}/runloop/rl/ws/channel/${encodeURIComponent(tapName)}`;
+    const url = `${proto}//${window.location.host}/runloop/rl/ws/channel/${encodeURIComponent(tapName)}?projectId=${encodeURIComponent(projectId || '')}`;
     const ws = new WebSocket(url);
     ws.onopen = () => setTapStatus('open');
     ws.onerror = () => setTapStatus('error');

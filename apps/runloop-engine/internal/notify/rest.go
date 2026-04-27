@@ -20,9 +20,28 @@ func (a *API) Register(router fiber.Router) {
 	router.Post("/channels/:name/publish", a.publish)
 }
 
+// projectIDFor extracts the project scope. API-key tokens populate
+// c.Locals("projectID") with the key's bound project; session JWTs (web
+// UI) don't, so callers pass ?projectId=. Same pattern as /api/dlq.
+func projectIDFor(c *fiber.Ctx) string {
+	if pid, _ := c.Locals("projectID").(string); pid != "" {
+		return pid
+	}
+	if pid := c.Query("projectId"); pid != "" {
+		return pid
+	}
+	if pid := c.Query("projectID"); pid != "" {
+		return pid
+	}
+	return ""
+}
+
 // list returns active channels for the caller's project, with subscriber counts.
 func (a *API) list(c *fiber.Ctx) error {
-	projectID, _ := c.Locals("projectID").(string)
+	projectID := projectIDFor(c)
+	if projectID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "projectId required (query param or API-key scope)"})
+	}
 	prefix := projectID + ":"
 	out := make([]fiber.Map, 0)
 	for key, count := range a.hub.Channels() {
@@ -41,19 +60,23 @@ func (a *API) list(c *fiber.Ctx) error {
 // directly without going through a flow. Useful for diagnosing
 // subscriber connectivity.
 func (a *API) publish(c *fiber.Ctx) error {
-	projectID, _ := c.Locals("projectID").(string)
-	if projectID == "" {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "project scope required"})
-	}
 	name := c.Params("name")
 	if name == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "name required"})
 	}
 	var body struct {
-		Payload map[string]interface{} `json:"payload"`
+		Payload   map[string]interface{} `json:"payload"`
+		ProjectID string                 `json:"projectId"`
 	}
 	if err := c.BodyParser(&body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid body"})
+	}
+	projectID := projectIDFor(c)
+	if projectID == "" {
+		projectID = body.ProjectID
+	}
+	if projectID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "projectId required (query, body, or API-key scope)"})
 	}
 	if body.Payload == nil {
 		body.Payload = map[string]interface{}{}
