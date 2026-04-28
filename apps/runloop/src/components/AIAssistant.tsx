@@ -60,8 +60,11 @@ export function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
-  const [provider, setProvider] = useState<Provider>('auto');
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Provider is no longer chosen per-chat — it's set once in
+  // Settings → Integrations and read server-side from
+  // CLAUDE_DEFAULT_PROVIDER. Keeping the field absent on the request
+  // body lets the server apply the project's saved preference.
 
   // Live page context — fetched once per pathname change. Gives the AI
   // grounding for "explain this" / "why fail" without a copy-paste loop.
@@ -121,10 +124,6 @@ export function AIAssistant() {
           system: systemPrompt,
           messages: next.map((m) => ({ role: m.role, content: m.content })),
           maxTokens: 1024,
-          // 'auto' = let the server pick (Claude wins if both keys are set,
-          // otherwise whichever is configured). Explicit 'claude' / 'kimi'
-          // forces that provider.
-          ...(provider !== 'auto' ? { provider } : {}),
         }),
       });
       const d = await r.json();
@@ -233,29 +232,11 @@ export function AIAssistant() {
               )}
             </div>
             <div className="flex items-center gap-1">
-              <select
-                value={provider}
-                onChange={(e) => setProvider(e.target.value as Provider)}
-                title="LLM provider"
-                style={{
-                  fontSize: 11,
-                  padding: '3px 6px',
-                  background: 'var(--t-input)',
-                  border: '1px solid var(--t-border)',
-                  color: 'var(--t-text-secondary)',
-                  borderRadius: 4,
-                  marginRight: 4,
-                }}
-              >
-                {(['auto', 'claude', 'openai', 'kimi'] as Provider[]).map((p) => (
-                  <option key={p} value={p}>{PROVIDER_LABELS[p]}</option>
-                ))}
-              </select>
               <Link
-                href="/settings/integrations"
+                href={selectedProject ? `/p/${selectedProject.id}/integrations` : '/projects'}
                 className="p-1.5 hover:opacity-70"
                 style={{ color: 'var(--t-text-muted)' }}
-                title="Settings"
+                title="Provider settings"
               >
                 <Settings className="w-3.5 h-3.5" />
               </Link>

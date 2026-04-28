@@ -90,11 +90,21 @@ function emptyState(p: Provider): CardState {
   return { hasKey: false, keyInput: '', model: p.defaultModel, saving: false, testing: false, result: null };
 }
 
+// CLAUDE_DEFAULT_PROVIDER is the legacy secret name the engine already
+// reads in /api/ai/chat. We keep it (rather than rename to AI_PROVIDER)
+// so existing data stays valid. Acceptable values: 'auto' | 'claude' |
+// 'kimi' | 'openai'.
+const PROVIDER_PREF_SECRET = 'CLAUDE_DEFAULT_PROVIDER';
+
 export default function IntegrationsPage() {
   const { selectedProject } = useProject();
   const [cards, setCards] = useState<Record<string, CardState>>(
     Object.fromEntries(PROVIDERS.map((p) => [p.id, emptyState(p)])),
   );
+  // 'auto' = server picks (claude wins if both keys are set, otherwise
+  // whichever is configured). Otherwise force a specific provider.
+  const [activeProvider, setActiveProvider] = useState<'auto' | Provider['id']>('auto');
+  const [savingActive, setSavingActive] = useState(false);
 
   const setCard = (id: string, patch: Partial<CardState>) =>
     setCards((s) => ({ ...s, [id]: { ...s[id], ...patch } }));
@@ -117,9 +127,38 @@ export default function IntegrationsPage() {
           };
         }
         setCards(next);
+        const pref = secrets.find((s) => s.name === PROVIDER_PREF_SECRET) as any;
+        const v = (pref?.value || 'auto') as 'auto' | Provider['id'];
+        if (v === 'auto' || v === 'claude' || v === 'kimi' || v === 'openai') {
+          setActiveProvider(v);
+        }
       })
       .catch(() => {});
   }, [selectedProject]);
+
+  const saveActiveProvider = async (next: 'auto' | Provider['id']) => {
+    if (!selectedProject?.id) return;
+    const prev = activeProvider;
+    setActiveProvider(next);
+    setSavingActive(true);
+    try {
+      await fetch('/runloop/api/secrets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: selectedProject.id,
+          name: PROVIDER_PREF_SECRET,
+          value: next,
+          category: 'OTHER',
+          description: 'Active LLM provider for the AI assistant (auto / claude / kimi / openai)',
+        }),
+      });
+    } catch {
+      setActiveProvider(prev);
+    } finally {
+      setSavingActive(false);
+    }
+  };
 
   const save = async (p: Provider) => {
     if (!selectedProject?.id) return;
@@ -202,6 +241,69 @@ export default function IntegrationsPage() {
           <p style={{ fontSize: 13, color: 'var(--t-text-muted)', marginTop: 6 }}>
             Plug an LLM into your workspace.
           </p>
+        </div>
+      </div>
+
+      {/* Active provider — picked here, persisted as a project secret,
+          read by /api/ai/chat. AI Assistant doesn't expose a per-chat
+          provider switcher anymore; pick once here and every chat in
+          the project uses it. 'Auto' lets the server pick based on
+          which keys are configured (Claude wins if both). */}
+      <div
+        className="mb-5"
+        style={{
+          background: 'var(--t-panel)',
+          border: '1px solid var(--t-border)',
+          borderRadius: 2,
+          padding: 16,
+        }}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--t-text)' }}>
+              Active provider
+            </div>
+            <div style={{ fontSize: 11.5, color: 'var(--t-text-muted)', marginTop: 2 }}>
+              Used by every AI Assistant chat in this project.
+            </div>
+          </div>
+          {savingActive && (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: 'var(--t-text-muted)' }} />
+          )}
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          {(['auto', 'claude', 'openai', 'kimi'] as const).map((id) => {
+            const active = activeProvider === id;
+            const labelMap = {
+              auto: 'Auto',
+              claude: 'Claude',
+              openai: 'ChatGPT',
+              kimi: 'Kimi',
+            } as const;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => saveActiveProvider(id)}
+                disabled={savingActive}
+                style={{
+                  padding: '7px 14px',
+                  borderRadius: 999,
+                  fontSize: 12.5,
+                  fontWeight: active ? 600 : 500,
+                  cursor: savingActive ? 'not-allowed' : 'pointer',
+                  background: active
+                    ? 'color-mix(in srgb, var(--t-accent) 18%, transparent)'
+                    : 'var(--t-input)',
+                  color: active ? 'var(--t-accent)' : 'var(--t-text-secondary)',
+                  border: `1px solid ${active ? 'var(--t-accent)' : 'var(--t-border)'}`,
+                  transition: 'background 0.12s, color 0.12s, border-color 0.12s',
+                }}
+              >
+                {labelMap[id]}
+              </button>
+            );
+          })}
         </div>
       </div>
 
