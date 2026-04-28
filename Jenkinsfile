@@ -39,6 +39,16 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr: '20'))
   }
 
+  // Auto-trigger: Jenkins polls the git remote every 5 minutes and
+  // starts a build when it sees new commits on the tracked branch.
+  // `H/5` = hash-spread over the 5-minute window (different jobs land
+  // on different sub-minutes so the git server doesn't get hammered
+  // at :00 :05 :10 ...). Replace with a real webhook later if/when
+  // the git server can POST to Jenkins.
+  triggers {
+    pollSCM('H/5 * * * *')
+  }
+
   stages {
     stage('Checkout') {
       steps {
