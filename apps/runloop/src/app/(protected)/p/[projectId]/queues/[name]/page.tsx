@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, Send, Trash2, RefreshCw, AlertCircle, Loader2,
-  CheckCircle2, Clock, XCircle, PlayCircle, Inbox,
+  CheckCircle2, Clock, XCircle, PlayCircle, Inbox, Settings,
 } from 'lucide-react';
 import {
   ControlBreadcrumb, PageHeader, MonoTag, SharpButton, SchematicPanel, TableHeaderRow, StatusDot, MONO,
@@ -69,8 +69,71 @@ export default function QueueDetailPage() {
   const [enqueueOpen, setEnqueueOpen] = useState(false);
   const [enqueuePayload, setEnqueuePayload] = useState('{\n  "example": "value"\n}');
   const [enqueueKey, setEnqueueKey] = useState('');
+  const [editOpen, setEditOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [flows, setFlows] = useState<Array<{ id: string; name: string }>>([]);
+
+  // Local edit-form state (loaded from `def` when the modal opens, then
+  // diffed against `def` on save so PATCH only carries actual changes).
+  const [editFlow, setEditFlow] = useState('');
+  const [editConc, setEditConc] = useState(1);
+  const [editAttempts, setEditAttempts] = useState(3);
+  const [editVisibility, setEditVisibility] = useState(300);
+  const [editEnabled, setEditEnabled] = useState(true);
+
+  useEffect(() => {
+    fetch(`/runloop/api/flows?projectId=${projectId}`)
+      .then((r) => r.json())
+      .then((d) => setFlows((d.data || []).map((f: any) => ({ id: f.id, name: f.name }))))
+      .catch(() => {});
+  }, [projectId]);
+
+  const openEdit = () => {
+    if (!def) return;
+    setEditFlow(def.FlowID);
+    setEditConc(def.Concurrency);
+    setEditAttempts(def.MaxAttempts);
+    setEditVisibility(def.VisibilitySec);
+    setEditEnabled(def.Enabled);
+    setEditOpen(true);
+  };
+
+  const saveEdit = async () => {
+    if (!def) return;
+    // Diff against current def — only patch fields that actually changed.
+    const patch: Record<string, any> = {};
+    if (editFlow && editFlow !== def.FlowID) patch.flowId = editFlow;
+    if (editConc !== def.Concurrency) patch.concurrency = editConc;
+    if (editAttempts !== def.MaxAttempts) patch.maxAttempts = editAttempts;
+    if (editVisibility !== def.VisibilitySec) patch.visibilitySec = editVisibility;
+    if (editEnabled !== def.Enabled) patch.enabled = editEnabled;
+    if (Object.keys(patch).length === 0) {
+      setEditOpen(false);
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await fetch(`/runloop/api/queues/${encodeURIComponent(name)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error(e.error || `HTTP ${res.status}`);
+      }
+      setToast('Saved');
+      setTimeout(() => setToast(null), 2000);
+      setEditOpen(false);
+      fetchAll();
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : 'Save failed');
+      setTimeout(() => setToast(null), 3000);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const fetchAll = useCallback(async () => {
     try {
@@ -201,6 +264,9 @@ export default function QueueDetailPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+            <SharpButton variant="ghost" onClick={openEdit}>
+              <Settings className="w-3.5 h-3.5" /> Edit
+            </SharpButton>
             <SharpButton onClick={() => setEnqueueOpen((v) => !v)}>
               <Send className="w-3.5 h-3.5" /> Enqueue Job
             </SharpButton>
@@ -209,6 +275,118 @@ export default function QueueDetailPage() {
             </SharpButton>
         </div>
       </div>
+
+      {editOpen && (
+        <SchematicPanel className="mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>
+              Edit queue · {def.Name}
+            </span>
+            <button
+              onClick={() => setEditOpen(false)}
+              style={{ fontSize: 12, color: T.textMuted }}
+            >
+              Close
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="col-span-2">
+              <label style={{ fontSize: 11, color: T.textMuted, display: 'block', marginBottom: 4 }}>
+                Flow (which flow each job triggers)
+              </label>
+              <select
+                value={editFlow}
+                onChange={(e) => setEditFlow(e.target.value)}
+                style={{
+                  width: '100%', background: T.input, border: `1px solid ${T.border}`,
+                  color: T.text, borderRadius: 2, padding: '8px 10px',
+                  fontFamily: MONO, fontSize: 12,
+                }}
+              >
+                {!flows.find((f) => f.id === editFlow) && editFlow && (
+                  <option value={editFlow}>{editFlow} (current)</option>
+                )}
+                {flows.map((f) => (
+                  <option key={f.id} value={f.id}>{f.name} · {f.id.slice(0, 10)}…</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={{ fontSize: 11, color: T.textMuted, display: 'block', marginBottom: 4 }}>
+                Concurrency
+              </label>
+              <input
+                type="number" min={1}
+                value={editConc}
+                onChange={(e) => setEditConc(Number(e.target.value) || 1)}
+                style={{
+                  width: '100%', background: T.input, border: `1px solid ${T.border}`,
+                  color: T.text, borderRadius: 2, padding: '8px 10px',
+                  fontFamily: MONO, fontSize: 12,
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontSize: 11, color: T.textMuted, display: 'block', marginBottom: 4 }}>
+                Max attempts
+              </label>
+              <input
+                type="number" min={1}
+                value={editAttempts}
+                onChange={(e) => setEditAttempts(Number(e.target.value) || 1)}
+                style={{
+                  width: '100%', background: T.input, border: `1px solid ${T.border}`,
+                  color: T.text, borderRadius: 2, padding: '8px 10px',
+                  fontFamily: MONO, fontSize: 12,
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontSize: 11, color: T.textMuted, display: 'block', marginBottom: 4 }}>
+                Visibility (sec)
+              </label>
+              <input
+                type="number" min={1}
+                value={editVisibility}
+                onChange={(e) => setEditVisibility(Number(e.target.value) || 1)}
+                style={{
+                  width: '100%', background: T.input, border: `1px solid ${T.border}`,
+                  color: T.text, borderRadius: 2, padding: '8px 10px',
+                  fontFamily: MONO, fontSize: 12,
+                }}
+              />
+            </div>
+
+            <div className="flex items-end">
+              <label className="flex items-center gap-2" style={{ fontSize: 12, color: T.textSec }}>
+                <input
+                  type="checkbox"
+                  checked={editEnabled}
+                  onChange={(e) => setEditEnabled(e.target.checked)}
+                />
+                Enabled
+              </label>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <SharpButton onClick={saveEdit} disabled={busy}>
+              {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+              Save
+            </SharpButton>
+            <SharpButton variant="ghost" size="sm" onClick={() => setEditOpen(false)}>
+              Cancel
+            </SharpButton>
+            <span style={{ fontSize: 11, color: T.textMuted, marginLeft: 8 }}>
+              Changes apply on next worker pickup. Backend + name can&rsquo;t be changed live — delete and recreate.
+            </span>
+          </div>
+        </SchematicPanel>
+      )}
 
       {enqueueOpen && (
         <SchematicPanel className="mb-4">

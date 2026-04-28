@@ -358,6 +358,7 @@ func setupRoutes(app *fiber.App, handler *api.Handler, webhookHandler *webhook.H
 	apiGroup.Get("/queues", handler.ListQueues)
 	apiGroup.Post("/queues", handler.CreateQueue)
 	apiGroup.Get("/queues/:name", handler.GetQueue)
+	apiGroup.Patch("/queues/:name", handler.UpdateQueue)
 	apiGroup.Delete("/queues/:name", handler.DeleteQueue)
 	apiGroup.Post("/queues/:name/jobs", handler.EnqueueJob)
 	apiGroup.Get("/queues/:name/jobs", handler.ListJobs)

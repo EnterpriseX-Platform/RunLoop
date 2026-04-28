@@ -149,6 +149,124 @@ func (h *Handler) GetQueue(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"data": def})
 }
 
+// updateQueueRequest carries the subset of queue config that's safe to
+// change without recreating the queue. Pointer fields = optional patch:
+// nil leaves the existing value, non-nil overwrites it.
+//
+// Why these and not all fields:
+//   * `name` is the primary key — renaming would invalidate every job
+//     row and every existing API key URL pointing at this queue.
+//   * `backend` requires a different consumer wiring; safer to recreate.
+//   * `backendConfig` ditto for non-postgres backends.
+// Fields you CAN patch live:
+//   * flowId — every subsequent pickup runs the new flow. In-flight
+//     pickups continue with the flow they already started.
+//   * concurrency — bumped/lowered on next consumer cycle.
+//   * maxAttempts, visibilitySec — applies to new deliveries.
+//   * enabled — toggle pause without losing the queue or its jobs.
+type updateQueueRequest struct {
+	FlowID        *string `json:"flowId,omitempty"`
+	Concurrency   *int    `json:"concurrency,omitempty"`
+	MaxAttempts   *int    `json:"maxAttempts,omitempty"`
+	VisibilitySec *int    `json:"visibilitySec,omitempty"`
+	Enabled       *bool   `json:"enabled,omitempty"`
+}
+
+// UpdateQueue patches the queue config. After a successful update we
+// stop the consumer and restart it with the new def — that's the
+// cleanest way to pick up concurrency / enabled changes without a
+// process restart. flow_id changes don't need a restart (the worker
+// reads it per-pickup) but we restart anyway for consistency.
+func (h *Handler) UpdateQueue(c *fiber.Ctx) error {
+	name := c.Params("name")
+	if name == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "name required"})
+	}
+	var req updateQueueRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid body"})
+	}
+	if req.FlowID == nil && req.Concurrency == nil && req.MaxAttempts == nil && req.VisibilitySec == nil && req.Enabled == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "no fields to update"})
+	}
+
+	// Build the SET clause dynamically so we only touch fields the caller
+	// supplied. Easier than juggling COALESCE in SQL.
+	sets := []string{}
+	args := []interface{}{}
+	idx := 1
+	if req.FlowID != nil {
+		sets = append(sets, "flow_id=$"+strconv.Itoa(idx))
+		args = append(args, *req.FlowID)
+		idx++
+	}
+	if req.Concurrency != nil {
+		if *req.Concurrency < 1 {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "concurrency must be >= 1"})
+		}
+		sets = append(sets, "concurrency=$"+strconv.Itoa(idx))
+		args = append(args, *req.Concurrency)
+		idx++
+	}
+	if req.MaxAttempts != nil {
+		if *req.MaxAttempts < 1 {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "maxAttempts must be >= 1"})
+		}
+		sets = append(sets, "max_attempts=$"+strconv.Itoa(idx))
+		args = append(args, *req.MaxAttempts)
+		idx++
+	}
+	if req.VisibilitySec != nil {
+		if *req.VisibilitySec < 1 {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "visibilitySec must be >= 1"})
+		}
+		sets = append(sets, "visibility_sec=$"+strconv.Itoa(idx))
+		args = append(args, *req.VisibilitySec)
+		idx++
+	}
+	if req.Enabled != nil {
+		sets = append(sets, "enabled=$"+strconv.Itoa(idx))
+		args = append(args, *req.Enabled)
+		idx++
+	}
+	sets = append(sets, "updated_at=NOW()")
+	args = append(args, name)
+
+	q := "UPDATE job_queues SET " + joinComma(sets) + " WHERE name=$" + strconv.Itoa(idx)
+	tag, err := h.db.Pool.Exec(c.Context(), q, args...)
+	if err != nil {
+		log.Error().Err(err).Str("queue", name).Msg("update queue failed")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	if tag.RowsAffected() == 0 {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "queue not found"})
+	}
+
+	// Restart the consumer so concurrency/enabled changes take effect.
+	// Reads the freshly-saved row back from DB.
+	h.queue.StopQueue(name)
+	if def, gerr := h.queue.GetQueue(c.Context(), name); gerr == nil && def.Enabled {
+		if startErr := h.queue.StartQueue(context.Background(), def); startErr != nil {
+			log.Error().Err(startErr).Str("queue", name).Msg("StartQueue failed after update")
+		}
+	}
+
+	return c.JSON(fiber.Map{"data": fiber.Map{"name": name, "updated": true}})
+}
+
+// joinComma is a tiny string helper kept local to the file. Avoids the
+// reflective overhead of strings.Join for our small slice.
+func joinComma(ss []string) string {
+	out := ""
+	for i, s := range ss {
+		if i > 0 {
+			out += ", "
+		}
+		out += s
+	}
+	return out
+}
+
 // DeleteQueue removes the queue config and stops its consumer. Existing
 // items (PG backend) are cascade-deleted by FK.
 func (h *Handler) DeleteQueue(c *fiber.Ctx) error {
