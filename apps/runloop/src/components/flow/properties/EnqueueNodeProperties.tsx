@@ -1,8 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { BaseProperties, Section, SelectField, TextArea, TextField } from './BaseProperties';
+import { BaseProperties, Section, TextArea, TextField } from './BaseProperties';
 import { BasePropertiesProps } from './BaseProperties';
+import { Combobox } from '@/components/Combobox';
 
 interface QueueRow {
   name: string;
@@ -29,17 +30,19 @@ export function EnqueueNodeProperties({ config, onChange }: BasePropertiesProps)
   return (
     <BaseProperties config={config} onChange={onChange}>
       <Section title="Target Queue">
-        <SelectField
-          label="Queue"
+        <label className="block mb-2" style={{ fontSize: 12, fontWeight: 600, color: 'var(--t-text-secondary)' }}>
+          Queue
+        </label>
+        <Combobox
           value={config.queue || ''}
           onChange={(v) => onChange({ ...config, queue: v })}
-          options={[
-            { value: '', label: 'Select a queue…' },
-            ...queues.map((q) => ({
-              value: q.name,
-              label: `${q.name}${q.enabled ? '' : ' (disabled)'} · ${q.backend}`,
-            })),
-          ]}
+          placeholder="Pick a queue…"
+          options={queues.map((q) => ({
+            value: q.name,
+            label: q.enabled ? q.name : `${q.name} (disabled)`,
+            hint: `${q.backend} · → flow ${q.flowId.slice(0, 10)}…`,
+            disabled: !q.enabled,
+          }))}
         />
         {selected && (
           <p className="text-xs mt-2" style={{ color: 'var(--t-text-muted)' }}>

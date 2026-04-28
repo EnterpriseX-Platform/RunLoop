@@ -7,6 +7,7 @@ import { ArrowLeft, Save, Loader2, AlertCircle } from 'lucide-react';
 import {
   ControlBreadcrumb, PageHeader, SchematicPanel, SharpButton, MONO,
 } from '@/components/ControlChrome';
+import { Combobox } from '@/components/Combobox';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const T = {
@@ -149,12 +150,12 @@ export default function NewQueuePage() {
           />
         </Field>
         <Field label="Flow" required hint="Each job triggers this flow with its payload as input">
-          <select value={flowId} onChange={(e) => setFlowId(e.target.value)} style={inputStyle()}>
-            <option value="">Select a flow…</option>
-            {flows.map((f) => (
-              <option key={f.id} value={f.id}>{f.name}</option>
-            ))}
-          </select>
+          <Combobox
+            value={flowId}
+            onChange={setFlowId}
+            placeholder="Pick a flow…"
+            options={flows.map((f) => ({ value: f.id, label: f.name, hint: f.id }))}
+          />
         </Field>
       </Section>
 

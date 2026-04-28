@@ -1,8 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { BaseProperties, Section, SelectField, TextArea } from './BaseProperties';
+import { BaseProperties, Section, TextArea } from './BaseProperties';
 import { BasePropertiesProps } from './BaseProperties';
+import { Combobox } from '@/components/Combobox';
 
 export function SubFlowNodeProperties({ config, onChange }: BasePropertiesProps) {
   const params = useParams();
@@ -20,14 +21,14 @@ export function SubFlowNodeProperties({ config, onChange }: BasePropertiesProps)
   return (
     <BaseProperties config={config} onChange={onChange}>
       <Section title="Sub-flow">
-        <SelectField
-          label="Flow to invoke"
+        <label className="block mb-2" style={{ fontSize: 12, fontWeight: 600, color: 'var(--t-text-secondary)' }}>
+          Flow to invoke
+        </label>
+        <Combobox
           value={config.flowId || ''}
           onChange={(v) => onChange({ ...config, flowId: v })}
-          options={[
-            { value: '', label: 'Select a flow…' },
-            ...flows.map((f) => ({ value: f.id, label: f.name })),
-          ]}
+          placeholder="Pick a flow…"
+          options={flows.map((f) => ({ value: f.id, label: f.name, hint: f.id }))}
         />
         <div className="mt-3">
           <TextArea

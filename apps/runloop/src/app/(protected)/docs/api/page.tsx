@@ -416,6 +416,89 @@ ws.on('message', (raw) => {
         </div>
       </section>
 
+      {/* Variable syntax — separate section because it applies inside */}
+      {/* every node config, not on a specific endpoint.                */}
+      <section className="mb-8">
+        <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--t-text)', marginBottom: 10 }}>
+          5. Variables in node config
+        </h2>
+        <p style={{ fontSize: 13, color: 'var(--t-text-secondary)', marginBottom: 10, lineHeight: 1.6 }}>
+          Any string field in any node config can reference{' '}
+          <code style={{ color: 'var(--t-accent)' }}>{'${{path}}'}</code>. The engine resolves the
+          path at execution time, walking node outputs and the flow&rsquo;s variable map.
+        </p>
+
+        <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--t-text-secondary)', marginTop: 14, marginBottom: 6 }}>
+          Trigger payload
+        </h3>
+        <CodeBlock
+          lang="text"
+          code={`\${{input.<field>}}                # the body of the trigger
+                                  # • Queue:     POST body's "payload" key
+                                  # • Scheduler: scheduler config's "input" key
+                                  # • API:       request body's "input" key
+
+# Example — Email node, sender from queue payload:
+#   "to": "\${{input.to}}"
+#   "subject": "Welcome \${{input.name}}"`}
+        />
+
+        <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--t-text-secondary)', marginTop: 14, marginBottom: 6 }}>
+          Built-in dynamic variables
+        </h3>
+        <CodeBlock
+          lang="text"
+          code={`\${{NOW}}              # 2026-04-29T17:23:00+07:00     RFC3339 string
+\${{TODAY}}            # 2026-04-29                    YYYY-MM-DD
+\${{TIMESTAMP}}        # 1777393380                    Unix seconds
+\${{TIMESTAMP_MS}}     # 1777393380123                 Unix ms
+
+# All four are evaluated ONCE at the start of execution, so a flow
+# spanning a few seconds sees the same NOW everywhere.`}
+        />
+
+        <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--t-text-secondary)', marginTop: 14, marginBottom: 6 }}>
+          Upstream node outputs
+        </h3>
+        <CodeBlock
+          lang="text"
+          code={`\${{<nodeId>.<key>}}            # whole output[key] of an earlier node
+\${{<nodeId>.body.user.id}}     # walks nested objects/arrays
+
+# Example — chain HTTP → Transform:
+# HTTP node produces { "body": { "user": { "id": 42 } } }
+# Transform node:
+#   "expression": "{ userId: \\\"\${{http_node.body.user.id}}\\\" }"`}
+        />
+
+        <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--t-text-secondary)', marginTop: 14, marginBottom: 6 }}>
+          Loop iteration variables
+        </h3>
+        <CodeBlock
+          lang="text"
+          code={`\${{loop.item}}     # current item (when iterating a list)
+\${{loop.index}}    # 0-based index
+\${{loop.iteration}} # 1-based iteration count
+\${{loop.batch}}    # current batch (when batching mode is on)
+
+# Inside a Loop node body:
+#   "to": "\${{loop.item.email}}"`}
+        />
+
+        <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--t-text-secondary)', marginTop: 14, marginBottom: 6 }}>
+          Secrets
+        </h3>
+        <CodeBlock
+          lang="text"
+          code={`\${{secrets.<NAME>}}     # decrypted at execution time
+                        # Stored AES-256-GCM in the project's secret vault.
+                        # The decrypted value never appears in execution logs.
+
+# Example — Email node:
+#   "password": "\${{secrets.SMTP_PASSWORD}}"`}
+        />
+      </section>
+
       <p style={{ fontSize: 11.5, color: 'var(--t-text-muted)' }}>
         Missing something?{' '}
         <a href="https://github.com/anthropics/runloop/issues" style={{ color: 'var(--t-accent)' }}>

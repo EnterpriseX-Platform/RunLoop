@@ -10,6 +10,7 @@ import {
 import {
   ControlBreadcrumb, PageHeader, MonoTag, SharpButton, SchematicPanel, TableHeaderRow, StatusDot, MONO,
 } from '@/components/ControlChrome';
+import { Combobox } from '@/components/Combobox';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const T = {
@@ -277,40 +278,52 @@ export default function QueueDetailPage() {
       </div>
 
       {editOpen && (
-        <SchematicPanel className="mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>
-              Edit queue · {def.Name}
-            </span>
-            <button
-              onClick={() => setEditOpen(false)}
-              style={{ fontSize: 12, color: T.textMuted }}
-            >
-              Close
-            </button>
-          </div>
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center"
+          style={{ background: 'rgba(0,0,0,0.55)', paddingTop: '8vh' }}
+          onClick={() => setEditOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-[560px] mx-4"
+            style={{
+              background: T.panel,
+              border: `1px solid ${T.border}`,
+              borderRadius: 6,
+              boxShadow: '0 24px 60px rgba(0,0,0,0.4)',
+            }}
+          >
+            <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: `1px solid ${T.border}` }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: T.text }}>
+                Edit queue · <code style={{ fontFamily: MONO, color: T.accent, fontSize: 12 }}>{def.Name}</code>
+              </span>
+              <button
+                onClick={() => setEditOpen(false)}
+                style={{ color: T.textMuted, fontSize: 18, lineHeight: 1, cursor: 'pointer' }}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="px-5 py-4">
 
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div className="col-span-2">
               <label style={{ fontSize: 11, color: T.textMuted, display: 'block', marginBottom: 4 }}>
                 Flow (which flow each job triggers)
               </label>
-              <select
+              <Combobox
                 value={editFlow}
-                onChange={(e) => setEditFlow(e.target.value)}
-                style={{
-                  width: '100%', background: T.input, border: `1px solid ${T.border}`,
-                  color: T.text, borderRadius: 2, padding: '8px 10px',
-                  fontFamily: MONO, fontSize: 12,
-                }}
-              >
-                {!flows.find((f) => f.id === editFlow) && editFlow && (
-                  <option value={editFlow}>{editFlow} (current)</option>
-                )}
-                {flows.map((f) => (
-                  <option key={f.id} value={f.id}>{f.name} · {f.id.slice(0, 10)}…</option>
-                ))}
-              </select>
+                onChange={setEditFlow}
+                placeholder="Pick a flow…"
+                options={flows.map((f) => ({
+                  value: f.id,
+                  label: f.name,
+                  hint: f.id,
+                }))}
+                resolveLabel={(v) => `${v} (deleted?)`}
+              />
             </div>
 
             <div>
@@ -373,19 +386,21 @@ export default function QueueDetailPage() {
             </div>
           </div>
 
+          <p style={{ fontSize: 11, color: T.textMuted, marginBottom: 12 }}>
+            Changes apply on next worker pickup. Backend + name can&rsquo;t be changed live — delete and recreate.
+          </p>
           <div className="flex items-center gap-2">
             <SharpButton onClick={saveEdit} disabled={busy}>
               {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-              Save
+              Save changes
             </SharpButton>
             <SharpButton variant="ghost" size="sm" onClick={() => setEditOpen(false)}>
               Cancel
             </SharpButton>
-            <span style={{ fontSize: 11, color: T.textMuted, marginLeft: 8 }}>
-              Changes apply on next worker pickup. Backend + name can&rsquo;t be changed live — delete and recreate.
-            </span>
           </div>
-        </SchematicPanel>
+            </div>
+          </div>
+        </div>
       )}
 
       {enqueueOpen && (

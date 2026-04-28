@@ -191,6 +191,35 @@ func (fe *FlowExecutor) ExecuteFlow(
 	flowConfig *models.FlowConfig,
 ) (*models.JobResult, error) {
 	flowCtx := NewFlowExecutionContext()
+	// Seed the input variable so flows can read `${{input.<field>}}` from
+	// the payload that triggered them — whether that came from a queue
+	// (queue.Manager → task.Config.payload), a scheduler with
+	// configured input (task.Config.input), or a manual trigger
+	// (task.Config raw). Order: explicit input > queue payload > whole
+	// config. The first non-nil one wins.
+	if task != nil && task.Config != nil {
+		var input interface{}
+		if v, ok := task.Config["input"]; ok && v != nil {
+			input = v
+		} else if v, ok := task.Config["payload"]; ok && v != nil {
+			input = v
+		} else {
+			input = map[string]interface{}(task.Config)
+		}
+		flowCtx.mu.Lock()
+		flowCtx.Variables["input"] = input
+		flowCtx.mu.Unlock()
+	}
+	// Built-in dynamic variables. Evaluated once per execution so all
+	// nodes within a single run see the same NOW (predictable for
+	// scheduled jobs that span seconds).
+	now := time.Now()
+	flowCtx.mu.Lock()
+	flowCtx.Variables["NOW"] = now.Format(time.RFC3339)
+	flowCtx.Variables["TODAY"] = now.Format("2006-01-02")
+	flowCtx.Variables["TIMESTAMP"] = fmt.Sprintf("%d", now.Unix())
+	flowCtx.Variables["TIMESTAMP_MS"] = fmt.Sprintf("%d", now.UnixMilli())
+	flowCtx.mu.Unlock()
 	return fe.runFlow(ctx, task, flowConfig, flowCtx)
 }
 
@@ -1462,7 +1491,13 @@ func (fe *FlowExecutor) lookupPath(flowCtx *FlowExecutionContext, parts []string
 		}
 	}
 
-	// 2. Flat variables. Try longest-prefix match then walk remaining.
+	// 2. Flat variables. Try single-segment first (e.g. ${{NOW}}, ${{input}})
+	// then longest-prefix match for nested paths.
+	if len(parts) == 1 {
+		if v, ok := flowCtx.Variables[parts[0]]; ok {
+			return v
+		}
+	}
 	for split := len(parts); split >= 2; split-- {
 		key := strings.Join(parts[:split], ".")
 		v, ok := flowCtx.Variables[key]
@@ -1475,6 +1510,15 @@ func (fe *FlowExecutor) lookupPath(flowCtx *FlowExecutionContext, parts []string
 		}
 		if walked := walkValue(v, rest); walked != nil {
 			return walked
+		}
+	}
+	// Walk single-segment value as a map: e.g. ${{input.foo.bar}} where
+	// "input" is a map stored as the whole value.
+	if len(parts) > 1 {
+		if v, ok := flowCtx.Variables[parts[0]]; ok {
+			if walked := walkValue(v, parts[1:]); walked != nil {
+				return walked
+			}
 		}
 	}
 	return nil

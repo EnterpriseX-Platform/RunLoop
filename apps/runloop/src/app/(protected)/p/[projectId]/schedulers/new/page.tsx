@@ -56,6 +56,16 @@ export default function NewSchedulerPage() {
     retryDelay: 60,
     maxConcurrency: 1,
   });
+  // Parameters JSON — passed to the bound flow as the `${{input.*}}`
+  // variable on each trigger. Supports built-in dynamic vars:
+  //   ${{NOW}}        — RFC3339 timestamp
+  //   ${{TODAY}}      — YYYY-MM-DD
+  //   ${{TIMESTAMP}}  — Unix seconds
+  //   ${{TIMESTAMP_MS}}
+  // Engine substitutes these at execution time so daily reports get the
+  // run's actual date even if the cron fires a few seconds late.
+  const [paramsJson, setParamsJson] = useState<string>('{\n  "runDate": "${{TODAY}}"\n}');
+  const [paramsValid, setParamsValid] = useState<boolean>(true);
 
   useEffect(() => {
     fetchFlows();
@@ -89,13 +99,29 @@ export default function NewSchedulerPage() {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
+      // Parse Parameters JSON before submitting. Soft-fail with a clear
+      // error rather than letting the API choke on malformed JSON.
+      let parsedParams: unknown = undefined;
+      if (paramsJson.trim() && paramsJson.trim() !== '{}') {
+        try {
+          parsedParams = JSON.parse(paramsJson);
+        } catch (err) {
+          setSubmitError('Parameters: invalid JSON — fix and try again');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       const { schedule, ...rest } = formData;
       const payload: Record<string, unknown> = {
         ...rest,
         projectId,
         status: 'ACTIVE',
         type: 'HTTP',
-        config: {},
+        // `input` is what the engine reads as ${{input.*}} when the
+        // scheduler fires. Stored alongside other config so it's edited
+        // and versioned with the scheduler.
+        config: parsedParams ? { input: parsedParams } : {},
       };
       if (schedule && schedule.trim()) payload.schedule = schedule.trim();
 
@@ -335,6 +361,47 @@ Body: { "input": {...} }`}
                   </div>
                 </div>
               )}
+            </Section>
+
+            <Section title="PARAMETERS">
+              <Field
+                label="Input (JSON)"
+                hint={
+                  <>
+                    Passed to the bound flow as <code style={{ color: 'var(--t-accent)' }}>{'${{input.<field>}}'}</code>.
+                    {' '}Built-in dynamic vars: <code style={{ color: 'var(--t-accent)' }}>{'${{NOW}}'}</code>,{' '}
+                    <code style={{ color: 'var(--t-accent)' }}>{'${{TODAY}}'}</code>,{' '}
+                    <code style={{ color: 'var(--t-accent)' }}>{'${{TIMESTAMP}}'}</code>,{' '}
+                    <code style={{ color: 'var(--t-accent)' }}>{'${{TIMESTAMP_MS}}'}</code> — evaluated each run.
+                  </>
+                }
+              >
+                <textarea
+                  value={paramsJson}
+                  onChange={(e) => {
+                    setParamsJson(e.target.value);
+                    try {
+                      JSON.parse(e.target.value || '{}');
+                      setParamsValid(true);
+                    } catch {
+                      setParamsValid(false);
+                    }
+                  }}
+                  rows={6}
+                  spellCheck={false}
+                  style={{
+                    ...inp(),
+                    fontFamily: 'IBM Plex Mono, ui-monospace, SFMono-Regular, monospace',
+                    resize: 'vertical' as const,
+                    borderColor: paramsValid ? 'var(--t-border)' : '#EF4444',
+                  }}
+                />
+                {!paramsValid && (
+                  <p style={{ fontSize: 11, color: '#EF4444', marginTop: 4 }}>
+                    Invalid JSON — fix syntax before saving
+                  </p>
+                )}
+              </Field>
             </Section>
 
             <Section title="EXECUTION SETTINGS">
