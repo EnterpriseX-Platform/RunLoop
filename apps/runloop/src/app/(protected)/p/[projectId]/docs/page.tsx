@@ -326,7 +326,13 @@ export default function ApiDocsPage() {
 
   return (
     <div className="flex" style={{ minHeight: 'calc(100vh - 64px)' }}>
-      {/* ── Sidebar nav (vertical icon+label) ─────────────────── */}
+      {/* ── Sidebar nav (vertical icon+label) ─────────────────────
+          The page lives inside Layout's <main overflow-y-auto> scroll
+          container, so position:sticky pins to that container, not the
+          window. top:0 (relative to the scroll container) keeps the
+          sidebar pinned through the whole scroll. The sidebar's own
+          overflow-y handles the case where the nav is taller than the
+          viewport.                                                    */}
       <aside
         className="hidden md:flex flex-col flex-shrink-0"
         style={{
@@ -334,9 +340,9 @@ export default function ApiDocsPage() {
           borderRight: '1px solid var(--t-border)',
           background: 'var(--t-panel)',
           position: 'sticky',
-          top: 64,
+          top: 0,
           alignSelf: 'flex-start',
-          maxHeight: 'calc(100vh - 64px)',
+          height: 'calc(100vh - 64px)',
           overflowY: 'auto',
         }}
       >
@@ -407,10 +413,12 @@ export default function ApiDocsPage() {
           </p>
         </div>
 
-        {/* Sticky search */}
+        {/* Sticky search — pins inside the same scroll container as
+            the sidebar, so top:0 (not 64) once the user scrolls past
+            the title. */}
         <div
           className="sticky z-10 mb-6"
-          style={{ top: 64, background: 'var(--t-bg)', paddingTop: 6, paddingBottom: 8 }}
+          style={{ top: 0, background: 'var(--t-bg)', paddingTop: 6, paddingBottom: 8 }}
         >
           <div
             className="flex items-center gap-2 px-3 py-2"
