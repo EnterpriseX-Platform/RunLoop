@@ -12,8 +12,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useProject } from '@/context/ProjectContext';
-import { Sparkles, X, Send, Loader2, Settings } from 'lucide-react';
+import { Sparkles, X, Send, Loader2, Settings, Eye } from 'lucide-react';
 import Link from 'next/link';
+import { usePageContext } from '@/hooks/usePageContext';
 
 type Provider = 'auto' | 'claude' | 'kimi' | 'openai';
 
@@ -75,6 +76,10 @@ export function AIAssistant() {
 
   const greeting = useMemo(() => rotatingGreeting(), []);
 
+  // Live page context — fetched once per pathname change. Gives the AI
+  // grounding for "explain this" / "why fail" without a copy-paste loop.
+  const pageCtx = usePageContext(selectedProject?.id);
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -91,12 +96,24 @@ export function AIAssistant() {
     setBusy(true);
 
     try {
+      // Build the system prompt: base instructions + current path + the
+      // page context block (if any). The context is the difference between
+      // a generic answer and a specific one: when the user asks "why did
+      // this fail?", the model sees the actual logs/status from the page.
+      const systemPrompt = [
+        SYSTEM_PROMPT,
+        '',
+        `The user is currently on page: ${pathname}.`,
+        pageCtx.prompt ? '' : null,
+        pageCtx.prompt || null,
+      ].filter((s) => s !== null).join('\n');
+
       const r = await fetch('/runloop/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           projectId: selectedProject.id,
-          system: `${SYSTEM_PROMPT}\n\nThe user is currently on page: ${pathname}.`,
+          system: systemPrompt,
           messages: next.map((m) => ({ role: m.role, content: m.content })),
           maxTokens: 1024,
           // 'auto' = let the server pick (Claude wins if both keys are set,
@@ -185,11 +202,29 @@ export function AIAssistant() {
             className="flex items-center justify-between px-4 py-3"
             style={{ borderBottom: '1px solid var(--t-border)' }}
           >
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4" style={{ color: 'var(--t-accent)' }} />
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <Sparkles className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--t-accent)' }} />
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--t-text)' }}>
-                AI Assistant
+                AI
               </span>
+              {pageCtx.label && (
+                <span
+                  className="flex items-center gap-1 truncate"
+                  title={`AI is reading: ${pageCtx.label}`}
+                  style={{
+                    fontSize: 10.5,
+                    padding: '2px 6px',
+                    background: 'color-mix(in srgb, var(--t-accent) 12%, transparent)',
+                    color: 'var(--t-accent)',
+                    borderRadius: 999,
+                    fontWeight: 500,
+                    minWidth: 0,
+                  }}
+                >
+                  <Eye className="w-3 h-3 flex-shrink-0" />
+                  <span className="truncate">{pageCtx.loading ? 'reading…' : pageCtx.label}</span>
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-1">
               <select
