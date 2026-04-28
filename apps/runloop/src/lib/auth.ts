@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { prisma } from './prisma';
 import { NextRequest } from 'next/server';
 
@@ -59,14 +60,15 @@ export async function getCurrentUser(request: NextRequest): Promise<JWTPayload |
   // is surprising and inconsistent.
   if (token.startsWith('rl_')) {
     try {
-      const sha256 = await import('crypto').then((m) =>
-        m.createHash('sha256').update(token).digest('hex'),
-      );
+      const sha256 = crypto.createHash('sha256').update(token).digest('hex');
       const row = await prisma.apiKey.findFirst({
         where: { key: sha256, status: 'ACTIVE' },
         select: { userId: true, projectId: true },
       });
-      if (!row) return null;
+      if (!row) {
+        console.warn('[auth] API key not found in api_keys table (prefix=' + token.slice(0, 8) + ')');
+        return null;
+      }
       // Touch last_used_at on success — same pattern as the engine.
       // Best-effort, ignore failure.
       prisma.apiKey
@@ -80,7 +82,8 @@ export async function getCurrentUser(request: NextRequest): Promise<JWTPayload |
         email: '',
         role: 'API_KEY',
       } as unknown as JWTPayload;
-    } catch {
+    } catch (err) {
+      console.error('[auth] API key lookup error:', err);
       return null;
     }
   }
