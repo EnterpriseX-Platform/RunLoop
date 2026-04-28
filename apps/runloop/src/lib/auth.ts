@@ -50,6 +50,41 @@ export async function getCurrentUser(request: NextRequest): Promise<JWTPayload |
     return null;
   }
 
+  // RunLoop API keys are issued via Settings → API Keys with the rl_
+  // prefix. The engine validates them by hashing and looking up the
+  // api_keys table; we mirror that here so Next.js native routes
+  // (/api/env-vars, /api/secrets, /api/ai/chat, …) accept the same
+  // token a producer uses against the engine. Without this, API keys
+  // worked only against routes that proxy through to the engine, which
+  // is surprising and inconsistent.
+  if (token.startsWith('rl_')) {
+    try {
+      const sha256 = await import('crypto').then((m) =>
+        m.createHash('sha256').update(token).digest('hex'),
+      );
+      const row = await prisma.apiKey.findFirst({
+        where: { key: sha256, status: 'ACTIVE' },
+        select: { userId: true, projectId: true },
+      });
+      if (!row) return null;
+      // Touch last_used_at on success — same pattern as the engine.
+      // Best-effort, ignore failure.
+      prisma.apiKey
+        .updateMany({ where: { key: sha256 }, data: { lastUsedAt: new Date() } })
+        .catch(() => {});
+      return {
+        userId: row.userId,
+        // The JWTPayload shape carries email/role; for API keys we
+        // can't synthesize those, but they aren't read by the
+        // env-vars / secrets / ai-chat routes (only userId is).
+        email: '',
+        role: 'API_KEY',
+      } as unknown as JWTPayload;
+    } catch {
+      return null;
+    }
+  }
+
   try {
     return verifyToken(token);
   } catch {
