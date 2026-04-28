@@ -72,9 +72,12 @@ const mainNavigation: NavItemType[] = [
   { name: 'Channels',   href: '/channels',   icon: BellRing,        countKey: null },
 ];
 
+// projectScoped:true → href is rewritten to /p/<currentProjectId>/<href>
+// at render time. Same pattern as the main nav so every link follows the
+// /p/<id>/* convention; non-scoped paths (eg /projects) don't need it.
 const systemNavigation: NavItemType[] = [
-  { name: 'API Docs', href: '/docs/api', icon: BookOpen, countKey: null },
-  { name: 'Settings', href: '/settings',  icon: Settings, countKey: null },
+  { name: 'API Docs', href: '/docs',     icon: BookOpen, countKey: null, projectScoped: true },
+  { name: 'Settings', href: '/settings', icon: Settings, countKey: null, projectScoped: true },
 ];
 
 /* ==================== Breadcrumb ==================== */
@@ -92,6 +95,11 @@ const breadcrumbMap: Record<string, string> = {
   'settings': 'Settings',
   'audit-log': 'Audit Log',
   'api-keys': 'API Keys',
+  'integrations': 'Integrations',
+  'plugins': 'Plugins',
+  'env': 'Environment',
+  'docs': 'API Docs',
+  'dlq': 'DLQ',
   'new': 'New',
 };
 

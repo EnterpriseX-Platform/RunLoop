@@ -26,62 +26,66 @@ interface SettingsTab {
 // DLQ was merged into Executions page (?filter=needs_review) because they
 // share the same underlying data set. Audit Log stays here because it records
 // user actions, not execution outcomes — a different concept.
+// All tabs are project-scoped now: every settings page lives under
+// /p/<projectId>/<tab>. The buildHref helper requires pid; if it's
+// missing (legacy paths), the tab silently no-ops rather than building
+// a broken /settings URL.
 const TABS: SettingsTab[] = [
   {
     key: 'general',
     label: 'General',
     icon: SettingsIcon,
-    buildHref: () => '/settings',
-    match: (p) => p === '/settings',
+    buildHref: (pid) => pid ? `/p/${pid}/settings` : '#',
+    match: (p) => /\/p\/[^/]+\/settings\/?$/.test(p),
   },
   {
     key: 'members',
     label: 'Members',
     icon: Users,
-    buildHref: (pid) => pid ? `/p/${pid}/members` : '/settings',
+    buildHref: (pid) => pid ? `/p/${pid}/members` : '#',
     match: (p) => p.includes('/members'),
   },
   {
     key: 'secrets',
     label: 'Secrets',
     icon: Shield,
-    buildHref: () => '/secrets',
-    match: (p) => p.startsWith('/secrets'),
+    buildHref: (pid) => pid ? `/p/${pid}/secrets` : '#',
+    match: (p) => /\/p\/[^/]+\/secrets/.test(p),
   },
   {
     key: 'env',
     label: 'Environment',
     icon: Variable,
-    buildHref: (pid) => pid ? `/p/${pid}/env` : '/settings',
+    buildHref: (pid) => pid ? `/p/${pid}/env` : '#',
     match: (p) => p.includes('/env'),
   },
   {
     key: 'api-keys',
     label: 'API Keys',
     icon: Key,
-    buildHref: (pid) => pid ? `/p/${pid}/api-keys` : '/settings',
+    buildHref: (pid) => pid ? `/p/${pid}/api-keys` : '#',
     match: (p) => p.includes('/api-keys'),
   },
   {
     key: 'audit-log',
     label: 'Audit Log',
     icon: ScrollText,
-    buildHref: (pid) => pid ? `/p/${pid}/audit-log` : '/settings',
+    buildHref: (pid) => pid ? `/p/${pid}/audit-log` : '#',
     match: (p) => p.includes('/audit-log'),
-  },
-  {
-    key: 'plugins',
-    label: 'Plugins',
-    icon: Blocks,
-    buildHref: () => '/settings/plugins',
-    match: (p) => p.startsWith('/settings/plugins'),
   },
   {
     key: 'integrations',
     label: 'Integrations',
     icon: Sparkles,
-    buildHref: () => '/settings/integrations',
-    match: (p) => p.startsWith('/settings/integrations'),
+    buildHref: (pid) => pid ? `/p/${pid}/integrations` : '#',
+    match: (p) => p.includes('/integrations'),
+  },
+  {
+    key: 'plugins',
+    label: 'Plugins',
+    icon: Blocks,
+    buildHref: (pid) => pid ? `/p/${pid}/plugins` : '#',
+    match: (p) => p.includes('/plugins'),
   },
 ];
 
