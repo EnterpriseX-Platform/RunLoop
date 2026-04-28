@@ -220,7 +220,45 @@ func (fe *FlowExecutor) ExecuteFlow(
 	flowCtx.Variables["TIMESTAMP"] = fmt.Sprintf("%d", now.Unix())
 	flowCtx.Variables["TIMESTAMP_MS"] = fmt.Sprintf("%d", now.UnixMilli())
 	flowCtx.mu.Unlock()
+
+	// Pre-load env vars (plaintext, project-scoped). Loaded once per
+	// execution so all nodes see the same snapshot, and a mid-run change
+	// to env_vars by an admin doesn't surprise an in-flight flow.
+	// Falls back silently if the table doesn't exist (older deployments).
+	if task != nil && task.ProjectID != "" {
+		envMap, err := fe.loadEnvVars(ctx, task.ProjectID)
+		if err != nil {
+			fe.log(logging.LevelWarning, fmt.Sprintf("env load failed: %v", err), task.ExecutionID, "", nil)
+		} else if len(envMap) > 0 {
+			flowCtx.mu.Lock()
+			flowCtx.Variables["env"] = envMap
+			flowCtx.mu.Unlock()
+		}
+	}
 	return fe.runFlow(ctx, task, flowConfig, flowCtx)
+}
+
+// loadEnvVars reads the project's env_vars rows. Returns map[name]value.
+// Engine talks to Postgres directly (no Prisma) — query is trivial.
+func (fe *FlowExecutor) loadEnvVars(ctx context.Context, projectID string) (map[string]interface{}, error) {
+	if fe.db == nil {
+		return nil, nil
+	}
+	rows, err := fe.db.Pool.Query(ctx,
+		`SELECT name, value FROM env_vars WHERE project_id = $1`, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]interface{}{}
+	for rows.Next() {
+		var name, value string
+		if err := rows.Scan(&name, &value); err != nil {
+			continue
+		}
+		out[name] = value
+	}
+	return out, rows.Err()
 }
 
 // runFlow is the inner runner. Exposed (via method) so LOOP's body iteration

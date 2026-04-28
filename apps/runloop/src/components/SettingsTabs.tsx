@@ -11,6 +11,7 @@ import {
   Users,
   Blocks,
   Sparkles,
+  Variable,
   LucideIcon,
 } from 'lucide-react';
 
@@ -46,6 +47,13 @@ const TABS: SettingsTab[] = [
     icon: Shield,
     buildHref: () => '/secrets',
     match: (p) => p.startsWith('/secrets'),
+  },
+  {
+    key: 'env',
+    label: 'Environment',
+    icon: Variable,
+    buildHref: (pid) => pid ? `/p/${pid}/env` : '/settings',
+    match: (p) => p.includes('/env'),
   },
   {
     key: 'api-keys',
