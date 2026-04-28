@@ -9,7 +9,7 @@
 // Phase 1: minimal chat. Phase 2 will pull execution data, flow JSON,
 // scheduler config etc. into the system prompt automatically.
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useProject } from '@/context/ProjectContext';
 import { Sparkles, X, Send, Loader2, Settings, Eye } from 'lucide-react';
@@ -25,25 +25,14 @@ const PROVIDER_LABELS: Record<Provider, string> = {
   kimi: 'Kimi',
 };
 
-// Quick-start prompts shown when the chat is empty. Click → fills the
-// input. Picked to cover the four use cases I listed in the welcome card.
-const SUGGESTIONS = [
-  'Explain what this page does',
-  'Write a cron expression for "every weekday at 9am Bangkok time"',
-  'Draft an email payload for a welcome flow',
-  'Why does my last execution keep failing?',
+// Welcome bullets shown when the chat is empty. Same four use cases
+// the AI is good at, kept short so they read at a glance.
+const WELCOME_BULLETS = [
+  'Explain how a node or feature works',
+  'Suggest configs (cron, JSON, transform expressions)',
+  'Debug a failing execution',
+  'Build a flow from a description',
 ];
-
-function rotatingGreeting() {
-  const opts = [
-    'พร้อมช่วยแล้ว ✨',
-    'มีอะไรให้ช่วยมั้ย? 👀',
-    'ลุยเลย 🚀',
-    'ถามมาได้เลย 💬',
-    'ว่าไง? 😎',
-  ];
-  return opts[Math.floor(Math.random() * opts.length)];
-}
 
 const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
 
@@ -73,8 +62,6 @@ export function AIAssistant() {
   const [busy, setBusy] = useState(false);
   const [provider, setProvider] = useState<Provider>('auto');
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  const greeting = useMemo(() => rotatingGreeting(), []);
 
   // Live page context — fetched once per pathname change. Gives the AI
   // grounding for "explain this" / "why fail" without a copy-paste loop.
@@ -182,23 +169,24 @@ export function AIAssistant() {
 
   return (
     <>
-      {/* Floating launcher */}
+      {/* Floating launcher — icon-only round button. Hover shows the
+          "Ask AI" label as a tooltip. Cleaner than the pill version,
+          and the Sparkles glyph is the AI icon the user asked for. */}
       <button
         onClick={() => setOpen(true)}
         aria-label="Open AI assistant"
-        className="fixed bottom-5 right-5 z-40 flex items-center gap-2 px-4 py-2.5 shadow-lg hover:opacity-90 transition"
+        title="Ask AI"
+        className="fixed bottom-5 right-5 z-40 flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
         style={{
           background: 'var(--t-accent)',
           color: '#fff',
+          width: 48,
+          height: 48,
           borderRadius: 999,
-          fontSize: 12.5,
-          fontWeight: 600,
-          letterSpacing: '0.02em',
           display: open ? 'none' : 'flex',
         }}
       >
-        <Sparkles className="w-4 h-4" />
-        Ask AI
+        <Sparkles className="w-5 h-5" />
       </button>
 
       {/* Panel */}
@@ -289,58 +277,27 @@ export function AIAssistant() {
             style={{ background: 'var(--t-bg)' }}
           >
             {messages.length === 0 && (
-              <div className="flex flex-col h-full">
-                <div
-                  className="flex flex-col items-center justify-center text-center px-4 py-6 mb-3"
-                  style={{
-                    background: 'linear-gradient(180deg, color-mix(in srgb, var(--t-accent) 8%, transparent), transparent)',
-                    borderRadius: 6,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 44, height: 44, borderRadius: 999,
-                      background: 'var(--t-accent)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      marginBottom: 10,
-                    }}
+              // Welcome — back to the original simple list. The gradient
+              // hero version felt over-designed for a chat panel; the
+              // bullet list reads in a glance and matches the rest of
+              // the app's flat surfaces. Provider switcher + page
+              // context chip stay in the header where they belong.
+              <div style={{ fontSize: 12.5, color: 'var(--t-text-muted)', lineHeight: 1.6 }}>
+                <p style={{ marginBottom: 8, color: 'var(--t-text)' }}>
+                  Hi <Sparkles className="w-3.5 h-3.5 inline" style={{ color: 'var(--t-accent)', verticalAlign: 'baseline' }} /> — I can help with:
+                </p>
+                <ul className="space-y-1 ml-4" style={{ listStyle: 'disc' }}>
+                  {WELCOME_BULLETS.map((b) => <li key={b}>{b}</li>)}
+                </ul>
+                <p style={{ marginTop: 12, fontSize: 11.5 }}>
+                  Set an API key in{' '}
+                  <Link
+                    href={selectedProject ? `/p/${selectedProject.id}/integrations` : '/settings'}
+                    style={{ color: 'var(--t-accent)' }}
                   >
-                    <Sparkles className="w-5 h-5" style={{ color: '#fff' }} />
-                  </div>
-                  <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--t-text)' }}>
-                    {greeting}
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--t-text-muted)', marginTop: 4 }}>
-                    Ask me anything about RunLoop — try one of these:
-                  </div>
-                </div>
-
-                <div className="space-y-1.5 mb-3">
-                  {SUGGESTIONS.map((s, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setInput(s)}
-                      className="block w-full text-left px-3 py-2 hover:opacity-80 transition"
-                      style={{
-                        fontSize: 12.5, color: 'var(--t-text-secondary)',
-                        background: 'var(--t-input)',
-                        border: '1px solid var(--t-border)',
-                        borderRadius: 4,
-                      }}
-                    >
-                      <span style={{ color: 'var(--t-accent)', marginRight: 6 }}>›</span>
-                      {s}
-                    </button>
-                  ))}
-                </div>
-
-                <p style={{ fontSize: 11, color: 'var(--t-text-muted)', textAlign: 'center' }}>
-                  No provider configured?{' '}
-                  <Link href="/settings/integrations" style={{ color: 'var(--t-accent)' }}>
-                    Add one
-                  </Link>{' '}
-                  · Claude · ChatGPT · Kimi
+                    Settings → Integrations
+                  </Link>
+                  {' '}— Claude, ChatGPT, or Kimi.
                 </p>
               </div>
             )}
