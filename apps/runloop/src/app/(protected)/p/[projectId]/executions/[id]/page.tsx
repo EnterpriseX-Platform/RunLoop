@@ -9,6 +9,7 @@ import { useWebSocket } from '@/hooks/useWebSocket';
 import {
   ControlBreadcrumb, PageHeader, MonoTag, SharpButton, StatusDot, MONO,
 } from '@/components/ControlChrome';
+import { AskAIButton } from '@/components/AskAIButton';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const THEME = {
@@ -161,6 +162,22 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
             {' · '}
             {execution.durationMs ? `${execution.durationMs}ms` : 'running…'}
           </p>
+          {/* Inline AI shortcuts. AI Assistant already injects this
+              execution's full data into its system prompt via
+              usePageContext, so these prompts are deliberately short —
+              the model has the actual logs/output already. */}
+          <div className="flex items-center gap-2 mt-3 flex-wrap">
+            {execution.status === 'FAILED' && (
+              <AskAIButton prompt="Why did this execution fail? Be specific — point to the failing node and the root cause." />
+            )}
+            {execution.status === 'SUCCESS' && (
+              <AskAIButton prompt="Briefly summarize what this execution did and what its output looks like." label="Explain" />
+            )}
+            {execution.status === 'TIMEOUT' && (
+              <AskAIButton prompt="This execution timed out — which node was the bottleneck and how should I tune it?" label="Why timeout?" />
+            )}
+            <AskAIButton prompt="Suggest one small improvement to the flow that produced this execution." label="Suggest fix" />
+          </div>
         </div>
         {isActive && (
           <SharpButton

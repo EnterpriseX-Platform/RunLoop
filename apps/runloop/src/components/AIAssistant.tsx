@@ -86,6 +86,24 @@ export function AIAssistant() {
     }
   }, [messages, busy]);
 
+  // Listen for `ai-ask` custom events so any inline "Ask AI" button on
+  // the page can open this panel with a pre-filled prompt without prop
+  // drilling. Dispatch via:
+  //   window.dispatchEvent(new CustomEvent('ai-ask', { detail: { prompt } }))
+  // The user clicks Send to actually fire — no auto-send, so they can
+  // tweak the question first.
+  useEffect(() => {
+    const onAsk = (e: Event) => {
+      const detail = (e as CustomEvent).detail || {};
+      const prompt = (detail.prompt as string) || '';
+      if (!prompt) return;
+      setOpen(true);
+      setInput(prompt);
+    };
+    window.addEventListener('ai-ask', onAsk as EventListener);
+    return () => window.removeEventListener('ai-ask', onAsk as EventListener);
+  }, []);
+
   const send = async () => {
     const text = input.trim();
     if (!text || busy || !selectedProject?.id) return;

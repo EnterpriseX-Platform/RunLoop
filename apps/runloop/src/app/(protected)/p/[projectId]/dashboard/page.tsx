@@ -20,6 +20,7 @@ import {
   PlayCircle,
 } from 'lucide-react';
 import { useProject } from '@/context/ProjectContext';
+import { SharpButton } from '@/components/ControlChrome';
 import type { DashboardStats, Execution } from '@/types';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
@@ -158,44 +159,12 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            href={`/p/${projectId}/flows/new`}
-            className="flex items-center gap-2 transition-all hover:border-[var(--t-accent)] hover:text-[var(--t-accent)]"
-            style={{
-              background: THEME.panel,
-              border: `1px solid ${THEME.border}`,
-              color: THEME.text.secondary,
-              borderRadius: 2,
-              padding: '8px 14px',
-              fontFamily: MONO,
-              fontSize: 11,
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-            }}
-          >
-            <span style={{ opacity: 0.5 }}>$</span>
-            new flow
-            <ArrowUpRight className="w-3.5 h-3.5" />
-          </Link>
-          <Link
-            href={`/p/${projectId}/schedulers/new`}
-            className="flex items-center gap-2 transition-all"
-            style={{
-              background: THEME.text.primary,
-              color: 'var(--t-bg)',
-              border: `1px solid ${THEME.text.primary}`,
-              borderRadius: 2,
-              padding: '8px 14px',
-              fontFamily: MONO,
-              fontSize: 11,
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-            }}
-          >
-            <span style={{ opacity: 0.5 }}>$</span>
-            new scheduler
-            <ArrowUpRight className="w-3.5 h-3.5" />
-          </Link>
+          <SharpButton variant="ghost" href={`/p/${projectId}/flows/new`}>
+            <Plus className="w-3.5 h-3.5" /> New Flow
+          </SharpButton>
+          <SharpButton href={`/p/${projectId}/schedulers/new`}>
+            <Plus className="w-3.5 h-3.5" /> New Scheduler
+          </SharpButton>
         </div>
       </div>
 

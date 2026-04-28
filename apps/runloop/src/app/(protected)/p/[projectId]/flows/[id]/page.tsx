@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Loader2, AlertCircle, Trash2, History, RotateCcw, X, Play } from 'lucide-react';
 import { Node, Edge } from 'reactflow';
 import { FlowCanvas } from '@/components/flow/FlowCanvas';
+import { AskAIButton } from '@/components/AskAIButton';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const THEME = {
@@ -307,6 +308,10 @@ export default function FlowDetailPage() {
           <span className="text-xs font-medium" style={{ color: THEME.text.secondary }}>
             Flow {flow.status === 'ACTIVE' ? '·' : `(${flow.status})`} {flow.type}
           </span>
+          <AskAIButton
+            prompt="Explain what this flow does at a high level, then point out any obvious issue or improvement."
+            label="Explain flow"
+          />
         </div>
         <div className="flex items-center gap-2">
           <button
