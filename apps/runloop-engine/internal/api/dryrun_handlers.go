@@ -19,6 +19,7 @@ func (h *Handler) DryRunFlow(c *fiber.Ctx) error {
 	type req struct {
 		ProjectID  string             `json:"projectId"`
 		FlowConfig *models.FlowConfig `json:"flowConfig"`
+		Input      interface{}        `json:"input"`
 	}
 	var body req
 	if err := c.BodyParser(&body); err != nil {
@@ -57,7 +58,16 @@ func (h *Handler) DryRunFlow(c *fiber.Ctx) error {
 		ProjectID:   body.ProjectID,
 		ExecutionID: executionID,
 		Type:        models.JobTypeHTTP, // placeholder; flow executor dispatches per-node
-		Config:      models.JSONMap{},
+		Config: func() models.JSONMap {
+			// FlowExecutor reads task.Config["input"] to seed ${{input.X}}.
+			// Pass the dry-run body's "input" through so callers can exercise
+			// variable substitution from the test endpoint.
+			cfg := models.JSONMap{}
+			if body.Input != nil {
+				cfg["input"] = body.Input
+			}
+			return cfg
+		}(),
 		FlowConfig:  body.FlowConfig,
 		Timeout:     5 * time.Minute,
 		RetryCount:  0,
