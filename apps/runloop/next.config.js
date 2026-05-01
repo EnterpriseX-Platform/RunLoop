@@ -1,7 +1,64 @@
 /** @type {import('next').NextConfig} */
+
+// basePath defaults to '' (i.e. the root) so a vanilla deploy serves at /.
+// Set BASE_PATH=/runloop (or any sub-path) to mount under a prefix; the
+// value must start with '/' and not end with '/'.
+const basePath = process.env.BASE_PATH ?? '';
+if (basePath !== '' && (!basePath.startsWith('/') || basePath.endsWith('/'))) {
+  throw new Error(`BASE_PATH must be empty or look like '/foo'; got '${basePath}'`);
+}
+
+const isProd = process.env.NODE_ENV === 'production';
+
+// CORS allowlist for the API. In production, set ALLOWED_ORIGINS to a
+// comma-separated list — '*' is rejected because mixing wildcard origin
+// with credentials lets any site invoke our API on a logged-in user.
+const allowedOriginsRaw = (process.env.ALLOWED_ORIGINS || '').trim();
+let corsOrigin = '*';
+if (allowedOriginsRaw) {
+  if (isProd && allowedOriginsRaw.split(',').map((s) => s.trim()).includes('*')) {
+    throw new Error("ALLOWED_ORIGINS=\"*\" is not permitted in production");
+  }
+  // Pick first; for true multi-origin support use a runtime middleware.
+  corsOrigin = allowedOriginsRaw.split(',')[0].trim();
+} else if (isProd) {
+  throw new Error('ALLOWED_ORIGINS must be set in production');
+}
+
+const securityHeaders = [
+  // Don't reveal infra fingerprints
+  { key: 'X-Powered-By', value: '' },
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+  // HSTS only makes sense behind HTTPS — keep off in dev
+  ...(isProd
+    ? [{ key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' }]
+    : []),
+  // CSP: allow same-origin for everything plus inline styles/scripts that
+  // Next.js needs (the framework hashes these in production). 'unsafe-eval'
+  // is required by React DevTools / Next dev — only enabled outside prod.
+  {
+    key: 'Content-Security-Policy',
+    value: [
+      "default-src 'self'",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data:",
+      `script-src 'self' 'unsafe-inline'${isProd ? '' : " 'unsafe-eval'"}`,
+      "style-src 'self' 'unsafe-inline'",
+      "connect-src 'self' ws: wss: https:",
+      "frame-ancestors 'self'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join('; '),
+  },
+];
+
 const nextConfig = {
   output: 'standalone',
-  basePath: '/runloop',
+  basePath,
+  poweredByHeader: false,
   async redirects() {
     // Root → /projects. AuthProvider picks up from there:
     //   logged in  → stays on /projects (or last-selected project)
@@ -16,105 +73,40 @@ const nextConfig = {
   },
   async rewrites() {
     const engineUrl = process.env.ENGINE_URL || 'http://localhost:8092';
-    
+    const enginePrefix = process.env.ENGINE_BASE_PATH || '/rl';
+
+    // The engine groups its public surface under enginePrefix (default /rl).
+    // We mirror that here so a deployer who picks a different engine prefix
+    // doesn't have to fork next.config.js.
+    const route = (p) => ({ source: `/api${p}`, destination: `${engineUrl}${enginePrefix}/api${p}` });
     return [
-      // Internal API: Schedulers → Go Engine
-      {
-        source: '/api/schedulers',
-        destination: `${engineUrl}/rl/api/schedulers`,
-      },
-      {
-        source: '/api/schedulers/:path*',
-        destination: `${engineUrl}/rl/api/schedulers/:path*`,
-      },
-      // Internal API: Flows → Go Engine
-      {
-        source: '/api/flows',
-        destination: `${engineUrl}/rl/api/flows`,
-      },
-      {
-        source: '/api/flows/:path*',
-        destination: `${engineUrl}/rl/api/flows/:path*`,
-      },
-      // Internal API: Executions → Go Engine
-      {
-        source: '/api/executions',
-        destination: `${engineUrl}/rl/api/executions`,
-      },
-      {
-        source: '/api/executions/:path*',
-        destination: `${engineUrl}/rl/api/executions/:path*`,
-      },
-      // Internal API: Bulk operations → Go Engine
-      {
-        source: '/api/bulk',
-        destination: `${engineUrl}/rl/api/bulk`,
-      },
-      // Internal API: Job templates → Go Engine
-      {
-        source: '/api/templates',
-        destination: `${engineUrl}/rl/api/templates`,
-      },
-      // Internal API: Persistent job queues → Go Engine
-      {
-        source: '/api/queues',
-        destination: `${engineUrl}/rl/api/queues`,
-      },
-      {
-        source: '/api/queues/:path*',
-        destination: `${engineUrl}/rl/api/queues/:path*`,
-      },
-      // Internal API: Dead Letter Queue → Go Engine
-      {
-        source: '/api/dlq',
-        destination: `${engineUrl}/rl/api/dlq`,
-      },
-      {
-        source: '/api/dlq/:path*',
-        destination: `${engineUrl}/rl/api/dlq/:path*`,
-      },
-      // Internal API: Pub/Sub Channels → Go Engine
-      {
-        source: '/api/channels',
-        destination: `${engineUrl}/rl/api/channels`,
-      },
-      {
-        source: '/api/channels/:path*',
-        destination: `${engineUrl}/rl/api/channels/:path*`,
-      },
-      // Plugin + node-template APIs (SDK extension nodes)
-      {
-        source: '/api/plugins',
-        destination: `${engineUrl}/rl/api/plugins`,
-      },
-      {
-        source: '/api/plugins/:path*',
-        destination: `${engineUrl}/rl/api/plugins/:path*`,
-      },
-      {
-        source: '/api/node-templates',
-        destination: `${engineUrl}/rl/api/node-templates`,
-      },
-      {
-        source: '/api/node-templates/:path*',
-        destination: `${engineUrl}/rl/api/node-templates/:path*`,
-      },
-      // Proxy /runloop/proxy/engine/* to Go Engine
-      {
-        source: '/proxy/engine/:path*',
-        destination: `${engineUrl}/rl/:path*`,
-      },
+      route('/schedulers'),       route('/schedulers/:path*'),
+      route('/flows'),            route('/flows/:path*'),
+      route('/executions'),       route('/executions/:path*'),
+      route('/bulk'),
+      route('/templates'),
+      route('/queues'),           route('/queues/:path*'),
+      route('/dlq'),              route('/dlq/:path*'),
+      route('/channels'),         route('/channels/:path*'),
+      route('/plugins'),          route('/plugins/:path*'),
+      route('/node-templates'),   route('/node-templates/:path*'),
+      // Catch-all proxy /proxy/engine/* → engine root
+      { source: '/proxy/engine/:path*', destination: `${engineUrl}${enginePrefix}/:path*` },
     ];
   },
   async headers() {
     return [
+      // Apply security headers to every response
+      { source: '/:path*', headers: securityHeaders },
+      // Stricter CORS on the API surface
       {
         source: '/api/:path*',
         headers: [
           { key: 'Access-Control-Allow-Credentials', value: 'true' },
-          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Origin', value: corsOrigin },
           { key: 'Access-Control-Allow-Methods', value: 'GET,POST,PUT,DELETE,PATCH,OPTIONS' },
-          { key: 'Access-Control-Allow-Headers', value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization' },
+          { key: 'Access-Control-Allow-Headers', value: 'Accept, Authorization, Content-Type, X-Requested-With, X-Idempotency-Key' },
+          { key: 'Vary', value: 'Origin' },
         ],
       },
     ];

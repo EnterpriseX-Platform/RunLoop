@@ -77,6 +77,14 @@ async function main() {
 
   console.log('✅ Demo scheduler created:', scheduler.name);
 
+  // Hand off to the template seeder so a fresh checkout has the n8n-style
+  // catalog visible in the flow editor without an extra command.
+  try {
+    await import('./seed-node-templates');
+  } catch (err) {
+    console.warn('⚠️  Could not seed node templates:', err instanceof Error ? err.message : err);
+  }
+
   console.log('\n🎉 Seeding completed!');
   console.log('\nLogin credentials (shown once — store securely):');
   console.log(`  Email:    ${adminEmail}`);

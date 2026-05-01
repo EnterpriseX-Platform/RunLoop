@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyPassword, generateToken, createSession } from '@/lib/auth';
+import { loginLimiter, clientKey } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
+  // Brute-force barrier — one bucket per IP. Default 10/min; tune via
+  // LOGIN_RATE_LIMIT / LOGIN_RATE_WINDOW_MS.
+  const rlKey = clientKey(request, 'login:');
+  if (!loginLimiter.consume(rlKey)) {
+    return NextResponse.json(
+      { error: 'too many login attempts; slow down' },
+      { status: 429, headers: { 'Retry-After': '60' } }
+    );
+  }
   try {
     const body = await request.json();
     const { email, password } = body;
@@ -20,6 +30,13 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
+      // Constant-ish-time response: hash the supplied password against a
+      // dummy hash so attackers can't distinguish "user not found" from
+      // "wrong password" via timing.
+      await verifyPassword(
+        password,
+        '$2b$10$abcdefghijklmnopqrstuv.NHL2y8QyEGBELQK1uJ6pK4wQR2t/Daa'
+      );
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
@@ -35,6 +52,10 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
+
+    // Successful login — clear the rate-limit bucket so a legitimate
+    // user doesn't get throttled after a few typos.
+    loginLimiter.reset(rlKey);
 
     // Check if user is active
     if (user.status !== 'ACTIVE') {
@@ -76,7 +97,8 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('Login error:', error);
+    // Log details server-side; never leak the underlying message to client.
+    console.error('Login error:', error instanceof Error ? error.message : 'unknown');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

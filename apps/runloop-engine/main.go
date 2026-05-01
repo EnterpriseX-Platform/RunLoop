@@ -16,6 +16,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/websocket/v2"
 	"github.com/rs/zerolog"
@@ -37,6 +38,7 @@ import (
 	"github.com/runloop/runloop-engine/internal/webhook"
 	ws "github.com/runloop/runloop-engine/internal/websocket"
 	"github.com/runloop/runloop-engine/internal/worker"
+	"strings"
 	"time"
 )
 
@@ -189,31 +191,56 @@ func main() {
 	// Initialize API handler
 	handler := api.NewHandler(database, schedulerManager, workerPool, hub, queueManager, pluginRegistry)
 
-	// Create Fiber app
+	// Create Fiber app. The error handler returns a generic message to
+	// the client and logs the underlying detail server-side so we don't
+	// leak stack traces, DSN strings, or filesystem paths to callers.
 	app := fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			code := fiber.StatusInternalServerError
+			msg := "internal server error"
 			if e, ok := err.(*fiber.Error); ok {
 				code = e.Code
+				if code < 500 { // 4xx are user-facing and safe to surface
+					msg = e.Message
+				}
 			}
-			log.Error().Err(err).Int("code", code).Msg("Request error")
-			return c.Status(code).JSON(fiber.Map{
-				"error": err.Error(),
-			})
+			log.Error().Err(err).Int("code", code).Str("path", c.Path()).Msg("Request error")
+			return c.Status(code).JSON(fiber.Map{"error": msg})
 		},
 		ReadTimeout:  cfg.ServerReadTimeout,
 		WriteTimeout: cfg.ServerWriteTimeout,
+		BodyLimit:    cfg.BodyLimitBytes,
 	})
 
 	// Middleware
 	app.Use(recover.New())
 	app.Use(tracing.Middleware()) // Assigns trace_id before logging so log lines carry it
 	app.Use(middleware.LoggerMiddleware())
+
+	// CORS allowlist. Production must specify ALLOWED_ORIGINS; "*" is
+	// rejected when NODE_ENV=production (or RUNTIME_ENV=production)
+	// because mixing wildcard origin with API-key auth lets any site
+	// invoke our API on a logged-in user's behalf.
+	allowedOrigins := strings.Join(cfg.AllowedOrigins, ",")
+	if allowedOrigins == "" {
+		// No allowlist configured — fall back to "*" only outside production.
+		if isProduction() {
+			log.Fatal().Msg("ALLOWED_ORIGINS must be set in production (comma-separated origin allowlist)")
+		}
+		allowedOrigins = "*"
+	} else {
+		for _, o := range cfg.AllowedOrigins {
+			if o == "*" && isProduction() {
+				log.Fatal().Msg("ALLOWED_ORIGINS=\"*\" is not permitted in production")
+			}
+		}
+	}
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-		AllowMethods: "GET,POST,PUT,DELETE,OPTIONS",
-		AllowHeaders: "Origin,Content-Type,Accept,Authorization",
-		ExposeHeaders: "X-Trace-ID",
+		AllowOrigins:     allowedOrigins,
+		AllowMethods:     "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+		AllowHeaders:     "Origin,Content-Type,Accept,Authorization,X-Idempotency-Key",
+		ExposeHeaders:    "X-Trace-ID",
+		AllowCredentials: allowedOrigins != "*",
 	}))
 
 	// Routes
@@ -274,14 +301,46 @@ func setupRoutes(app *fiber.App, handler *api.Handler, webhookHandler *webhook.H
 	// Public webhook endpoint (no auth required)
 	webhookHandler.RegisterRoutes(app, basePath)
 
-	// WebSocket route for real-time execution updates
-	app.Use(basePath+"/ws", func(c *fiber.Ctx) error {
-		// Check if it's a WebSocket upgrade request
-		if websocket.IsWebSocketUpgrade(c) {
-			c.Locals("allowed", true)
-			return c.Next()
+	// Build the WebSocket Origin allowlist once. Falls back to the HTTP
+	// allowlist when WS_ALLOWED_ORIGINS is unset; "*" is allowed only
+	// outside production.
+	wsAllow := cfg.TrustedWSOrigins
+	if len(wsAllow) == 0 {
+		wsAllow = cfg.AllowedOrigins
+	}
+	wsAllowAny := false
+	wsAllowSet := make(map[string]struct{}, len(wsAllow))
+	for _, o := range wsAllow {
+		if o == "*" {
+			wsAllowAny = true
+			continue
 		}
-		return fiber.ErrUpgradeRequired
+		wsAllowSet[o] = struct{}{}
+	}
+	if len(wsAllowSet) == 0 && !wsAllowAny && !isProduction() {
+		// Local dev convenience: with no allowlist configured, accept any.
+		wsAllowAny = true
+	}
+
+	// WebSocket route for real-time execution updates. We verify the
+	// Origin header against the allowlist before any further handlers
+	// run, so an authenticated session in one tab can't be hijacked by
+	// a malicious cross-origin page.
+	app.Use(basePath+"/ws", func(c *fiber.Ctx) error {
+		if !websocket.IsWebSocketUpgrade(c) {
+			return fiber.ErrUpgradeRequired
+		}
+		origin := c.Get("Origin")
+		if !wsAllowAny {
+			if origin == "" {
+				return fiber.NewError(fiber.StatusForbidden, "missing Origin header")
+			}
+			if _, ok := wsAllowSet[origin]; !ok {
+				return fiber.NewError(fiber.StatusForbidden, "origin not allowed")
+			}
+		}
+		c.Locals("allowed", true)
+		return c.Next()
 	})
 	app.Get(basePath+"/ws/executions/:id", websocket.New(ws.HandleWebSocket(hub)))
 
@@ -292,6 +351,22 @@ func setupRoutes(app *fiber.App, handler *api.Handler, webhookHandler *webhook.H
 		middleware.JWTMiddleware(cfg, database),
 		websocket.New(notify.HandleWebSocket(notifyHub)),
 	)
+
+	// Login / token endpoints get a stricter per-IP rate limit. Unrelated
+	// authenticated traffic is unaffected — the limiter only fires on
+	// paths matching the prefix.
+	loginLimiter := limiter.New(limiter.Config{
+		Max:        cfg.LoginRateLimit,
+		Expiration: cfg.LoginRateLimitWindow,
+		KeyGenerator: func(c *fiber.Ctx) string {
+			return c.IP() + ":" + c.Path()
+		},
+		LimitReached: func(c *fiber.Ctx) error {
+			return fiber.NewError(fiber.StatusTooManyRequests, "too many requests; slow down")
+		},
+	})
+	app.Use(basePath+"/auth", loginLimiter)
+	app.Use(basePath+"/api/auth", loginLimiter)
 
 	// Protected routes (require JWT)
 	apiGroup := app.Group(basePath+"/api", middleware.JWTMiddleware(cfg, database))
@@ -413,4 +488,15 @@ func (a *queueProducerAdapter) Enqueue(ctx context.Context, queueName string, pa
 		return "", false, err
 	}
 	return res.JobID, res.Duplicate, nil
+}
+
+// isProduction reports whether we're deploying to a production environment.
+// Honoured by the auth/CORS guards to refuse weak defaults at startup.
+func isProduction() bool {
+	for _, k := range []string{"RUNTIME_ENV", "NODE_ENV", "ENV"} {
+		if v := strings.ToLower(os.Getenv(k)); v == "production" || v == "prod" {
+			return true
+		}
+	}
+	return false
 }

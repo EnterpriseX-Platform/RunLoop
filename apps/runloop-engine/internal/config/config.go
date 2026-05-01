@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -24,6 +25,13 @@ type Config struct {
 	ServerReadTimeout  time.Duration
 	ServerWriteTimeout time.Duration
 	BasePath           string
+	BodyLimitBytes     int      // Max request body. Default 4MB; raise for large flow JSON.
+	AllowedOrigins     []string // CORS allowlist. Empty = same-origin only. "*" only honoured outside production.
+	TrustedWSOrigins   []string // WebSocket Origin allowlist. Falls back to AllowedOrigins when empty.
+
+	// Rate limiting
+	LoginRateLimit       int           // Max login attempts per window per IP. Default 10.
+	LoginRateLimitWindow time.Duration // Window for login attempts. Default 1m.
 
 	// Database
 	DatabaseURL        string
@@ -68,6 +76,13 @@ func Load() *Config {
 		ServerReadTimeout:  getDuration("SERVER_READ_TIMEOUT", 10*time.Second),
 		ServerWriteTimeout: getDuration("SERVER_WRITE_TIMEOUT", 30*time.Second),
 		BasePath:           getEnv("BASE_PATH", "/rl"),
+		BodyLimitBytes:     getInt("BODY_LIMIT_BYTES", 4*1024*1024),
+		AllowedOrigins:     splitCSV(getEnv("ALLOWED_ORIGINS", "")),
+		TrustedWSOrigins:   splitCSV(getEnv("WS_ALLOWED_ORIGINS", "")),
+
+		// Rate limiting
+		LoginRateLimit:       getInt("LOGIN_RATE_LIMIT", 10),
+		LoginRateLimitWindow: getDuration("LOGIN_RATE_WINDOW", 1*time.Minute),
 
 		// Database defaults
 		DatabaseURL:        getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/runloop?sslmode=disable"),
@@ -102,6 +117,28 @@ func Load() *Config {
 	validateJWTSecret(cfg)
 
 	return cfg
+}
+
+// splitCSV parses a comma-separated env var into a deduplicated slice,
+// dropping empty entries. Whitespace around items is trimmed.
+func splitCSV(s string) []string {
+	if s == "" {
+		return nil
+	}
+	seen := make(map[string]struct{})
+	out := make([]string, 0, 4)
+	for _, raw := range strings.Split(s, ",") {
+		v := strings.TrimSpace(raw)
+		if v == "" {
+			continue
+		}
+		if _, ok := seen[v]; ok {
+			continue
+		}
+		seen[v] = struct{}{}
+		out = append(out, v)
+	}
+	return out
 }
 
 func validateJWTSecret(cfg *Config) {

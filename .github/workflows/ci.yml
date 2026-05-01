@@ -33,12 +33,17 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Test
+        env:
+          SECRET_ENCRYPTION_KEY: 0000000000000000000000000000000000000000000000000000000000000001
+        run: npm test --workspaces --if-present
+
       - name: Build
         env:
           # Build needs SOME value to succeed; the runtime guards refuse
           # weak defaults at boot, not at compile time.
-          JWT_SECRET: ci-build-only-not-used-at-runtime-12345
-          SECRET_ENCRYPTION_KEY: 0000000000000000000000000000000000000000000000000000000000000000
+          JWT_SECRET: ci-build-only-not-used-at-runtime-1234567890
+          SECRET_ENCRYPTION_KEY: 0000000000000000000000000000000000000000000000000000000000000001
           DATABASE_URL: postgres://ci:ci@localhost:5432/ci?sslmode=disable
         run: npm run build
 
