@@ -1,0 +1,525 @@
+/* IBM Plex — Sans for UI text (Thai supported via IBM Plex Sans Thai),
+   Mono for code-like inputs and identifiers. Loaded from Google Fonts to
+   keep the app self-contained with no asset pipeline. */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==================== Orch.io Theme System ==================== */
+
+:root {
+  /* Thai first so Thai characters hit the Thai cut automatically, Sans
+     second for Latin — browser falls through per-glyph. */
+  --font-sans: 'IBM Plex Sans Thai', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+  /* Flow canvas design tokens — used by nodes/edges. Nodes render on top of
+     a paper-like light surface in both themes for maximum legibility, but
+     we expose CSS vars so the theme can adjust if needed. */
+  --flow-node-bg:             #FFFFFF;
+  --flow-node-border:         #E5E7EB;
+  --flow-node-border-subtle:  #F3F4F6;
+  --flow-node-text:           #111827;
+  --flow-node-text-muted:     #6B7280;
+  --flow-canvas-bg:           #F8FAFC;
+  --flow-canvas-dots:         #CBD5E1;
+
+  /* Default: Dark Theme (Orch.io) */
+  --t-bg: #0F1117;
+  --t-panel: #1A1D28;
+  --t-panel-hover: #1E2132;
+  --t-border: #232736;
+  --t-border-light: #1D2130;
+  --t-text: #E2E8F0;
+  --t-text-secondary: #8B92A5;
+  --t-text-muted: #5A6178;
+  --t-accent: #3B82F6;
+  --t-accent-hover: #2563EB;
+  --t-accent-light: #60A5FA;
+  --t-input: #151821;
+  --t-header: #12141D;
+  --t-sidebar: #0B0D14;
+  --t-card-hover: #252836;
+  --t-shadow: rgba(0,0,0,0.3);
+  --t-code-bg: #151821;
+}
+
+/* Dark theme: flow surface stays readable with high-contrast node cards */
+[data-theme="dark"] {
+  /* Flow canvas in dark mode: charcoal background, slightly darker node
+     surface so the colored accents pop. Still high-contrast for legibility. */
+  --flow-node-bg:             #1E2233;
+  --flow-node-border:         #2A3044;
+  --flow-node-border-subtle:  #252938;
+  --flow-node-text:           #F1F5F9;
+  --flow-node-text-muted:     #94A3B8;
+  --flow-canvas-bg:           #13151E;
+  --flow-canvas-dots:         #2A3044;
+
+  --t-bg: #0F1117;
+  --t-panel: #1A1D28;
+  --t-panel-hover: #1E2132;
+  --t-border: #232736;
+  --t-border-light: #1D2130;
+  --t-text: #E2E8F0;
+  --t-text-secondary: #8B92A5;
+  --t-text-muted: #5A6178;
+  --t-accent: #3B82F6;
+  --t-accent-hover: #2563EB;
+  --t-accent-light: #60A5FA;
+  --t-input: #151821;
+  --t-header: #12141D;
+  --t-sidebar: #0B0D14;
+  --t-card-hover: #252836;
+  --t-shadow: rgba(0,0,0,0.3);
+  --t-code-bg: #151821;
+
+  /* Legacy compat mapping */
+  --bg-primary: #0F1117;
+  --bg-secondary: #1A1D28;
+  --bg-tertiary: #1E2132;
+  --bg-elevated: #252836;
+  --bg-hover: #1E2132;
+
+  --border-color: #232736;
+  --border-hover: #2E3345;
+
+  --text-primary: #E2E8F0;
+  --text-secondary: #8B92A5;
+  --text-tertiary: #5A6178;
+  --text-muted: #3D4455;
+
+  --ocean-blue: #3B82F6;
+  --ocean-dark: #2563EB;
+  --ocean-light: #60A5FA;
+  --ocean-subtle: rgba(59, 130, 246, 0.15);
+
+  --warm-orange: #f97316;
+  --warm-dark: #ea580c;
+  --warm-light: #fb923c;
+  --warm-subtle: rgba(249, 115, 22, 0.12);
+
+  --success: #22c55e;
+  --success-subtle: rgba(34, 197, 94, 0.12);
+  --warning: #f59e0b;
+  --warning-subtle: rgba(245, 158, 11, 0.12);
+  --error: #ef4444;
+  --error-subtle: rgba(239, 68, 68, 0.12);
+  --rose: #f43f5e;
+  --rose-subtle: rgba(244, 63, 94, 0.12);
+
+  --card-bg: #1A1D28;
+  --card-border: #232736;
+  --card-hover-border: #2E3345;
+  --input-bg: #151821;
+  --input-border: #232736;
+  --sidebar-bg: #0B0D14;
+  --sidebar-border: #1D2130;
+  --sidebar-active-bg: rgba(59, 130, 246, 0.20);
+  --sidebar-active-text: #60A5FA;
+  --sidebar-text: #8B92A5;
+  --sidebar-text-hover: #E2E8F0;
+  --page-bg: #0F1117;
+  --header-bg: #12141D;
+  --badge-bg: #1A1D28;
+  --badge-text: #8B92A5;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: #232736;
+  --scrollbar-thumb-hover: #2E3345;
+}
+
+/* Light Theme Override (Orch.io) */
+[data-theme="light"] {
+  --t-bg: #EBEEF3;
+  --t-panel: #F5F6FA;
+  --t-panel-hover: #ECEEF4;
+  --t-border: #E8ECF2;
+  --t-border-light: #EFF2F7;
+  --t-text: #1A2030;
+  --t-text-secondary: #5A6578;
+  --t-text-muted: #8892A2;
+  --t-accent: #3B82F6;
+  --t-accent-hover: #2563EB;
+  --t-accent-light: #60A5FA;
+  --t-input: #E8EBF1;
+  --t-header: #F0F1F6;
+  --t-sidebar: #F0F1F6;
+  --t-card-hover: #E8EBF1;
+  --t-shadow: rgba(15,20,35,0.06);
+  --t-code-bg: #ECEEF4;
+
+  /* Legacy compat mapping */
+  --bg-primary: #EBEEF3;
+  --bg-secondary: #F5F6FA;
+  --bg-tertiary: #F0F1F6;
+  --bg-elevated: #ECEEF4;
+  --bg-hover: #E8EBF1;
+
+  --border-color: #E8ECF2;
+  --border-hover: #D0D5DE;
+
+  --text-primary: #1A2030;
+  --text-secondary: #5A6578;
+  --text-tertiary: #8892A2;
+  --text-muted: #B0B8C8;
+
+  --ocean-blue: #3B82F6;
+  --ocean-dark: #2563EB;
+  --ocean-light: #60A5FA;
+  --ocean-subtle: rgba(59, 130, 246, 0.1);
+
+  --warm-orange: #f97316;
+  --warm-dark: #ea580c;
+  --warm-light: #fb923c;
+  --warm-subtle: rgba(249, 115, 22, 0.08);
+
+  --success: #22c55e;
+  --success-subtle: rgba(34, 197, 94, 0.08);
+  --warning: #f59e0b;
+  --warning-subtle: rgba(245, 158, 11, 0.08);
+  --error: #ef4444;
+  --error-subtle: rgba(239, 68, 68, 0.08);
+  --rose: #f43f5e;
+  --rose-subtle: rgba(244, 63, 94, 0.08);
+
+  --card-bg: #F5F6FA;
+  --card-border: #E8ECF2;
+  --card-hover-border: #D0D5DE;
+  --input-bg: #E8EBF1;
+  --input-border: #E8ECF2;
+  --sidebar-bg: #F0F1F6;
+  --sidebar-border: #EFF2F7;
+  --sidebar-active-bg: rgba(59, 130, 246, 0.15);
+  --sidebar-active-text: #3B82F6;
+  --sidebar-text: #5A6178;
+  --sidebar-text-hover: #1A2030;
+  --page-bg: #EBEEF3;
+  --header-bg: #F0F1F6;
+  --badge-bg: #ECEEF4;
+  --badge-text: #5A6578;
+  --scrollbar-track: #ECEEF4;
+  --scrollbar-thumb: #D0D5DE;
+  --scrollbar-thumb-hover: #8892A2;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border-color: var(--t-border);
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--t-bg);
+  color: var(--t-text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--t-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--t-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--t-text-muted);
+}
+
+/* Selection & Focus */
+::selection {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--t-text);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--t-accent);
+  outline-offset: 2px;
+}
+
+/* Spinner / Loading */
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--t-border);
+  border-top-color: var(--t-accent);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Typography */
+.text-gradient {
+  background: linear-gradient(135deg, var(--t-accent) 0%, var(--warm-orange) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.font-tech {
+  font-family: var(--font-mono);
+  font-feature-settings: 'liga' 1;
+}
+
+/* Buttons */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background-color: var(--t-accent);
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--t-accent-hover);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background-color: var(--t-panel);
+  color: var(--t-text);
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  border: 1px solid var(--t-border);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background-color: var(--t-panel-hover);
+  border-color: var(--border-hover);
+}
+
+/* Ocean Blue Button */
+.btn-ocean {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background-color: var(--t-accent);
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-ocean:hover {
+  background-color: var(--t-accent-hover);
+}
+
+/* Glass Effect */
+.glass {
+  background: color-mix(in srgb, var(--t-panel) 80%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--t-border);
+}
+
+/* Cards */
+.card {
+  background-color: var(--t-panel);
+  border: 1px solid var(--t-border);
+  border-radius: 10px;
+  transition: border-color 0.15s ease;
+}
+
+.card:hover {
+  border-color: var(--card-hover-border);
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 9999px;
+}
+
+.badge-success {
+  background-color: var(--success-subtle);
+  color: var(--success);
+}
+
+.badge-warning {
+  background-color: var(--warning-subtle);
+  color: var(--warning);
+}
+
+.badge-error {
+  background-color: var(--error-subtle);
+  color: var(--error);
+}
+
+.badge-ocean {
+  background-color: var(--ocean-subtle);
+  color: var(--t-accent);
+}
+
+/* Grid Background */
+.bg-grid {
+  background-image:
+    linear-gradient(var(--t-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--t-border) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.3;
+}
+
+/* HTTP Method Badges */
+.method-get { background-color: var(--success-subtle); color: var(--success); }
+.method-post { background-color: var(--ocean-subtle); color: var(--t-accent); }
+.method-put { background-color: var(--warning-subtle); color: var(--warning); }
+.method-delete { background-color: var(--error-subtle); color: var(--error); }
+.method-patch { background-color: rgba(168, 85, 247, 0.1); color: #a855f7; }
+
+/* Animations */
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.2s ease-out;
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Feature Cards (Login Page) */
+.feature-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: var(--t-panel);
+  border: 1px solid var(--t-border);
+  border-radius: 0.75rem;
+  transition: all 0.15s ease;
+}
+
+.feature-card:hover {
+  border-color: var(--border-hover);
+  background-color: var(--t-panel-hover);
+}
+
+.feature-icon-blue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background-color: var(--ocean-subtle);
+  border-radius: 0.625rem;
+  color: var(--t-accent);
+}
+
+.feature-icon-orange {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background-color: var(--warm-subtle);
+  border-radius: 0.625rem;
+  color: var(--warm-orange);
+}
+
+.feature-icon-green {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background-color: var(--success-subtle);
+  border-radius: 0.625rem;
+  color: var(--success);
+}
+
+/* Form Elements */
+.input-dark {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: var(--t-input);
+  border: 1px solid var(--t-border);
+  border-radius: 0.625rem;
+  color: var(--t-text);
+  font-size: 0.9375rem;
+  transition: all 0.15s ease;
+}
+
+.input-dark:focus {
+  outline: none;
+  border-color: var(--t-accent);
+  box-shadow: 0 0 0 3px var(--ocean-subtle);
+}
+
+.input-dark::placeholder {
+  color: var(--t-text-muted);
+}
+
+/* Sidebar Specific Styles */
+.sidebar-gradient {
+  background: linear-gradient(135deg, var(--t-accent) 0%, var(--warm-orange) 100%);
+}
+
+/* Light theme ring override */
+[data-theme="light"] * {
+  --tw-ring-color: var(--t-border);
+}

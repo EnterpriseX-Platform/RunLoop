@@ -1,0 +1,32 @@
+{
+  "name": "runloop-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "description": "RunLoop - Modern Scheduler Platform (Turborepo)",
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "db:generate": "cd apps/runloop && prisma generate",
+    "db:migrate": "cd apps/runloop && prisma migrate dev",
+    "db:push": "cd apps/runloop && prisma db push",
+    "db:studio": "cd apps/runloop && prisma studio",
+    "db:seed": "cd apps/runloop && tsx prisma/seed.ts",
+    "db:start": "docker-compose -f docker-compose.db.yml up -d",
+    "db:stop": "docker-compose -f docker-compose.db.yml down",
+    "db:logs": "docker-compose -f docker-compose.db.yml logs -f",
+    "setup": "npm install && npm run db:start && sleep 5 && npm run db:push && npm run db:seed"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0",
+    "typescript": "^5.3.3"
+  },
+  "packageManager": "npm@10.2.4",
+  "workspaces": [
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

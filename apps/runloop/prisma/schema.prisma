@@ -1,0 +1,804 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User authentication model
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  avatar    String?
+  role      UserRole @default(USER)
+  status    UserStatus @default(ACTIVE)
+  password  String   // Hashed password
+  
+  // Relations
+  projects  ProjectMember[]
+  schedulers Scheduler[]
+  executions Execution[]
+  sessions  Session[]
+  auditLogs AuditLog[]
+  apiKeys   ApiKey[]
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("sessions")
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  status      ProjectStatus @default(ACTIVE)
+  color       String   @default("cyan")
+  
+  // Relations
+  members     ProjectMember[]
+  schedulers  Scheduler[]
+  flows       Flow[]
+  tasks       Task[]
+  executions  Execution[]
+  auditLogs   AuditLog[]
+  secrets     Secret[]
+  envVars     EnvVar[]
+  webhooks    Webhook[]
+  apiKeys     ApiKey[]
+  jobQueues   JobQueue[]
+  nodeTemplates NodeTemplate[]
+
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  @@map("projects")
+}
+
+model ProjectMember {
+  id        String @id @default(cuid())
+  projectId String @map("project_id")
+  userId    String @map("user_id")
+  role      ProjectRole @default(MEMBER)
+  
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  joinedAt  DateTime @default(now()) @map("joined_at")
+
+  @@unique([projectId, userId])
+  @@map("project_members")
+}
+
+// Main Scheduler Model
+model Scheduler {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  
+  // Job Configuration
+  type        JobType
+  config      Json        @default("{}")
+  
+  // Flow Designer Support
+  flowConfig  Json?       @map("flow_config") // For visual workflow builder
+  isFlow      Boolean     @default(false) @map("is_flow")
+  
+  // Trigger Configuration
+  triggerType TriggerType @default(SCHEDULE) @map("trigger_type")
+  schedule    String?     // Cron expression (e.g., "0 */6 * * *")
+  timezone    String      @default("Asia/Bangkok")
+  
+  // Execution Settings
+  status      SchedulerStatus @default(ACTIVE)
+  timeout     Int         @default(300) // seconds
+  retryCount  Int         @default(0) @map("retry_count")
+  retryDelay  Int         @default(60) @map("retry_delay") // seconds
+  maxConcurrency Int      @default(1) @map("max_concurrency") // prevent overlapping runs
+  pausedUntil DateTime?   @map("paused_until") // maintenance window
+  
+  // Statistics
+  successCount Int        @default(0) @map("success_count")
+  failureCount Int        @default(0) @map("failure_count")
+  lastRunAt   DateTime?   @map("last_run_at")
+  nextRunAt   DateTime?   @map("next_run_at")
+  lastError   String?     @map("last_error")
+  
+  // Relations
+  projectId   String      @map("project_id")
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy   String      @map("created_by")
+  creator     User        @relation(fields: [createdBy], references: [id])
+  // Executions are matched by scheduler_id column (string) rather than FK
+  // so queue/webhook/manual triggers can use synthetic IDs. Use raw SQL
+  // or `Execution.findMany({where:{schedulerId}})` to traverse.
+  notifications Notification[]
+  schedulerFlows SchedulerFlow[]
+  dependsOn    SchedulerDependency[] @relation("DependentScheduler")
+  dependedBy   SchedulerDependency[] @relation("PrerequisiteScheduler")
+
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  deletedAt   DateTime?   @map("deleted_at")
+
+  @@index([projectId, status])
+  @@index([status, nextRunAt])
+  @@index([createdBy])
+  @@map("schedulers")
+}
+
+// Flow Model - Standalone workflow/task definition
+model Flow {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  type        String   @default("SIMPLE")
+  jobType     String?  @map("job_type")
+  config      Json?    @default("{}")
+  flowConfig  Json?    @map("flow_config")
+  status      String   @default("DRAFT")
+  currentVersion Int   @default(1) @map("current_version")
+  projectId   String   @map("project_id")
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy   String   @map("created_by")
+
+  schedulerFlows SchedulerFlow[]
+  versions    FlowVersion[]
+  jobQueues   JobQueue[]
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([projectId, status])
+  @@index([createdBy])
+  @@map("flows")
+}
+
+// Flow version history — snapshots every time the flow is saved.
+// Allows inspection and rollback.
+model FlowVersion {
+  id         String   @id @default(cuid())
+  flowId     String   @map("flow_id")
+  flow       Flow     @relation(fields: [flowId], references: [id], onDelete: Cascade)
+  version    Int
+  name       String
+  description String?
+  flowConfig Json     @map("flow_config")
+  createdBy  String   @map("created_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+  comment    String?  // Optional user message "rolled back to v3", "added retry"
+
+  @@unique([flowId, version])
+  @@index([flowId, createdAt])
+  @@map("flow_versions")
+}
+
+// Task Model - Atomic job unit (single executable action)
+model Task {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  jobType     String   @map("job_type")
+  config      Json     @default("{}")
+  status      String   @default("ACTIVE")
+  projectId   String   @map("project_id")
+  project     Project  @relation(fields: [projectId], references: [id])
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([projectId, status])
+  @@index([createdBy])
+  @@map("tasks")
+}
+
+model SchedulerFlow {
+  id             String    @id @default(cuid())
+  schedulerId    String    @map("scheduler_id")
+  scheduler      Scheduler @relation(fields: [schedulerId], references: [id], onDelete: Cascade)
+  flowId         String    @map("flow_id")
+  flow           Flow      @relation(fields: [flowId], references: [id])
+  executionOrder Int       @default(0) @map("execution_order")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@unique([schedulerId, flowId])
+  @@index([schedulerId])
+  @@index([flowId])
+  @@map("scheduler_flows")
+}
+
+model SchedulerFlowEdge {
+  id           String @id @default(cuid())
+  schedulerId  String @map("scheduler_id")
+  sourceFlowId String @map("source_flow_id")
+  targetFlowId String @map("target_flow_id")
+  condition    String? @default("ON_SUCCESS")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([schedulerId])
+  @@map("scheduler_flow_edges")
+}
+
+model SchedulerDependency {
+  id                   String    @id @default(cuid())
+  schedulerId          String    @map("scheduler_id")
+  scheduler            Scheduler @relation("DependentScheduler", fields: [schedulerId], references: [id], onDelete: Cascade)
+  dependsOnSchedulerId String    @map("depends_on_scheduler_id")
+  dependsOn            Scheduler @relation("PrerequisiteScheduler", fields: [dependsOnSchedulerId], references: [id], onDelete: Cascade)
+  condition            String    @default("ON_SUCCESS")
+  createdAt            DateTime  @default(now()) @map("created_at")
+
+  @@unique([schedulerId, dependsOnSchedulerId])
+  @@index([schedulerId])
+  @@index([dependsOnSchedulerId])
+  @@map("scheduler_dependencies")
+}
+
+// Execution Model - Tracks job runs
+model Execution {
+  id          String          @id @default(cuid())
+
+  // Relations
+  //
+  // schedulerId is now a loose identifier, not a hard FK — queue-triggered
+  // runs use `queue:<name>` and webhook/API runs may use synthetic values
+  // too. Use flowId / projectId when you need a true relational link.
+  schedulerId String          @map("scheduler_id")
+  projectId   String          @map("project_id")
+  project     Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  flowId      String?         @map("flow_id")
+  
+  // Trigger Information
+  triggerType TriggerType     @map("trigger_type")
+  triggeredBy String?         @map("triggered_by") // User ID for manual triggers
+  triggerUser User?           @relation(fields: [triggeredBy], references: [id])
+  
+  // Execution Status
+  status      ExecutionStatus @default(PENDING)
+  startedAt   DateTime        @default(now()) @map("started_at")
+  completedAt DateTime?       @map("completed_at")
+  durationMs  Int?            @map("duration_ms")
+  
+  // I/O and Logs
+  input       Json?           @default("{}")
+  output      Json?           @default("{}")
+  logs        String?         @db.Text
+  errorMessage String?        @map("error_message") @db.Text
+  
+  // Real-time Logs (for WebSocket)
+  realtimeLogs RealtimeLog[]
+  
+  // Metadata
+  retryAttempt Int           @default(0) @map("retry_attempt")
+  workerId    String?         @map("worker_id")
+  ipAddress   String?         @map("ip_address")
+  
+  // Replay
+  replayedFrom String?       @map("replayed_from") // Original execution ID if replayed
+  replayCount  Int           @default(0) @map("replay_count")
+  
+  createdAt   DateTime        @default(now()) @map("created_at")
+
+  @@index([schedulerId, startedAt])
+  @@index([status, startedAt])
+  @@index([projectId, startedAt])
+  @@map("executions")
+}
+
+// Real-time Logs for WebSocket
+model RealtimeLog {
+  id          String   @id @default(cuid())
+  executionId String   @map("execution_id")
+  execution   Execution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  
+  timestamp   DateTime @default(now())
+  level       String   // INFO, WARN, ERROR, DEBUG
+  message     String
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([executionId, timestamp])
+  @@map("realtime_logs")
+}
+
+// Secrets Management (Encrypted)
+model Secret {
+  id          String   @id @default(cuid())
+  projectId   String   @map("project_id")
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  name        String   // e.g., "AWS_ACCESS_KEY", "DATABASE_URL"
+  value       String   // AES-256-GCM encrypted (base64)
+  iv          String   // Initialization vector (base64)
+  authTag     String   @default("") @map("auth_tag") // GCM authentication tag (base64)
+  
+  // Scope
+  scope       SecretScope @default(PROJECT) // PROJECT, GLOBAL, ORGANIZATION
+  
+  // Metadata
+  description String?
+  category    String?  // database, cloud, api, ssh, etc.
+  tags        String[] // For filtering
+  
+  // Access Control
+  accessLevel SecretAccess @default(ALL) // ALL, RESTRICTED
+  allowedSchedulers String[] @default([]) @map("allowed_schedulers") // Specific scheduler IDs that can use this secret
+  
+  // Audit
+  lastUsedAt  DateTime? @map("last_used_at")
+  useCount    Int      @default(0) @map("use_count")
+  createdBy   String   @map("created_by")
+  
+  // Rotation
+  expiresAt   DateTime? @map("expires_at")
+  rotatedFrom String?   @map("rotated_from") // Previous secret ID if rotated
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([projectId, name])
+  @@index([projectId, category])
+  @@index([scope])
+  @@map("secrets")
+}
+
+// Secret Access Logs (Audit)
+model SecretAccessLog {
+  id          String   @id @default(cuid())
+  secretId    String   @map("secret_id")
+  secretName  String   @map("secret_name") // Denormalized for audit
+  
+  // Who/What accessed
+  accessedBy  String   @map("accessed_by") // User ID or 'SYSTEM'
+  executionId String?  @map("execution_id")
+  schedulerId String?  @map("scheduler_id")
+  
+  // Context
+  action      SecretAction @default(READ) // READ, UPDATE, DELETE, ROTATE
+  success     Boolean  @default(true)
+  errorMessage String? @map("error_message")
+  
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([secretId, createdAt])
+  @@index([executionId])
+  @@map("secret_access_logs")
+}
+
+// EnvVar — plaintext per-project configuration. Distinct from Secret:
+// values are visible in the UI, never encrypted, no audit log of access.
+// Use for non-sensitive settings (API base URLs, feature flags, region
+// codes) that flows reference as ${{env.NAME}} during execution.
+//
+// Why split from Secret: secrets carry compliance requirements (audit,
+// expiration, restricted access) that have real cost. Env vars don't,
+// and forcing them through the secret table would either bloat audit
+// logs or give a false sense of confidentiality.
+model EnvVar {
+  id          String   @id @default(cuid())
+  projectId   String   @map("project_id")
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  name        String   // e.g., "API_BASE_URL", "REGION", "FEATURE_BETA"
+  value       String   // plaintext
+  description String?
+
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([projectId, name])
+  @@index([projectId])
+  @@map("env_vars")
+}
+
+// Webhooks for external triggers
+model Webhook {
+  id          String   @id @default(cuid())
+  projectId   String   @map("project_id")
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  name        String
+  description String?
+  secret      String?  // For webhook signature verification
+  
+  // Trigger Configuration
+  schedulerId String?  @map("scheduler_id") // Optional: trigger specific scheduler
+  customPayload Json?  @map("custom_payload")
+  
+  status      WebhookStatus @default(ACTIVE)
+  lastCalledAt DateTime?    @map("last_called_at")
+  callCount   Int          @default(0) @map("call_count")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("webhooks")
+}
+
+// API Keys for external access
+model ApiKey {
+  id          String   @id @default(cuid())
+  projectId   String?  @map("project_id") // Optional: project-specific key
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name        String
+  key         String   @unique // SHA-256 hash of the raw token
+  prefix      String?  @map("prefix") // First 8 chars of the raw token, e.g., rl_a1b2c3d4
+  permissions String[] @default([]) // ['schedulers:read', 'executions:write', etc.]
+
+  lastUsedAt  DateTime? @map("last_used_at")
+  expiresAt   DateTime? @map("expires_at")
+  revokedAt   DateTime? @map("revoked_at")
+  status      ApiKeyStatus @default(ACTIVE)
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([key])
+  @@index([prefix])
+  @@map("api_keys")
+}
+
+// Job Templates
+model JobTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  
+  // Template Configuration
+  type        JobType
+  config      Json     // Default config
+  flowConfig  Json?    @map("flow_config")
+  isFlow      Boolean  @default(false) @map("is_flow")
+  
+  // Template Settings
+  category    String   @default("custom") // http, database, utility, etc.
+  icon        String?  // Lucide icon name
+  isPublic    Boolean  @default(false) @map("is_public") // System templates
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("job_templates")
+}
+
+// Notifications (Email/Slack)
+model Notification {
+  id          String   @id @default(cuid())
+  schedulerId String   @map("scheduler_id")
+  scheduler   Scheduler @relation(fields: [schedulerId], references: [id], onDelete: Cascade)
+  
+  type        NotificationType
+  config      Json     // { email: '...' } or { webhook: '...' }
+  
+  // When to notify
+  onSuccess   Boolean  @default(false) @map("on_success")
+  onFailure   Boolean  @default(true) @map("on_failure")
+  onStart     Boolean  @default(false) @map("on_start")
+  
+  status      NotificationStatus @default(ACTIVE)
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("notifications")
+}
+
+// Audit Log for compliance
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?  @map("user_id")
+  user        User?    @relation(fields: [userId], references: [id])
+  projectId   String?  @map("project_id")
+  project     Project? @relation(fields: [projectId], references: [id])
+  
+  action      String   // e.g., "scheduler.created", "execution.triggered"
+  resource    String   // e.g., "scheduler", "execution"
+  resourceId  String?  @map("resource_id")
+  
+  oldValue    Json?    @map("old_value")
+  newValue    Json?    @map("new_value")
+  
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([projectId, createdAt])
+  @@index([action, createdAt])
+  @@map("audit_logs")
+}
+
+// Enums
+enum UserRole {
+  USER
+  ADMIN
+  SUPERADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum ProjectStatus {
+  ACTIVE
+  ARCHIVED
+  DELETED
+}
+
+enum ProjectRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum JobType {
+  HTTP
+  DATABASE
+  SHELL
+  PYTHON
+  NODEJS
+  DOCKER
+}
+
+enum TriggerType {
+  SCHEDULE
+  MANUAL
+  WEBHOOK
+  API
+  QUEUE
+}
+
+enum SchedulerStatus {
+  ACTIVE
+  INACTIVE
+  PAUSED
+  ERROR
+}
+
+enum ExecutionStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+  CANCELLED
+  TIMEOUT
+}
+
+// Failed work that exceeded retries / tripped a circuit breaker / hit a
+// permanent error. Operators triage these via the "Needs Review" tab on
+// the executions page: replay (re-enqueue or re-trigger source), discard,
+// or resolve. The Go engine writes/reads this table directly via raw SQL.
+model DeadLetterQueueEntry {
+  id              String    @id
+  executionId     String    @map("execution_id")
+  schedulerId     String    @map("scheduler_id")
+  projectId       String    @map("project_id")
+  reason          String
+  errorMessage    String    @map("error_message")
+  errorDetails    String    @default("") @map("error_details")
+  retryCount      Int       @default(0) @map("retry_count")
+  originalInput   Json?     @map("original_input")
+  nodeId          String    @default("") @map("node_id")
+  nodeType        String    @default("") @map("node_type")
+  status          String    @default("PENDING")
+  resolvedAt      DateTime? @map("resolved_at")
+  resolvedBy      String    @default("") @map("resolved_by")
+  resolution      String    @default("")
+  replayed        Boolean   @default(false)
+  replayedAt      DateTime? @map("replayed_at")
+  newExecutionId  String    @default("") @map("new_execution_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([projectId, status, createdAt(sort: Desc)])
+  @@index([executionId])
+  @@map("dead_letter_queue")
+}
+
+enum WebhookStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ApiKeyStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+enum NotificationType {
+  EMAIL
+  SLACK
+  DISCORD
+  WEBHOOK
+}
+
+enum NotificationStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum SecretScope {
+  PROJECT      // Only within project
+  GLOBAL       // Across all projects (admin only)
+  ORGANIZATION // Within org (future)
+}
+
+enum SecretAccess {
+  ALL          // Any scheduler in project can use
+  RESTRICTED   // Only specific schedulers
+}
+
+enum SecretAction {
+  READ
+  UPDATE
+  DELETE
+  ROTATE
+  CREATE
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Persistent Job Queue
+//
+// Durable inbox for ad-hoc work that should be processed continuously by a
+// pool of workers (e.g. outbound email, webhook delivery). Each queue is
+// bound to one flow — enqueueing a job triggers a flow execution with the
+// job's payload injected as variables.
+//
+// The `backend` column selects the transport: Postgres (default, zero-ops),
+// Redis Streams, RabbitMQ, or Kafka. Retry/DLQ policy is the same across
+// all backends; only the delivery mechanism differs.
+// ─────────────────────────────────────────────────────────────────────────────
+model JobQueue {
+  name           String   @id
+  projectId      String   @map("project_id")
+  project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  flowId         String   @map("flow_id")
+  flow           Flow     @relation(fields: [flowId], references: [id], onDelete: Cascade)
+
+  backend        String   @default("postgres")    // postgres | redis | rabbitmq | kafka
+  backendConfig  Json     @default("{}") @map("backend_config")
+
+  concurrency    Int      @default(1)
+  maxAttempts    Int      @default(3)  @map("max_attempts")
+  visibilitySec  Int      @default(300) @map("visibility_sec")
+  backoffInitMs  Int      @default(1000)  @map("backoff_init_ms")
+  backoffMaxMs   Int      @default(60000) @map("backoff_max_ms")
+  backoffMult    Float    @default(2.0)   @map("backoff_mult")
+
+  enabled        Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt      @map("updated_at")
+
+  items          JobQueueItem[]
+
+  @@index([projectId, enabled])
+  @@map("job_queues")
+}
+
+// PG backend row + DLQ store for all backends.
+// For non-PG backends, only DLQ rows land here (the primary storage is in
+// the external broker).
+model JobQueueItem {
+  id              String   @id @default(cuid())
+  queueName       String   @map("queue_name")
+  queue           JobQueue @relation(fields: [queueName], references: [name], onDelete: Cascade)
+  projectId       String   @map("project_id")
+  payload         Json
+  idempotencyKey  String?  @map("idempotency_key")
+
+  status          String   @default("PENDING")  // PENDING | PROCESSING | COMPLETED | FAILED | DLQ
+  priority        Int      @default(0)
+  attempts        Int      @default(0)
+  lastError       String?  @map("last_error")
+
+  visibleAfter    DateTime @default(now()) @map("visible_after")
+  lockedBy        String?  @map("locked_by")
+  lockedUntil     DateTime? @map("locked_until")
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  completedAt     DateTime? @map("completed_at")
+
+  @@unique([queueName, idempotencyKey])
+  @@index([queueName, status, priority, visibleAfter])
+  @@index([status, lockedUntil])
+  @@map("job_queue_items")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Plugin system
+//
+// L1 — NodeTemplate: preset configs for existing node types (e.g. "Slack:
+// Ops channel" is really an HTTP node with fixed URL + headers). Users save
+// a configured node as a template and reuse it across flows.
+//
+// L2 — Plugin: a new node type whose handler lives off-engine, called over
+// HTTP. Manifest declares the node's UI (inputs/outputs/icon/color) so the
+// editor can render a form without shipping UI code per plugin. Engine
+// dispatches by POSTing to handler.url and treating the response as the
+// node's result.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model NodeTemplate {
+  id          String   @id @default(cuid())
+  // project-scoped templates are the common case; global ones (null) are
+  // for platform-owned presets shown to every project.
+  projectId   String?  @map("project_id")
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  nodeType    String   @map("node_type")   // e.g. HTTP, SHELL, or a plugin name
+  config      Json                          // the saved node.config blob
+  icon        String?
+  color       String?
+
+  createdBy   String?  @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt      @map("updated_at")
+
+  @@index([projectId])
+  @@map("node_templates")
+}
+
+model Plugin {
+  // name is the logical node-type id ("stripe-charge") — must NOT collide
+  // with built-in JobType values. Uniqueness is enforced at install time.
+  name        String   @id
+  version     String
+  manifest    Json                                       // full manifest JSON
+  enabled     Boolean  @default(true)
+  authSecret  String?  @map("auth_secret")               // optional shared secret for handler auth
+
+  installedBy String?  @map("installed_by")
+  installedAt DateTime @default(now()) @map("installed_at")
+  updatedAt   DateTime @updatedAt      @map("updated_at")
+
+  @@map("plugins")
+}
+
+// Shared idempotency ledger for non-PG backends (Kafka/Rabbit don't have
+// native dedupe). PG backend relies on JobQueueItem's unique constraint
+// directly and doesn't touch this table.
+model QueueDedupeKey {
+  queueName  String   @map("queue_name")
+  key        String
+  jobId      String   @map("job_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  expiresAt  DateTime @map("expires_at")
+
+  @@id([queueName, key])
+  @@index([expiresAt])
+  @@map("queue_dedupe_keys")
+}

@@ -1,0 +1,93 @@
+# runloop-postgres — dedicated Postgres 16 instance for RunLoop.
+# Uses the cluster's NFS storage pattern (manually-provisioned PV
+# backed by <nfs-server>:/datastore/runloop/postgres).
+#
+# One-time setup on NFS server (or via bootstrap pod that mounts
+# the NFS root and mkdirs):
+#   mkdir -p /datastore/runloop/postgres && chown 999:999 /datastore/runloop/postgres
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: runloop-postgres-pv
+  labels: { app: runloop-postgres }
+spec:
+  capacity: { storage: 10Gi }
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs
+  mountOptions: [hard, nfsvers=4.1]
+  nfs:
+    server: <nfs-server>
+    path: /datastore/runloop/postgres
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: runloop-postgres-data
+  namespace: community
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: nfs
+  resources:
+    requests: { storage: 10Gi }
+  selector:
+    matchLabels: { app: runloop-postgres }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: runloop-postgres
+  namespace: community
+  labels: { app: runloop-postgres }
+spec:
+  replicas: 1
+  strategy: { type: Recreate }   # single-writer — never run 2 replicas against same PVC
+  selector:
+    matchLabels: { app: runloop-postgres }
+  template:
+    metadata:
+      labels: { app: runloop-postgres }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports: [{ containerPort: 5432, name: pg }]
+          env:
+            - name: POSTGRES_DB
+              value: runloop
+            - name: POSTGRES_USER
+              value: runloop
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: runloop-secret, key: POSTGRES_PASSWORD }
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "runloop", "-d", "runloop"]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            requests: { cpu: "100m", memory: "256Mi" }
+            limits:   { cpu: "1000m", memory: "1Gi" }
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: runloop-postgres-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: runloop-postgres
+  namespace: community
+spec:
+  selector: { app: runloop-postgres }
+  ports:
+    - name: pg
+      port: 5432
+      targetPort: 5432
+  type: ClusterIP

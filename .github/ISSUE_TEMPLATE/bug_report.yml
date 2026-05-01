@@ -1,0 +1,56 @@
+name: Bug Report
+description: Report a defect — something isn't working the way it should
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: A short description of the problem and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Numbered list. Include flow definitions, payloads, queries — whatever someone else needs to see the same bug.
+      placeholder: |
+        1. Create a flow with HTTP node pointing to ...
+        2. Trigger it with payload { ... }
+        3. Observe that the execution row reports SUCCESS even though the HTTP call returned 500
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+      description: Output of `git rev-parse --short HEAD` (or the released version tag).
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: How are you running RunLoop?
+      options:
+        - Local dev (npm run dev)
+        - Docker Compose
+        - Kubernetes
+        - Other (describe in additional context)
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / errors
+      description: Paste relevant engine and web logs. Redact secrets first.
+      render: shell
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?

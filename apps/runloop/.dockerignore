@@ -1,0 +1,10 @@
+# Exclude local dev env/secrets/build artifacts — production build must
+# not inherit NEXT_PUBLIC_SKIP_AUTH=true from .env.local or any baked
+# localhost DB URL. Real values come from k8s Secret at runtime.
+.env.local
+.env.*.local
+.env.development
+.next
+node_modules
+.turbo
+*.log

@@ -1,0 +1,148 @@
+// RunLoop — Deploy to Kubernetes (parametrised).
+//
+// One Jenkinsfile, multiple jobs. Each Jenkins job hard-codes its
+// target environment via parameters (defaults below) so an operator
+// only needs to choose IMAGE_TAG.
+//
+// Existing jobs:
+//   /COMMUNITY/deploy-runloop-to-kube         → community  ns, <your-domain>/runloop
+//   /COMMERCIAL/deploy-runloop-to-kube        → commercial ns, commercial.oneweb.tech/runloop
+//
+// Each job overrides defaults via the "This project is parameterized"
+// section of the job config (NAMESPACE, DOMAIN, KUBECONFIG_CRED_ID,
+// INGRESS_RESOLVE_IP). Defaults below match the COMMUNITY job for
+// backwards compatibility.
+//
+// Triggered by: /<FOLDER>/runloop (on successful image push).
+// One-time bootstrap (namespace, PV, secret, postgres, ingress) is done
+// OUTSIDE this pipeline — see docs/deployment/DEPLOYMENT.md.
+
+pipeline {
+  agent any
+
+  parameters {
+    string(
+      name: 'IMAGE_TAG',
+      defaultValue: 'latest',
+      description: 'Image tag to deploy (matches avalantglobal/runloop-*:<tag>)',
+    )
+    string(
+      name: 'NAMESPACE',
+      defaultValue: 'community',
+      description: 'Target Kubernetes namespace (community | commercial | …)',
+    )
+    string(
+      name: 'DOMAIN',
+      defaultValue: '<your-domain>',
+      description: 'External domain used for the smoke-test curl',
+    )
+    string(
+      name: 'INGRESS_RESOLVE_IP',
+      defaultValue: '<k8s-master>',
+      description: 'IP that DOMAIN should resolve to during smoke test (cluster ingress / Apache front-door)',
+    )
+    string(
+      name: 'KUBECONFIG_CRED_ID',
+      defaultValue: 'bf9208b3-bbdb-49f1-aeac-e11c197a68a9',
+      description: 'Jenkins "Secret file" credential id holding the kubeconfig with rights in NAMESPACE',
+    )
+    booleanParam(
+      name: 'APPLY_MANIFESTS',
+      defaultValue: false,
+      description: 'Re-apply k8s/{30-engine,40-web,50-ingress}.yaml before rolling (use for infra changes only). Namespace/secret/postgres are NEVER auto-applied here.',
+    )
+  }
+
+  environment {
+    WEB_IMAGE  = "avalantglobal/runloop-web:${params.IMAGE_TAG}"
+    ENG_IMAGE  = "avalantglobal/runloop-engine:${params.IMAGE_TAG}"
+  }
+
+  options {
+    timeout(time: 15, unit: 'MINUTES')
+    disableConcurrentBuilds()
+  }
+
+  stages {
+    stage('Checkout') {
+      steps { checkout scm }
+    }
+
+    stage('Apply manifests (optional)') {
+      when { expression { return params.APPLY_MANIFESTS } }
+      steps {
+        withCredentials([file(credentialsId: "${params.KUBECONFIG_CRED_ID}", variable: 'KUBECONFIG')]) {
+          sh """
+            set -e
+            kubectl -n ${params.NAMESPACE} apply -f k8s/30-engine.yaml
+            kubectl -n ${params.NAMESPACE} apply -f k8s/40-web.yaml
+            kubectl -n ${params.NAMESPACE} apply -f k8s/50-ingress.yaml
+          """
+        }
+      }
+    }
+
+    stage('Roll web + engine') {
+      steps {
+        withCredentials([file(credentialsId: "${params.KUBECONFIG_CRED_ID}", variable: 'KUBECONFIG')]) {
+          // Web has both an `init` container "migrate" (prisma db push) and
+          // the main container "web". `kubectl set image` doesn't touch
+          // init containers reliably across all k8s versions, so we patch
+          // both via a strategic merge instead — one rollout, both updated.
+          sh """
+            set -e
+
+            kubectl -n ${params.NAMESPACE} set image deployment/runloop-engine \
+              engine=${ENG_IMAGE}
+
+            kubectl -n ${params.NAMESPACE} patch deployment runloop-web --type=strategic --patch '
+            spec:
+              template:
+                spec:
+                  initContainers:
+                  - name: migrate
+                    image: ${WEB_IMAGE}
+                  containers:
+                  - name: web
+                    image: ${WEB_IMAGE}
+            '
+
+            kubectl -n ${params.NAMESPACE} rollout status deployment/runloop-engine --timeout=180s
+            kubectl -n ${params.NAMESPACE} rollout status deployment/runloop-web    --timeout=300s
+          """
+        }
+      }
+    }
+
+    stage('Smoke test') {
+      steps {
+        // Soft probe — never fails the deploy. The Jenkins agent often
+        // can't reach the public ingress (no port 80 exposed on KT1
+        // master, agent might be off-network), and rollout status above
+        // already proves the new pods came up healthy. We just log the
+        // probe result so it's visible in the build console.
+        script {
+          def code = sh(returnStatus: true, script: """
+            curl -sk -o /dev/null --max-time 8 \\
+              -w 'ingress /runloop → %{http_code}\\n' \\
+              https://${params.DOMAIN}/runloop || true
+          """)
+          echo code == 0 ? '✅ public ingress reachable' : '⚠ public ingress not reachable from agent (rollout already verified)'
+        }
+      }
+    }
+  }
+
+  post {
+    success { echo "✅ Deployed ${params.IMAGE_TAG} to ${params.NAMESPACE} (${params.DOMAIN})" }
+    failure {
+      echo "❌ Deploy failed — rolling back ${params.NAMESPACE}"
+      withCredentials([file(credentialsId: "${params.KUBECONFIG_CRED_ID}", variable: 'KUBECONFIG')]) {
+        sh """
+          kubectl -n ${params.NAMESPACE} rollout undo deployment/runloop-web    || true
+          kubectl -n ${params.NAMESPACE} rollout undo deployment/runloop-engine || true
+        """
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+# Community namespace — shared tenant for runloop + future community apps.
+# Pre-exists in most clusters; apply once and skip on re-deploy.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: community
+  labels:
+    name: community
+    tier: shared
