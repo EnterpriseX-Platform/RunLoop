@@ -2,8 +2,8 @@
 //
 // Job locations (one build job per Jenkins folder; both fan out to the
 // same image tag):
-//   http://10.1.102.52:32552/job/COMMUNITY/job/runloop/
-//   http://10.1.102.52:32552/job/COMMERCIAL/job/runloop/
+//   http://<jenkins-host>:32552/job/COMMUNITY/job/runloop/
+//   http://<jenkins-host>:32552/job/COMMERCIAL/job/runloop/
 //
 // On success: triggers each downstream deploy job in DEPLOY_TARGETS
 // (default = the deploy job in the same folder).

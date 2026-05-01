@@ -79,7 +79,7 @@ In the Jenkins UI:
 
 - **New Item** → name `runloop` → **Pipeline**.
 - Pipeline → Pipeline script from SCM → Git
-  - Repository: `http://10.1.102.69/platform/runloop.git`
+  - Repository: `http://<git-server>/platform/runloop.git`
   - Credential: `gitlab-runloop`
   - Branch: `*/master`
   - Script Path: `Jenkinsfile`
@@ -92,7 +92,7 @@ In the Jenkins UI:
 
 - **New Item** → name `deploy-runloop-to-kube` → **Pipeline**.
 - Pipeline → Pipeline script from SCM → Git
-  - Repository: `http://10.1.102.69/platform/runloop.git`
+  - Repository: `http://<git-server>/platform/runloop.git`
   - Credential: `gitlab-runloop`
   - Branch: `*/master`
   - Script Path: `.jenkins/Jenkinsfile.deploy`

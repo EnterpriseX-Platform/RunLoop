@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 // Proxy to Go Engine
 export async function GET(request: NextRequest) {
   try {
-    const engineUrl = process.env.ENGINE_URL || 'http://localhost:8081';
+    const engineUrl = process.env.ENGINE_URL || 'http://localhost:8092';
     const url = new URL(request.url);
     
     const res = await fetch(`${engineUrl}/rl/api/schedulers${url.search}`, {
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const engineUrl = process.env.ENGINE_URL || 'http://localhost:8081';
+    const engineUrl = process.env.ENGINE_URL || 'http://localhost:8092';
     const body = await request.json();
     
     const res = await fetch(`${engineUrl}/rl/api/schedulers`, {

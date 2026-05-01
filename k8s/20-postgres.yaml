@@ -1,6 +1,6 @@
 # runloop-postgres — dedicated Postgres 16 instance for RunLoop.
 # Uses the cluster's NFS storage pattern (manually-provisioned PV
-# backed by 10.1.102.92:/datastore/runloop/postgres).
+# backed by <nfs-server>:/datastore/runloop/postgres).
 #
 # One-time setup on NFS server (or via bootstrap pod that mounts
 # the NFS root and mkdirs):
@@ -18,7 +18,7 @@ spec:
   storageClassName: nfs
   mountOptions: [hard, nfsvers=4.1]
   nfs:
-    server: 10.1.102.92
+    server: <nfs-server>
     path: /datastore/runloop/postgres
 ---
 apiVersion: v1

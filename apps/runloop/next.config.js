@@ -15,7 +15,7 @@ const nextConfig = {
     ];
   },
   async rewrites() {
-    const engineUrl = process.env.ENGINE_URL || 'http://localhost:8081';
+    const engineUrl = process.env.ENGINE_URL || 'http://localhost:8092';
     
     return [
       // Internal API: Schedulers → Go Engine

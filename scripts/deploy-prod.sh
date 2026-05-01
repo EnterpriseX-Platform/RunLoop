@@ -9,14 +9,14 @@
 #
 # Requires:
 #   • docker (buildx, linux/amd64)
-#   • ssh onewebadm@10.1.102.89 (has kubectl + admin kubeconfig)
+#   • ssh <deploy-user>@<k8s-master> (has kubectl + admin kubeconfig)
 #   • `docker login -u avalantglobal` done beforehand
 set -euo pipefail
 
 REGISTRY="avalantglobal"
 WEB_IMAGE="${REGISTRY}/runloop-web"
 ENG_IMAGE="${REGISTRY}/runloop-engine"
-SSH_HOST="onewebadm@10.1.102.89"
+SSH_HOST="<deploy-user>@<k8s-master>"
 NAMESPACE="community"
 
 TAG="${1:-v1.$(date +%Y%m%d-%H%M)-$(git rev-parse --short HEAD)}"
@@ -74,8 +74,8 @@ ssh "$SSH_HOST" "kubectl rollout status deployment/runloop-web    -n $NAMESPACE 
 # ── Smoke test ────────────────────────────────────────────────────────
 say "Smoke test"
 curl -sk -o /dev/null -w "ingress /runloop      → %{http_code}\n" \
-  https://community.oneweb.tech/runloop || true
+  https://<your-domain>/runloop || true
 curl -sk -o /dev/null -w "engine /rl/health     → %{http_code}\n" \
-  https://community.oneweb.tech/runloop/rl/health || true
+  https://<your-domain>/runloop/rl/health || true
 
 say "✅ Deployed $TAG"

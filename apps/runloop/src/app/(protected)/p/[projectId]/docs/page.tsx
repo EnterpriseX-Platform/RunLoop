@@ -253,7 +253,7 @@ export default function ApiDocsPage() {
 
   const baseUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/runloop`
-    : 'https://community.oneweb.tech/runloop';
+    : 'https://<your-domain>/runloop';
 
   const filteredEndpoints = useMemo(() => {
     if (!query.trim()) return ENDPOINTS;

@@ -1,18 +1,28 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const prisma = new PrismaClient();
+
+// Strong-ish random password for the seeded admin. Override with
+// SEED_ADMIN_PASSWORD when you want a known value (e.g. CI). The plaintext
+// is printed once at the end so the operator can capture it.
+function generatePassword(): string {
+  // 18 chars from a URL-safe alphabet ≈ 108 bits of entropy.
+  return crypto.randomBytes(13).toString('base64url');
+}
 
 async function main() {
   console.log('🌱 Seeding database...');
 
-  // Create admin user
-  const adminPassword = await bcrypt.hash('admin123', 10);
+  const adminEmail = process.env.SEED_ADMIN_EMAIL || 'admin@runloop.local';
+  const plaintextPassword = process.env.SEED_ADMIN_PASSWORD || generatePassword();
+  const adminPassword = await bcrypt.hash(plaintextPassword, 10);
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@runloop.io' },
+    where: { email: adminEmail },
     update: {},
     create: {
-      email: 'admin@runloop.io',
+      email: adminEmail,
       name: 'Admin User',
       password: adminPassword,
       role: 'ADMIN',
@@ -68,9 +78,13 @@ async function main() {
   console.log('✅ Demo scheduler created:', scheduler.name);
 
   console.log('\n🎉 Seeding completed!');
-  console.log('\nLogin credentials:');
-  console.log('  Email: admin@runloop.io');
-  console.log('  Password: admin123');
+  console.log('\nLogin credentials (shown once — store securely):');
+  console.log(`  Email:    ${adminEmail}`);
+  console.log(`  Password: ${plaintextPassword}`);
+  if (!process.env.SEED_ADMIN_PASSWORD) {
+    console.log('\n  (Password was auto-generated. Set SEED_ADMIN_PASSWORD env var');
+    console.log('   before re-seeding to keep a known value.)');
+  }
 }
 
 main()

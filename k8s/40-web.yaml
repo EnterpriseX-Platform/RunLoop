@@ -48,7 +48,7 @@ spec:
             - name: ENGINE_URL
               value: http://runloop-engine:8092
             - name: NEXT_PUBLIC_ENGINE_URL
-              value: https://community.oneweb.tech
+              value: https://<your-domain>
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef: { name: runloop-secret, key: DATABASE_URL }

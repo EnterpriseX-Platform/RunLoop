@@ -7,7 +7,7 @@ echo "╚═══════════════════════�
 echo ""
 
 PROJECT_DIR="/Users/hacka/Works/RUNLOOP"
-GIT_URL="http://10.1.102.69/platform/runloop.git"
+GIT_URL="http://<git-server>/platform/runloop.git"
 
 # ============================================
 # Step 1: Clone from Git

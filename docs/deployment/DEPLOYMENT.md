@@ -1,9 +1,9 @@
 # RunLoop — Production Deployment Guide
 
-> **Target cluster:** same K8s as ORCH (`10.1.102.89` master)
+> **Target cluster:** same K8s as ORCH (`<k8s-master>` master)
 > **Namespace:** `community`
-> **Domain:** `https://community.oneweb.tech/runloop`
-> **Jenkins:** `http://10.1.102.52:32552/job/COMMUNITY/`
+> **Domain:** `https://<your-domain>/runloop`
+> **Jenkins:** `http://<jenkins-host>:32552/job/COMMUNITY/`
 
 ---
 
@@ -12,7 +12,7 @@
 ```
 Browser
   │
-  ▼  https://community.oneweb.tech/runloop/*
+  ▼  https://<your-domain>/runloop/*
 ┌────────────────── Ingress (nginx) ──────────────────┐
 │  /runloop/rl/ws/* ─┐                                 │
 │  /runloop/rl/*   ──┼──▶  runloop-engine  (Go :8092)  │
@@ -38,12 +38,12 @@ On the master node:
 
 ```bash
 # 2.1 Create namespace
-ssh onewebadm@10.1.102.89 'kubectl create namespace community'
+ssh <deploy-user>@<k8s-master> 'kubectl create namespace community'
 
 # 2.2 Create runloop-secret (do NOT commit real values)
 #     DATABASE_URL must NOT contain ?schema=public — pgx (Go engine)
 #     rejects unknown parameters.
-ssh onewebadm@10.1.102.89 "kubectl -n community create secret generic runloop-secret \
+ssh <deploy-user>@<k8s-master> "kubectl -n community create secret generic runloop-secret \
   --from-literal=DATABASE_URL='postgresql://runloop:<PASSWORD>@runloop-postgres:5432/runloop' \
   --from-literal=POSTGRES_PASSWORD='<PASSWORD>' \
   --from-literal=JWT_SECRET='$(openssl rand -hex 32)' \
@@ -51,7 +51,7 @@ ssh onewebadm@10.1.102.89 "kubectl -n community create secret generic runloop-se
 
 # 2.3 Copy Docker Hub imagePullSecret from neb-dev (avalantglobal/* is private).
 #     The secret used by other BB deployments works for our images too.
-ssh onewebadm@10.1.102.89 'kubectl get secret oneweb-regcred -n neb-dev -o json \
+ssh <deploy-user>@<k8s-master> 'kubectl get secret oneweb-regcred -n neb-dev -o json \
   | jq "del(.metadata.namespace, .metadata.uid, .metadata.resourceVersion, .metadata.creationTimestamp, .metadata.managedFields, .metadata.annotations[\"kubectl.kubernetes.io/last-applied-configuration\"])" \
   | kubectl -n community apply -f -'
 
@@ -72,14 +72,14 @@ spec:
       volumeMounts: [{ name: nfs, mountPath: /nfs }]
   volumes:
     - name: nfs
-      nfs: { server: 10.1.102.92, path: /datastore }
+      nfs: { server: <nfs-server>, path: /datastore }
 EOF
 kubectl -n community wait --for=condition=Ready pod/nfs-bootstrap --timeout=60s
 kubectl -n community delete pod nfs-bootstrap
 
 # 2.5 Apply manifests (run from a checkout of this repo on your laptop)
 for f in k8s/20-postgres.yaml k8s/30-engine.yaml k8s/40-web.yaml; do
-  cat $f | ssh onewebadm@10.1.102.89 'kubectl apply -f -'
+  cat $f | ssh <deploy-user>@<k8s-master> 'kubectl apply -f -'
 done
 ```
 
@@ -116,16 +116,16 @@ deployment via SSH to the master node.
 ```
 git push origin master
   ↓ (webhook)
-http://10.1.102.52:32552/job/COMMUNITY/job/runloop/
+http://<jenkins-host>:32552/job/COMMUNITY/job/runloop/
   ↓  builds runloop-web + runloop-engine, pushes to Docker Hub
-http://10.1.102.52:32552/job/COMMUNITY/job/deploy-runloop-to-kube/
+http://<jenkins-host>:32552/job/COMMUNITY/job/deploy-runloop-to-kube/
   ↓  kubectl set image + rollout status
-live at https://community.oneweb.tech/runloop ✅
+live at https://<your-domain>/runloop ✅
 ```
 
 #### Jenkins folder setup (first time)
 
-1. Open `http://10.1.102.52:32552`
+1. Open `http://<jenkins-host>:32552`
 2. **New Item → Folder** → name = `COMMUNITY` (parallel to existing `BB` folder)
 3. Inside `COMMUNITY/`:
    - **New Item → Multibranch Pipeline** → `runloop`
@@ -145,7 +145,7 @@ live at https://community.oneweb.tech/runloop ✅
 
 ```bash
 # Pod status
-ssh onewebadm@10.1.102.89 'kubectl get pod -n community -o wide'
+ssh <deploy-user>@<k8s-master> 'kubectl get pod -n community -o wide'
 
 # Expected:
 # runloop-web-<hash>      2/2 Running
@@ -153,19 +153,19 @@ ssh onewebadm@10.1.102.89 'kubectl get pod -n community -o wide'
 # runloop-postgres-<hash> 1/1 Running
 
 # Tail logs
-ssh onewebadm@10.1.102.89 'kubectl logs -n community -l app=runloop-web    --tail=50 -f'
-ssh onewebadm@10.1.102.89 'kubectl logs -n community -l app=runloop-engine --tail=50 -f'
+ssh <deploy-user>@<k8s-master> 'kubectl logs -n community -l app=runloop-web    --tail=50 -f'
+ssh <deploy-user>@<k8s-master> 'kubectl logs -n community -l app=runloop-engine --tail=50 -f'
 
 # Ingress health
-curl -skI https://community.oneweb.tech/runloop | head -3
+curl -skI https://<your-domain>/runloop | head -3
 # Expect: HTTP/2 307 (redirect to /runloop/dashboard)
 
 # Engine health
-curl -sk https://community.oneweb.tech/runloop/rl/health
+curl -sk https://<your-domain>/runloop/rl/health
 # Expect: {"status":"ok"}
 
 # Image tag check
-ssh onewebadm@10.1.102.89 \
+ssh <deploy-user>@<k8s-master> \
   'kubectl get deployment -n community runloop-web -o jsonpath="{.spec.template.spec.containers[0].image}"'
 # Expect: avalantglobal/runloop-web:<your-tag>
 ```
@@ -176,13 +176,13 @@ ssh onewebadm@10.1.102.89 \
 
 ```bash
 # Fast path — undo last change
-ssh onewebadm@10.1.102.89 \
+ssh <deploy-user>@<k8s-master> \
   'kubectl rollout undo deployment/runloop-web -n community'
-ssh onewebadm@10.1.102.89 \
+ssh <deploy-user>@<k8s-master> \
   'kubectl rollout undo deployment/runloop-engine -n community'
 
 # Pin to a specific known-good tag
-ssh onewebadm@10.1.102.89 \
+ssh <deploy-user>@<k8s-master> \
   'kubectl set image deployment/runloop-web -n community web=avalantglobal/runloop-web:v1.20260422-deadbee'
 ```
 
@@ -192,20 +192,20 @@ ssh onewebadm@10.1.102.89 \
 
 ```bash
 # Restart (no image change — picks up ConfigMap edits)
-ssh onewebadm@10.1.102.89 'kubectl rollout restart deployment/runloop-web -n community'
+ssh <deploy-user>@<k8s-master> 'kubectl rollout restart deployment/runloop-web -n community'
 
 # Exec into web pod
-ssh -t onewebadm@10.1.102.89 \
+ssh -t <deploy-user>@<k8s-master> \
   'kubectl exec -it -n community deployment/runloop-web -- sh'
 
 # Prisma Studio via port-forward
-ssh -f -N -L 15481:localhost:15481 onewebadm@10.1.102.89
-ssh onewebadm@10.1.102.89 \
+ssh -f -N -L 15481:localhost:15481 <deploy-user>@<k8s-master>
+ssh <deploy-user>@<k8s-master> \
   "nohup kubectl port-forward -n community --address 0.0.0.0 svc/runloop-postgres 15481:5432 > /tmp/runloop-pf.log 2>&1 &"
 # Now: PGPASSWORD=<pwd> psql -h localhost -p 15481 -U runloop -d runloop
 
 # Reset DB schema (dev only!)
-ssh onewebadm@10.1.102.89 \
+ssh <deploy-user>@<k8s-master> \
   'kubectl exec -n community deploy/runloop-web -- npx prisma db push --force-reset'
 ```
 
@@ -217,7 +217,7 @@ ssh onewebadm@10.1.102.89 \
 Image built on ARM Mac without `--platform linux/amd64`. Rebuild with the flag — our `scripts/deploy-prod.sh` already sets it.
 
 ### ❌ WebSocket disconnects
-Browser connects to `wss://community.oneweb.tech/runloop/rl/ws/executions/<id>`. If it fails:
+Browser connects to `wss://<your-domain>/runloop/rl/ws/executions/<id>`. If it fails:
 1. Ingress path `/runloop/rl/ws` must come **before** `/runloop` in manifest (order matters).
 2. `proxy-read-timeout` must be long (we set 3600s).
 3. `useWebSocket.ts` in the app uses `window.location.host` — if hardcoded to a dev port, fix before deploy.
@@ -242,27 +242,27 @@ Runner image is missing the prisma CLI tree. The current Dockerfile bundles the 
 ### ❌ `prisma db push` hangs in init container
 Postgres pod not ready yet — delete the web pod, it'll retry:
 ```bash
-ssh onewebadm@10.1.102.89 'kubectl delete pod -n community -l app=runloop-web'
+ssh <deploy-user>@<k8s-master> 'kubectl delete pod -n community -l app=runloop-web'
 ```
 
 ### ❌ External Apache returns 503 for /runloop
-The external Apache vhost for community.oneweb.tech needs upstream
+The external Apache vhost for <your-domain> needs upstream
 ProxyPass pointing at the NodePorts. Required lines:
 
 ```apache
-ProxyPass        /runloop/rl/ws/ ws://10.1.102.89:31157/rl/ws/
-ProxyPassReverse /runloop/rl/ws/ ws://10.1.102.89:31157/rl/ws/
-ProxyPass        /runloop/rl/    http://10.1.102.89:31157/rl/
-ProxyPassReverse /runloop/rl/    http://10.1.102.89:31157/rl/
-ProxyPass        /runloop        http://10.1.102.89:31383/runloop
-ProxyPassReverse /runloop        http://10.1.102.89:31383/runloop
+ProxyPass        /runloop/rl/ws/ ws://<k8s-master>:31157/rl/ws/
+ProxyPassReverse /runloop/rl/ws/ ws://<k8s-master>:31157/rl/ws/
+ProxyPass        /runloop/rl/    http://<k8s-master>:31157/rl/
+ProxyPassReverse /runloop/rl/    http://<k8s-master>:31157/rl/
+ProxyPass        /runloop        http://<k8s-master>:31383/runloop
+ProxyPassReverse /runloop        http://<k8s-master>:31383/runloop
 ```
 
 If tests from master work but external still 503, check Apache error log —
-most likely cause is firewall blocking 10.1.102.89:3138x from the external host.
+most likely cause is firewall blocking <k8s-master>:3138x from the external host.
 
 ### ❌ WebSocket connections close 1006 (Apache strips Upgrade)
-Symptom: `wss://community.oneweb.tech/runloop/rl/ws/...` connects and
+Symptom: `wss://<your-domain>/runloop/rl/ws/...` connects and
 immediately closes with code 1006; HTTP `/runloop/rl/health` returns 200
 just fine. This means the vhost is reverse-proxying HTTP correctly but
 not handling the WebSocket Upgrade handshake.
@@ -283,7 +283,7 @@ Required Apache modules: `mod_proxy`, `mod_proxy_http`, `mod_proxy_wstunnel`.
 RewriteEngine On
 # WebSocket upgrade — must come BEFORE any /runloop/rl rule that targets http://
 RewriteCond %{HTTP:Upgrade} =websocket [NC]
-RewriteRule ^/runloop/rl/(.*) ws://10.1.102.89:31157/rl/$1 [P,L]
+RewriteRule ^/runloop/rl/(.*) ws://<k8s-master>:31157/rl/$1 [P,L]
 ```
 
 After editing the vhost, reload Apache (graceful — does not interrupt
@@ -301,7 +301,7 @@ Verify from a host that can reach the public domain:
 curl -i -N -H "Connection: Upgrade" -H "Upgrade: websocket" \
      -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" \
      -H "Sec-WebSocket-Version: 13" \
-     https://community.oneweb.tech/runloop/rl/ws/executions/ping | head -5
+     https://<your-domain>/runloop/rl/ws/executions/ping | head -5
 ```
 
 Once the 101 handshake works, the in-app live execution stream and the

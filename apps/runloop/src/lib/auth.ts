@@ -4,9 +4,48 @@ import crypto from 'crypto';
 import { prisma } from './prisma';
 import { NextRequest } from 'next/server';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key';
+// Production guards. Fail loudly at module load if the deployment looks
+// unsafe — never silently sign tokens with a known/weak default.
+const NODE_ENV = process.env.NODE_ENV;
+const KNOWN_INSECURE_SECRETS = new Set([
+  'dev-secret-key',
+  'dev-secret-key-change-in-production',
+  'change-me',
+  'changeme',
+  'runloop-secret-change-in-production',
+  'secret',
+]);
+
+function resolveJwtSecret(): string {
+  const raw = process.env.JWT_SECRET;
+  if (NODE_ENV === 'production') {
+    if (!raw) {
+      throw new Error('JWT_SECRET must be set in production');
+    }
+    if (raw.length < 32) {
+      throw new Error('JWT_SECRET must be at least 32 characters in production');
+    }
+    if (KNOWN_INSECURE_SECRETS.has(raw)) {
+      throw new Error('JWT_SECRET is set to a known insecure default — generate a strong random value');
+    }
+    return raw;
+  }
+  return raw || 'dev-only-secret-do-not-use-in-prod';
+}
+
+const JWT_SECRET = resolveJwtSecret();
 const JWT_EXPIRES_IN = '7d';
-export const SKIP_AUTH = process.env.NEXT_PUBLIC_SKIP_AUTH === 'true';
+
+// SKIP_AUTH bypasses authentication and must NEVER be enabled in production.
+// Note: avoid `NEXT_PUBLIC_*` here — that prefix bakes the value into the
+// client bundle. The skip flag is server-only.
+export const SKIP_AUTH = (() => {
+  const enabled = process.env.SKIP_AUTH === 'true' || process.env.NEXT_PUBLIC_SKIP_AUTH === 'true';
+  if (enabled && NODE_ENV === 'production') {
+    throw new Error('SKIP_AUTH cannot be enabled when NODE_ENV=production');
+  }
+  return enabled;
+})();
 
 export interface JWTPayload {
   userId: string;
