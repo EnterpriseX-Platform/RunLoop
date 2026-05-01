@@ -6,6 +6,14 @@ import (
 	"os/signal"
 	"syscall"
 
+	// Embed the full IANA timezone database into the binary. Without
+	// this, time.LoadLocation("Asia/Bangkok") (and validator's
+	// `timezone` tag, which uses LoadLocation) fail on alpine
+	// containers because alpine doesn't ship tzdata by default —
+	// users hit a "Validation failed" error trying to save any
+	// non-UTC scheduler. ~450KB binary cost; worth it.
+	_ "time/tzdata"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
