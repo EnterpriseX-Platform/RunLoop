@@ -68,10 +68,10 @@ func (s *SlackConnector) Metadata() ConnectorMetadata {
 	}
 }
 
-// ValidateConfig validates the configuration
+// ValidateConfig validates the configuration. Accepts both
+// `webhook_url` (canonical / docs) and `webhookUrl` (UI flow editor).
 func (s *SlackConnector) ValidateConfig(config map[string]interface{}) error {
-	webhookURL, ok := config["webhook_url"].(string)
-	if !ok || webhookURL == "" {
+	if pickStr(config, "webhook_url", "webhookUrl", "webhookURL") == "" {
 		return fmt.Errorf("webhook_url is required")
 	}
 	return nil
@@ -83,16 +83,9 @@ func (s *SlackConnector) Initialize(ctx context.Context, config map[string]inter
 		return err
 	}
 
-	s.webhookURL = config["webhook_url"].(string)
-	
-	if token, ok := config["token"].(string); ok {
-		s.token = token
-	}
-	
-	if channel, ok := config["channel"].(string); ok {
-		s.channel = channel
-	}
-
+	s.webhookURL = pickStr(config, "webhook_url", "webhookUrl", "webhookURL")
+	s.token = pickStr(config, "token", "botToken", "bot_token")
+	s.channel = pickStr(config, "channel")
 	return nil
 }
 

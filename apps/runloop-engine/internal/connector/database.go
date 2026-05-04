@@ -122,17 +122,40 @@ func driverName(dbType string) string {
 	return dbType
 }
 
-// ValidateConfig validates the configuration
+// ValidateConfig validates the configuration. Accepts both snake_case
+// canonical names and the camelCase variants emitted by the flow editor
+// UI (e.g. dbType, useConnectionString, connectionString).
 func (d *DatabaseConnector) ValidateConfig(config map[string]interface{}) error {
-	required := []string{"type", "host", "database", "username", "password"}
-	for _, field := range required {
-		if val, ok := config[field].(string); !ok || val == "" {
-			return fmt.Errorf("%s is required", field)
+	// Connection-string mode short-circuits the per-field requirements.
+	if useConnStr := pickBool(config, false, "use_connection_string", "useConnectionString"); useConnStr {
+		if pickStr(config, "connection_string", "connectionString", "dsn") == "" {
+			return fmt.Errorf("connection_string is required when use_connection_string=true")
+		}
+		if pickStr(config, "type", "dbType", "db_type") == "" {
+			return fmt.Errorf("type is required (postgres or mysql)")
+		}
+		return nil
+	}
+
+	checks := []struct {
+		label   string
+		aliases []string
+	}{
+		{"type", []string{"type", "dbType", "db_type"}},
+		{"host", []string{"host", "hostname"}},
+		{"database", []string{"database", "dbName", "db_name", "name"}},
+		{"username", []string{"username", "user"}},
+		{"password", []string{"password", "pass"}},
+	}
+	for _, c := range checks {
+		if pickStr(config, c.aliases...) == "" {
+			return fmt.Errorf("%s is required", c.label)
 		}
 	}
 
-	if normalizeDBType(config["type"].(string)) == "" {
-		return fmt.Errorf("unsupported database type: %s (supported: postgres, postgresql, pg, mysql, mariadb)", config["type"])
+	rawType := pickStr(config, "type", "dbType", "db_type")
+	if normalizeDBType(rawType) == "" {
+		return fmt.Errorf("unsupported database type: %s (supported: postgres, postgresql, pg, mysql, mariadb)", rawType)
 	}
 
 	return nil
@@ -144,7 +167,11 @@ func (d *DatabaseConnector) Initialize(ctx context.Context, config map[string]in
 		return err
 	}
 
-	d.dbType = normalizeDBType(config["type"].(string))
+	rawType := pickStr(config, "type", "dbType", "db_type")
+	d.dbType = normalizeDBType(rawType)
+	// Re-write the canonical key so downstream buildConnectionString reads
+	// it from the standard location regardless of which alias was used.
+	config["type"] = d.dbType
 	d.connStr = d.buildConnectionString(config)
 
 	db, err := sql.Open(driverName(d.dbType), d.connStr)
@@ -454,27 +481,33 @@ func (d *DatabaseConnector) executeTransaction(ctx context.Context, params map[s
 }
 
 func (d *DatabaseConnector) buildConnectionString(config map[string]interface{}) string {
-	host := config["host"].(string)
-	username := config["username"].(string)
-	password := config["password"].(string)
-	dbname := config["database"].(string)
-	
-	port := "5432"
-	if p, ok := config["port"].(float64); ok {
-		port = fmt.Sprintf("%.0f", p)
-	} else if p, ok := config["port"].(string); ok && p != "" {
-		port = p
+	// Honour the connection-string mode if the UI flagged it.
+	if pickBool(config, false, "use_connection_string", "useConnectionString") {
+		if dsn := pickStr(config, "connection_string", "connectionString", "dsn"); dsn != "" {
+			return dsn
+		}
 	}
-	
+
+	host := pickStr(config, "host", "hostname")
+	username := pickStr(config, "username", "user")
+	password := pickStr(config, "password", "pass")
+	dbname := pickStr(config, "database", "dbName", "db_name", "name")
+
+	defaultPort := 5432
+	if d.dbType == "mysql" {
+		defaultPort = 3306
+	}
+	port := fmt.Sprintf("%d", pickInt(config, defaultPort, "port"))
+
 	if d.dbType == "postgresql" {
-		sslMode := "require"
-		if s, ok := config["ssl_mode"].(string); ok && s != "" {
-			sslMode = s
+		sslMode := pickStr(config, "ssl_mode", "sslMode")
+		if sslMode == "" {
+			sslMode = "require"
 		}
 		return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 			host, port, username, password, dbname, sslMode)
 	}
-	
+
 	// MySQL
 	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
 		username, password, host, port, dbname)

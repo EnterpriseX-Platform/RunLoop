@@ -33,17 +33,31 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
   const [activeTab, setActiveTab] = useState<'nodes' | 'logs' | 'input' | 'output'>('nodes');
 
   const fetchExecution = useCallback(async () => {
-    try {
-      const res = await fetch(`/runloop/api/executions/${params.id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setExecution(data.data);
+    // Retry briefly on 404 — the execution row may not yet be visible
+    // when we land here straight from a Run Now redirect (the engine
+    // returns the id before COMMIT in some paths).
+    const MAX_ATTEMPTS = 8;
+    const DELAY_MS = 400;
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      try {
+        const res = await fetch(`/runloop/api/executions/${params.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.data) {
+            setExecution(data.data);
+            setIsLoading(false);
+            return;
+          }
+        } else if (res.status !== 404) {
+          // Real error (auth / server) — don't keep hammering
+          break;
+        }
+      } catch (error) {
+        console.error('Failed to fetch execution:', error);
       }
-    } catch (error) {
-      console.error('Failed to fetch execution:', error);
-    } finally {
-      setIsLoading(false);
+      await new Promise((r) => setTimeout(r, DELAY_MS));
     }
+    setIsLoading(false);
   }, [params.id]);
 
   useEffect(() => {
@@ -158,7 +172,14 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
           <p style={{ fontSize: 13, color: THEME.text.muted }}>
             {execution.schedulerId?.startsWith('queue:')
               ? `Queue: ${execution.schedulerId.slice(6)}`
-              : execution.schedulerName || execution.runloop?.name || 'Unknown RunLoop'}
+              : execution.schedulerId?.startsWith('dryrun_')
+              ? 'Dry-run'
+              : execution.schedulerName
+              || execution.runloop?.name
+              || (execution.triggerType === 'WEBHOOK' ? 'Webhook trigger'
+                : execution.triggerType === 'API' ? 'API trigger'
+                : execution.triggerType === 'MANUAL' ? 'Manual run'
+                : 'Untitled run')}
             {' · '}
             {execution.durationMs ? `${execution.durationMs}ms` : 'running…'}
           </p>

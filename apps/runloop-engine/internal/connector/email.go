@@ -85,12 +85,21 @@ func (e *EmailConnector) Metadata() ConnectorMetadata {
 	}
 }
 
-// ValidateConfig validates the configuration
+// ValidateConfig validates the configuration. Accepts both snake_case
+// (canonical) and camelCase (UI flow editor) field names.
 func (e *EmailConnector) ValidateConfig(config map[string]interface{}) error {
-	required := []string{"host", "username", "password", "from"}
-	for _, field := range required {
-		if val, ok := config[field].(string); !ok || val == "" {
-			return fmt.Errorf("%s is required", field)
+	checks := []struct {
+		label   string
+		aliases []string
+	}{
+		{"host", []string{"host", "smtpHost", "smtp_host"}},
+		{"username", []string{"username", "smtpUser", "smtp_user", "user"}},
+		{"password", []string{"password", "smtpPassword", "smtp_password", "pass"}},
+		{"from", []string{"from", "fromAddress", "from_address"}},
+	}
+	for _, c := range checks {
+		if pickStr(config, c.aliases...) == "" {
+			return fmt.Errorf("%s is required", c.label)
 		}
 	}
 	return nil
@@ -102,19 +111,18 @@ func (e *EmailConnector) Initialize(ctx context.Context, config map[string]inter
 		return err
 	}
 
-	e.host = config["host"].(string)
-	e.username = config["username"].(string)
-	e.password = config["password"].(string)
-	e.from = config["from"].(string)
+	e.host = pickStr(config, "host", "smtpHost", "smtp_host")
+	e.username = pickStr(config, "username", "smtpUser", "smtp_user", "user")
+	e.password = pickStr(config, "password", "smtpPassword", "smtp_password", "pass")
+	e.from = pickStr(config, "from", "fromAddress", "from_address")
 
-	if port, ok := config["port"].(string); ok && port != "" {
+	if port := pickStr(config, "port", "smtpPort", "smtp_port"); port != "" {
 		e.port = port
+	} else if p := pickInt(config, 0, "port", "smtpPort", "smtp_port"); p > 0 {
+		e.port = fmt.Sprintf("%d", p)
 	}
 
-	if useTLS, ok := config["use_tls"].(bool); ok {
-		e.useTLS = useTLS
-	}
-
+	e.useTLS = pickBool(config, e.useTLS, "use_tls", "useTLS", "tls", "useTls")
 	return nil
 }
 

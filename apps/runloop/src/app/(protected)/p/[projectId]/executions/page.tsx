@@ -101,6 +101,20 @@ function queueNameFromSchedulerId(id?: string): string | null {
   return null;
 }
 
+// Best-effort label for executions that don't have a saved RunLoop —
+// dry-runs from the editor, webhook fires, manual API triggers, etc.
+function syntheticLabel(e: { schedulerId?: string; triggerType?: string }): string | null {
+  if (e.schedulerId?.startsWith('dryrun_')) return 'Dry-run';
+  if (e.schedulerId?.startsWith('webhook_')) return 'Webhook';
+  switch (e.triggerType) {
+    case 'WEBHOOK': return 'Webhook trigger';
+    case 'API':     return 'API trigger';
+    case 'MANUAL':  return 'Manual run';
+    case 'QUEUE':   return 'Queue trigger';
+    default:        return null;
+  }
+}
+
 // "Needs Review" reads from the dead_letter_queue table, not from
 // executions: items end up there only after exhausting retries / hitting
 // the circuit breaker. Operators can replay (re-enqueue or re-trigger
@@ -151,11 +165,26 @@ export default function ExecutionsPage() {
     if (!projectId) return;
     setDlqLoading(true);
     try {
-      const res = await fetch(`/runloop/api/dlq?projectId=${projectId}&status=PENDING&limit=200`);
-      if (res.ok) {
-        const data = await res.json();
-        setDlqEntries(data.data || []);
+      // Show every "open" entry. The leader-only escalator flips PENDING
+      // → REVIEWING after 30 min so we'd miss the bulk of the backlog if
+      // we filtered to PENDING only. Anything RESOLVED / DISCARDED /
+      // REPLAYED is considered handled and stays out of view.
+      const [pending, reviewing] = await Promise.all([
+        fetch(`/runloop/api/dlq?projectId=${projectId}&status=PENDING&limit=200`),
+        fetch(`/runloop/api/dlq?projectId=${projectId}&status=REVIEWING&limit=200`),
+      ]);
+      const combined: DLQEntry[] = [];
+      if (pending.ok) {
+        const d = await pending.json();
+        combined.push(...((d.data as DLQEntry[]) || []));
       }
+      if (reviewing.ok) {
+        const d = await reviewing.json();
+        combined.push(...((d.data as DLQEntry[]) || []));
+      }
+      // Newest first
+      combined.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+      setDlqEntries(combined);
     } finally {
       setDlqLoading(false);
     }
@@ -793,7 +822,8 @@ export default function ExecutionsPage() {
                       {queueNameFromSchedulerId(execution.schedulerId) ||
                         execution.schedulerName ||
                         execution.runloop?.name ||
-                        'Unknown RunLoop'}
+                        syntheticLabel(execution) ||
+                        'Untitled run'}
                     </p>
                     <p style={{ fontFamily: MONO, fontSize: 10.5, color: THEME.text.muted, marginTop: 2 }}>
                       {relativeTime(execution.startedAt)}

@@ -18,13 +18,19 @@ export async function GET(request: NextRequest) {
 
     const projectIds = userProjects.map((p) => p.projectId);
 
-    // Get counts
+    // Get counts. Scheduler delete is soft (sets deleted_at), so the
+    // count must exclude rows the engine treats as gone — otherwise the
+    // dashboard contradicts the schedulers list page.
     const [totalProjects, totalRunloops, totalExecutions, successExecutions] = await Promise.all([
       prisma.project.count({
         where: { id: { in: projectIds }, status: 'ACTIVE' },
       }),
       prisma.scheduler.count({
-        where: { projectId: { in: projectIds }, status: { not: 'INACTIVE' } },
+        where: {
+          projectId: { in: projectIds },
+          status: { not: 'INACTIVE' },
+          deletedAt: null,
+        },
       }),
       prisma.execution.count({
         where: { projectId: { in: projectIds } },
@@ -56,12 +62,13 @@ export async function GET(request: NextRequest) {
       runloop: schedulerById.get(e.schedulerId) ?? null,
     }));
 
-    // Get upcoming runloops
+    // Get upcoming runloops — same soft-delete filter
     const upcomingRunloops = await prisma.scheduler.findMany({
       where: {
         projectId: { in: projectIds },
         status: 'ACTIVE',
         nextRunAt: { not: null },
+        deletedAt: null,
       },
       orderBy: { nextRunAt: 'asc' },
       take: 5,

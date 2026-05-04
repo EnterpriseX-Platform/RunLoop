@@ -345,7 +345,15 @@ export default function DashboardPage() {
                       style={{ fontSize: 12, color: THEME.text.primary, fontWeight: 500 }}
                       className="flex-1 truncate"
                     >
-                      {execution.runloop?.name || 'Unknown'}
+                      {execution.runloop?.name
+                        || (execution.schedulerId?.startsWith('dryrun_') ? 'Dry-run' : null)
+                        || (execution.schedulerId?.startsWith('queue:')
+                            ? `Queue: ${execution.schedulerId.slice(6)}`
+                            : null)
+                        || (execution.triggerType === 'WEBHOOK' ? 'Webhook' : null)
+                        || (execution.triggerType === 'API' ? 'API trigger' : null)
+                        || (execution.triggerType === 'MANUAL' ? 'Manual run' : null)
+                        || 'Untitled run'}
                     </span>
                     {/* status label */}
                     <span
