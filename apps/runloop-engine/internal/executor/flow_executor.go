@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -494,6 +495,21 @@ func (fe *FlowExecutor) executeNode(
 	}
 
 	config = fe.substituteVariables(config, flowCtx)
+
+	// Pre-flight: catch leftover ${{...}} placeholders that didn't resolve.
+	// Without this guard the literal text gets shipped to the upstream (HTTP
+	// body, SHELL command, DB query, …) and the upstream may quietly accept
+	// it or reject it with a confusing message. Failing early here gives the
+	// flow author a precise reason — which placeholder didn't resolve —
+	// instead of "MFR2003 STREAM_READ_FAIL" buried in an HTTP 200 body.
+	if leftover := findUnresolvedTemplates(config); len(leftover) > 0 {
+		return &FlowNodeResult{
+			NodeID:   node.ID,
+			Success:  false,
+			Error:    fmt.Sprintf("unresolved variable(s) in node config: %s — check your ${{...}} references", strings.Join(leftover, ", ")),
+			Duration: time.Since(startTime),
+		}
+	}
 
 	// Flow-shape nodes are handled inline — they don't go through the retry /
 	// circuit-breaker / per-type executor machinery because they have no
@@ -1961,3 +1977,53 @@ func (fe *FlowExecutor) executeWaitWebhookNode(ctx context.Context, config model
 	return out, true, nil
 }
 
+
+// findUnresolvedTemplates walks a JSONMap and returns the list of literal
+// "${{...}}" placeholders still present after substitution. Used by the
+// pre-flight check so a flow fails with a precise message ("env.MY_VAR
+// not set") instead of silently shipping the literal text downstream and
+// getting a confusing error from the upstream system.
+func findUnresolvedTemplates(v interface{}) []string {
+	seen := make(map[string]struct{})
+	walkUnresolved(v, seen)
+	if len(seen) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(seen))
+	for k := range seen {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
+}
+
+func walkUnresolved(v interface{}, out map[string]struct{}) {
+	switch x := v.(type) {
+	case string:
+		// Match every ${{...}} occurrence
+		for {
+			i := strings.Index(x, "${{")
+			if i < 0 {
+				return
+			}
+			j := strings.Index(x[i:], "}}")
+			if j < 0 {
+				return
+			}
+			out[strings.TrimSpace(x[i+3:i+j])] = struct{}{}
+			x = x[i+j+2:]
+		}
+	case map[string]interface{}:
+		for _, val := range x {
+			walkUnresolved(val, out)
+		}
+	case models.JSONMap:
+		for _, val := range x {
+			walkUnresolved(val, out)
+		}
+	case []interface{}:
+		for _, val := range x {
+			walkUnresolved(val, out)
+		}
+	}
+}

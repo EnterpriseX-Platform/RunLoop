@@ -188,6 +188,41 @@ func (e *JobExecutor) executeHTTP(ctx context.Context, task *worker.Task) (*mode
 	if hasExpected {
 		success = resp.StatusCode == int(expectedStatus)
 	}
+
+	// Body-level success check. Many APIs (Mendix microflows, GraphQL,
+	// SOAP-over-JSON, …) return HTTP 200 with an in-body status flag
+	// when business logic failed. Without this guard a flow shows
+	// SUCCESS while the upstream actually rejected the call.
+	//
+	// Two options the flow author can use:
+	//   successWhenJsonPath: { path: "responseStatus", equals: "SUCCESS" }
+	//   failWhenJsonPath:    { path: "responseStatus", equals: "FAIL" }
+	// (path is dot-notation, e.g. "data.items.0.status").
+	failureReason := ""
+	if success {
+		if check, ok := config["successWhenJsonPath"].(map[string]interface{}); ok {
+			path, _ := check["path"].(string)
+			expected := check["equals"]
+			actual := jsonPathGet(responseData, path)
+			if !looseEqual(actual, expected) {
+				success = false
+				failureReason = fmt.Sprintf(
+					"successWhenJsonPath failed: expected %s=%v but got %v",
+					path, expected, actual)
+			}
+		}
+		if check, ok := config["failWhenJsonPath"].(map[string]interface{}); ok {
+			path, _ := check["path"].(string)
+			marker := check["equals"]
+			actual := jsonPathGet(responseData, path)
+			if looseEqual(actual, marker) {
+				success = false
+				failureReason = fmt.Sprintf(
+					"failWhenJsonPath matched: %s=%v indicates failure",
+					path, actual)
+			}
+		}
+	}
 	
 	// Build auth info for logs — never log credentials
 	authInfo := "Auth: None"
@@ -231,10 +266,76 @@ func (e *JobExecutor) executeHTTP(ctx context.Context, task *worker.Task) (*mode
 	}
 	
 	if !success {
-		result.ErrorMessage = strPtr(fmt.Sprintf("HTTP %d: %s", resp.StatusCode, string(respBody)))
+		if failureReason != "" {
+			result.ErrorMessage = strPtr(fmt.Sprintf("HTTP %d but %s; body=%s",
+				resp.StatusCode, failureReason, truncate(string(respBody), 400)))
+		} else {
+			result.ErrorMessage = strPtr(fmt.Sprintf("HTTP %d: %s",
+				resp.StatusCode, truncate(string(respBody), 400)))
+		}
 	}
-	
+
 	return result, nil
+}
+
+// jsonPathGet walks a dot-notation path into a JSON-decoded value.
+// "a.b.0.c" descends through map keys and array indices; missing keys
+// return nil. Used by HTTP node's successWhenJsonPath / failWhenJsonPath
+// checks so flows can fail when an upstream returns 200 with an
+// in-body error flag (Mendix microflows, GraphQL, SOAP-over-JSON, …).
+func jsonPathGet(v interface{}, path string) interface{} {
+	if path == "" {
+		return v
+	}
+	parts := strings.Split(path, ".")
+	cur := v
+	for _, p := range parts {
+		if cur == nil {
+			return nil
+		}
+		switch node := cur.(type) {
+		case map[string]interface{}:
+			cur = node[p]
+		case []interface{}:
+			idx := 0
+			for _, c := range p {
+				if c < '0' || c > '9' {
+					return nil
+				}
+				idx = idx*10 + int(c-'0')
+			}
+			if idx >= len(node) {
+				return nil
+			}
+			cur = node[idx]
+		default:
+			return nil
+		}
+	}
+	return cur
+}
+
+// looseEqual compares values using JSON-friendly rules: numbers cast to
+// float64, strings compared verbatim, booleans direct. Anything else
+// uses fmt.Sprint.
+func looseEqual(a, b interface{}) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	if as, ok := a.(string); ok {
+		if bs, ok := b.(string); ok {
+			return as == bs
+		}
+	}
+	if ab, ok := a.(bool); ok {
+		if bb, ok := b.(bool); ok {
+			return ab == bb
+		}
+	}
+	return fmt.Sprint(a) == fmt.Sprint(b)
 }
 
 // executeDatabase executes a database query job
