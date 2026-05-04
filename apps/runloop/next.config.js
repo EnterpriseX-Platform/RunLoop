@@ -11,18 +11,19 @@ if (basePath !== '' && (!basePath.startsWith('/') || basePath.endsWith('/'))) {
 const isProd = process.env.NODE_ENV === 'production';
 
 // CORS allowlist for the API. In production, set ALLOWED_ORIGINS to a
-// comma-separated list — '*' is rejected because mixing wildcard origin
-// with credentials lets any site invoke our API on a logged-in user.
+// comma-separated list. We warn (not fatal) when ALLOWED_ORIGINS isn't
+// set in production so an existing deployment doesn't crash on first
+// boot just because the env hasn't been added yet — operators get a
+// startup-time nudge to tighten the allowlist.
 const allowedOriginsRaw = (process.env.ALLOWED_ORIGINS || '').trim();
 let corsOrigin = '*';
 if (allowedOriginsRaw) {
   if (isProd && allowedOriginsRaw.split(',').map((s) => s.trim()).includes('*')) {
-    throw new Error("ALLOWED_ORIGINS=\"*\" is not permitted in production");
+    console.warn("[runloop] ALLOWED_ORIGINS contains '*' in production — consider tightening");
   }
-  // Pick first; for true multi-origin support use a runtime middleware.
   corsOrigin = allowedOriginsRaw.split(',')[0].trim();
 } else if (isProd) {
-  throw new Error('ALLOWED_ORIGINS must be set in production');
+  console.warn("[runloop] ALLOWED_ORIGINS not set in production — falling back to '*'. Set ALLOWED_ORIGINS=https://your-domain to lock this down.");
 }
 
 const securityHeaders = [

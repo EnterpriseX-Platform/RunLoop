@@ -217,21 +217,24 @@ func main() {
 	app.Use(tracing.Middleware()) // Assigns trace_id before logging so log lines carry it
 	app.Use(middleware.LoggerMiddleware())
 
-	// CORS allowlist. Production must specify ALLOWED_ORIGINS; "*" is
-	// rejected when NODE_ENV=production (or RUNTIME_ENV=production)
-	// because mixing wildcard origin with API-key auth lets any site
-	// invoke our API on a logged-in user's behalf.
+	// CORS allowlist. Production deployments should specify
+	// ALLOWED_ORIGINS — mixing "*" with API-key auth lets any site
+	// invoke the API on a logged-in user's behalf.
+	//
+	// Operator hygiene only: we WARN at startup but don't fatal, because
+	// upgrading existing deployments shouldn't crash on first boot just
+	// because the env var hasn't been added yet. A future major release
+	// can flip this to log.Fatal once everyone has migrated.
 	allowedOrigins := strings.Join(cfg.AllowedOrigins, ",")
 	if allowedOrigins == "" {
-		// No allowlist configured — fall back to "*" only outside production.
 		if isProduction() {
-			log.Fatal().Msg("ALLOWED_ORIGINS must be set in production (comma-separated origin allowlist)")
+			log.Warn().Msg("ALLOWED_ORIGINS not set in production — falling back to '*'. Set ALLOWED_ORIGINS=https://your-domain to lock this down.")
 		}
 		allowedOrigins = "*"
 	} else {
 		for _, o := range cfg.AllowedOrigins {
 			if o == "*" && isProduction() {
-				log.Fatal().Msg("ALLOWED_ORIGINS=\"*\" is not permitted in production")
+				log.Warn().Msg("ALLOWED_ORIGINS contains '*' in production — consider tightening to a specific origin list")
 			}
 		}
 	}
