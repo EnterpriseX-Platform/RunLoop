@@ -1,11 +1,14 @@
 /** @type {import('next').NextConfig} */
 
-// basePath defaults to '' (i.e. the root) so a vanilla deploy serves at /.
-// Set BASE_PATH=/runloop (or any sub-path) to mount under a prefix; the
-// value must start with '/' and not end with '/'.
-const basePath = process.env.BASE_PATH ?? '';
+// basePath defaults to '/runloop' to preserve the existing deployment
+// (k8s probes hit /runloop, the external Apache rewrites /runloop/* to
+// this app). Set BASE_PATH=/ (or another prefix) at deploy time to host
+// at the root or under a different sub-path. Must start with '/' and
+// not end with '/' (except the bare '/' which we coerce to '' for Next).
+let basePath = process.env.BASE_PATH ?? '/runloop';
+if (basePath === '/') basePath = '';
 if (basePath !== '' && (!basePath.startsWith('/') || basePath.endsWith('/'))) {
-  throw new Error(`BASE_PATH must be empty or look like '/foo'; got '${basePath}'`);
+  throw new Error(`BASE_PATH must be '/', '' or look like '/foo'; got '${basePath}'`);
 }
 
 const isProd = process.env.NODE_ENV === 'production';
