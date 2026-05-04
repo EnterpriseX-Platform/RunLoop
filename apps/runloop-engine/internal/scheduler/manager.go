@@ -284,16 +284,46 @@ func (m *Manager) TriggerJob(ctx context.Context, schedulerID string, input mode
 				CreatedAt:   now,
 			}
 
-			if flow.Type == models.FlowTypeDAG {
+			// Both DAG and SIMPLE flows ship their work as a graph of
+			// nodes inside flow_config. Always pass the graph to the
+			// FlowExecutor so the per-node config (e.g. an HTTP node's
+			// url) is read from the right place — previously SIMPLE
+			// flows were dispatched to the direct executor with the
+			// scheduler's top-level config, which has no url field, so
+			// every cron run failed with "URL is required for HTTP jobs".
+			//
+			// SIMPLE flows that point at a saved Task (resolveTaskReferences)
+			// keep the legacy short-circuit since those don't have a real
+			// node graph to execute.
+			handledAsFlow := false
+			if flow.FlowConfig != nil && hasFlowGraph(flow.FlowConfig) {
 				var flowConfig models.FlowConfig
 				if flowConfigBytes, merr := json.Marshal(flow.FlowConfig); merr == nil {
-					json.Unmarshal(flowConfigBytes, &flowConfig)
+					if uerr := json.Unmarshal(flowConfigBytes, &flowConfig); uerr == nil &&
+						len(flowConfig.Nodes) > 0 {
+						task.Type = models.JobTypeHTTP // placeholder; FlowExecutor dispatches per-node
+						task.FlowConfig = &flowConfig
+						task.Config = flow.Config
+						// Merge scheduler's top-level config (e.g. input)
+						// into the flow context so ${{input.X}} works.
+						if task.Config == nil {
+							task.Config = models.JSONMap{}
+						}
+						if sched.Config != nil {
+							for k, v := range sched.Config {
+								if _, exists := task.Config[k]; !exists {
+									task.Config[k] = v
+								}
+							}
+						}
+						handledAsFlow = true
+					}
 				}
-				task.Type = models.JobTypeHTTP
-				task.FlowConfig = &flowConfig
-				task.Config = flow.Config
-			} else {
-				// SIMPLE flow: check for task references in flowConfig first
+			}
+
+			if !handledAsFlow {
+				// Legacy SIMPLE flow that references a stored Task by id
+				// inside its flowConfig — execute that task directly.
 				resolved := false
 				if flow.FlowConfig != nil {
 					if resolvedTask, err := m.resolveTaskReferences(ctx, flow.FlowConfig); err == nil && resolvedTask != nil {
@@ -731,17 +761,37 @@ func (m *Manager) executeFlow(ctx context.Context, s *models.Scheduler, flow att
 		CreatedAt:   now,
 	}
 
-	if flow.Type == models.FlowTypeDAG {
-		// DAG flow: parse flow_config into FlowConfig and set on task
+	// Both DAG and SIMPLE flows ship work as a graph of nodes. Always
+	// route to FlowExecutor when a node graph exists — the legacy
+	// SIMPLE-only path used the scheduler's top-level config which
+	// has no per-node fields (e.g. an HTTP node's url), so cron runs
+	// failed with "URL is required for HTTP jobs". See TriggerJob for
+	// the matching fix on the manual-trigger path.
+	handledAsFlow := false
+	if flow.FlowConfig != nil && hasFlowGraph(flow.FlowConfig) {
 		var flowConfig models.FlowConfig
 		if flowConfigBytes, err := json.Marshal(flow.FlowConfig); err == nil {
-			json.Unmarshal(flowConfigBytes, &flowConfig)
+			if uerr := json.Unmarshal(flowConfigBytes, &flowConfig); uerr == nil && len(flowConfig.Nodes) > 0 {
+				task.Type = models.JobTypeHTTP // placeholder; FlowExecutor dispatches per-node
+				task.FlowConfig = &flowConfig
+				task.Config = flow.Config
+				if task.Config == nil {
+					task.Config = models.JSONMap{}
+				}
+				if s.Config != nil {
+					for k, v := range s.Config {
+						if _, exists := task.Config[k]; !exists {
+							task.Config[k] = v
+						}
+					}
+				}
+				handledAsFlow = true
+			}
 		}
-		task.Type = models.JobTypeHTTP // placeholder, FlowExecutor reads FlowConfig
-		task.FlowConfig = &flowConfig
-		task.Config = flow.Config
-	} else {
-		// SIMPLE flow: check for task references in flowConfig first
+	}
+
+	if !handledAsFlow {
+		// SIMPLE flow that references a saved Task by id
 		resolved := false
 		if flow.FlowConfig != nil {
 			if resolvedTask, err := m.resolveTaskReferences(ctx, flow.FlowConfig); err == nil && resolvedTask != nil {
@@ -836,3 +886,34 @@ func (m *Manager) executeSchedulerDirect(ctx context.Context, s *models.Schedule
 	return nil
 }
 
+
+// hasFlowGraph reports whether the JSONMap looks like a flow editor
+// flowConfig (object with `nodes` array containing at least one entry).
+// SIMPLE flows that wrap a single saved-Task reference end up here too,
+// and we want them to route through the FlowExecutor when their nodes
+// carry real per-node config (url, query, command, …); otherwise the
+// caller falls through to the legacy resolveTaskReferences path.
+func hasFlowGraph(fc models.JSONMap) bool {
+	if fc == nil {
+		return false
+	}
+	nodes, ok := fc["nodes"].([]interface{})
+	if !ok || len(nodes) == 0 {
+		return false
+	}
+	// Has at least one non-START/END node with a non-empty config — a
+	// stub flow with just START → END shouldn't override the legacy
+	// direct executor.
+	for _, raw := range nodes {
+		n, ok := raw.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		t, _ := n["type"].(string)
+		if t == "START" || t == "END" || t == "" {
+			continue
+		}
+		return true
+	}
+	return false
+}
