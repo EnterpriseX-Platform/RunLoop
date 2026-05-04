@@ -370,21 +370,45 @@ func (e *JobExecutor) executeDatabase(ctx context.Context, task *worker.Task) (*
 	}, nil
 }
 
-// executeShell executes a shell command job
+// executeShell executes a shell command job. Honours the UI's two modes:
+//   mode="command" (default) — single line in `command`
+//   mode="script"            — multi-line in `script`
+// And the UI knobs failOnError + captureStderr.
 func (e *JobExecutor) executeShell(ctx context.Context, task *worker.Task) (*models.JobResult, error) {
 	config := task.Config
-	
-	command, _ := config["command"].(string)
-	if command == "" {
-		return nil, fmt.Errorf("command is required for shell jobs")
+
+	mode := strFromConfig(config, "mode", "command")
+	command := strFromConfig(config, "command", "")
+	if mode == "script" || command == "" {
+		if s := strFromConfig(config, "script", ""); s != "" {
+			command = s
+		}
 	}
-	
+	if command == "" {
+		return nil, fmt.Errorf("command is required for shell jobs (provide `command` or `script`)")
+	}
+
+	shell := strFromConfig(config, "shell", "sh")
+	// Whitelist of allowed shells — never let a flow choose an arbitrary
+	// path. /bin/sh is always available; bash is in the runtime image.
+	switch shell {
+	case "sh", "bash":
+		// OK
+	default:
+		shell = "sh"
+	}
+
 	workingDir, _ := config["workingDir"].(string)
 	env, _ := config["env"].(map[string]interface{})
-	
+	// captureStderr: default true (UI checks `!== false`). When false, we
+	// pipe stderr to the process's own stderr so it surfaces in container
+	// logs instead of the execution output.
+	captureStderr := boolFromConfig(config, "captureStderr", true)
+	failOnError := boolFromConfig(config, "failOnError", true)
+
 	// Create command
-	cmd := exec.CommandContext(ctx, "sh", "-c", command)
-	
+	cmd := exec.CommandContext(ctx, shell, "-c", command)
+
 	if workingDir != "" {
 		cmd.Dir = workingDir
 	}
@@ -401,26 +425,30 @@ func (e *JobExecutor) executeShell(ctx context.Context, task *worker.Task) (*mod
 	// Capture output
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	
+	if captureStderr {
+		cmd.Stderr = &stderr
+	} else {
+		cmd.Stderr = os.Stderr
+	}
+
 	// Execute
 	start := time.Now()
 	err := cmd.Run()
 	duration := time.Since(start)
-	
+
 	logs := fmt.Sprintf(
 		"Command: %s\nDuration: %v\nExit Code: %d\n\nSTDOUT:\n%s\n\nSTDERR:\n%s",
 		command, duration, cmd.ProcessState.ExitCode(), stdout.String(), stderr.String(),
 	)
-	
-	if err != nil {
+
+	if err != nil && failOnError {
 		return &models.JobResult{
 			Success:      false,
 			ErrorMessage: strPtr(fmt.Sprintf("Command failed: %v\nSTDERR: %s", err, stderr.String())),
 			Logs:         logs,
 		}, nil
 	}
-	
+
 	return &models.JobResult{
 		Success: true,
 		Output: models.JSONMap{
@@ -436,16 +464,38 @@ func (e *JobExecutor) executeShell(ctx context.Context, task *worker.Task) (*mod
 // executePython executes a Python script job
 func (e *JobExecutor) executePython(ctx context.Context, task *worker.Task) (*models.JobResult, error) {
 	config := task.Config
-	
-	script, _ := config["script"].(string)
+
+	// Accept `script` (canonical), `code` (flow-editor UI) and `source`.
+	// The UI's "file mode" sets `mode: "file"` + `file: <path>` — when
+	// requested we read the file from disk, otherwise inline code wins.
+	script := firstNonEmpty(
+		strFromConfig(config, "script", ""),
+		strFromConfig(config, "code", ""),
+		strFromConfig(config, "source", ""),
+	)
 	if script == "" {
-		return nil, fmt.Errorf("script is required for Python jobs")
+		mode := strFromConfig(config, "mode", "")
+		if mode == "file" {
+			path := strFromConfig(config, "file", "")
+			if path == "" {
+				return nil, fmt.Errorf("python: 'file' is required when mode=file")
+			}
+			data, rerr := os.ReadFile(path)
+			if rerr != nil {
+				return nil, fmt.Errorf("python: cannot read file %q: %w", path, rerr)
+			}
+			script = string(data)
+		}
 	}
-	
+	if script == "" {
+		return nil, fmt.Errorf("script is required for Python jobs (provide `code`, `script`, or mode=file + file)")
+	}
+
 	pythonPath, _ := config["pythonPath"].(string)
 	if pythonPath == "" {
 		pythonPath = "python3"
 	}
+	failOnStderr := boolFromConfig(config, "failOnStderr", false) || boolFromConfig(config, "fail_on_stderr", false)
 	
 	// Create command
 	cmd := exec.CommandContext(ctx, pythonPath, "-c", script)
@@ -472,13 +522,23 @@ func (e *JobExecutor) executePython(ctx context.Context, task *worker.Task) (*mo
 			Logs:         logs,
 		}, nil
 	}
-	
+
+	// failOnStderr — opt-in: treat any stderr output as a failure even if
+	// the process exited 0. Useful when scripts use stderr for warnings.
+	if failOnStderr && stderr.Len() > 0 {
+		return &models.JobResult{
+			Success:      false,
+			ErrorMessage: strPtr(fmt.Sprintf("Python wrote to stderr (failOnStderr=true): %s", stderr.String())),
+			Logs:         logs,
+		}, nil
+	}
+
 	// Try to parse stdout as JSON
 	var output interface{}
 	if err := json.Unmarshal(stdout.Bytes(), &output); err != nil {
 		output = stdout.String()
 	}
-	
+
 	return &models.JobResult{
 		Success: true,
 		Output: models.JSONMap{
@@ -493,12 +553,36 @@ func (e *JobExecutor) executePython(ctx context.Context, task *worker.Task) (*mo
 // executeNodeJS executes a Node.js script job
 func (e *JobExecutor) executeNodeJS(ctx context.Context, task *worker.Task) (*models.JobResult, error) {
 	config := task.Config
-	
-	script, _ := config["script"].(string)
+
+	// Same alias handling as Python: accept `script` (canonical), `code`
+	// (UI), `source`, plus mode=file + file=<path>.
+	script := firstNonEmpty(
+		strFromConfig(config, "script", ""),
+		strFromConfig(config, "code", ""),
+		strFromConfig(config, "source", ""),
+	)
 	if script == "" {
-		return nil, fmt.Errorf("script is required for Node.js jobs")
+		mode := strFromConfig(config, "mode", "")
+		if mode == "file" {
+			path := firstNonEmpty(
+				strFromConfig(config, "file", ""),
+				strFromConfig(config, "entryPoint", ""),
+			)
+			if path == "" {
+				return nil, fmt.Errorf("nodejs: 'file' is required when mode=file")
+			}
+			data, rerr := os.ReadFile(path)
+			if rerr != nil {
+				return nil, fmt.Errorf("nodejs: cannot read file %q: %w", path, rerr)
+			}
+			script = string(data)
+		}
 	}
-	
+	if script == "" {
+		return nil, fmt.Errorf("script is required for Node.js jobs (provide `code`, `script`, or mode=file + file)")
+	}
+	failOnStderr := boolFromConfig(config, "failOnStderr", false) || boolFromConfig(config, "fail_on_stderr", false)
+
 	nodePath, _ := config["nodePath"].(string)
 	if nodePath == "" {
 		nodePath = "node"
@@ -529,7 +613,15 @@ func (e *JobExecutor) executeNodeJS(ctx context.Context, task *worker.Task) (*mo
 			Logs:         logs,
 		}, nil
 	}
-	
+
+	if failOnStderr && stderr.Len() > 0 {
+		return &models.JobResult{
+			Success:      false,
+			ErrorMessage: strPtr(fmt.Sprintf("Node.js wrote to stderr (failOnStderr=true): %s", stderr.String())),
+			Logs:         logs,
+		}, nil
+	}
+
 	// Try to parse stdout as JSON
 	var output interface{}
 	if err := json.Unmarshal(stdout.Bytes(), &output); err != nil {

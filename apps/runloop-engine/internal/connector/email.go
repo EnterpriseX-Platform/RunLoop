@@ -277,9 +277,17 @@ func (e *EmailConnector) ExecuteAction(ctx context.Context, action string, param
 }
 
 func (e *EmailConnector) sendEmail(ctx context.Context, params map[string]interface{}) (*ActionResult, error) {
-	to := params["to"].(string)
-	subject := params["subject"].(string)
-	body := params["body"].(string)
+	// nil-safe extraction — UI may omit any of these and we don't want a
+	// panic; surface a real error instead.
+	to := pickStr(params, "to")
+	subject := pickStr(params, "subject")
+	body := pickStr(params, "body")
+	if to == "" {
+		return nil, fmt.Errorf("email: 'to' is required")
+	}
+	if subject == "" {
+		return nil, fmt.Errorf("email: 'subject' is required")
+	}
 	
 	from := e.from
 	if fromOverride, ok := params["from"].(string); ok && fromOverride != "" {

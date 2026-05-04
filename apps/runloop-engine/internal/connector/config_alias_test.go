@@ -167,6 +167,46 @@ func TestDatabaseConnector_AcceptsConnectionStringMode(t *testing.T) {
 	}
 }
 
+// Database query/statement actions accept `query` (UI) AND `sql` (docs)
+// AND survive a missing field with a real error rather than panicking.
+func TestDatabaseQuery_AcceptsQueryField(t *testing.T) {
+	c := NewDatabaseConnector()
+	// Hand-roll a fake params map; we don't need a real DB for this — the
+	// SELECT-prefix guard fires before the DB call when validation fails.
+	_, err := c.executeQuery(nil, map[string]interface{}{
+		"query": "DROP TABLE users", // not SELECT
+	})
+	if err == nil || !contains(err.Error(), "SELECT") {
+		t.Fatalf("expected SELECT-only guard, got: %v", err)
+	}
+}
+
+func TestDatabaseQuery_MissingQueryReturnsError(t *testing.T) {
+	c := NewDatabaseConnector()
+	_, err := c.executeQuery(nil, map[string]interface{}{})
+	if err == nil {
+		t.Fatalf("expected 'query is required' error")
+	}
+}
+
+func TestDatabaseStatement_MissingQueryReturnsError(t *testing.T) {
+	c := NewDatabaseConnector()
+	// No DB init, but the missing-query guard fires before the DB call.
+	_, err := c.executeStatement(nil, map[string]interface{}{})
+	if err == nil {
+		t.Fatalf("expected 'query is required' error")
+	}
+}
+
+func contains(s, sub string) bool {
+	for i := 0; i+len(sub) <= len(s); i++ {
+		if s[i:i+len(sub)] == sub {
+			return true
+		}
+	}
+	return false
+}
+
 func TestDatabaseConnector_RejectsBadType(t *testing.T) {
 	c := NewDatabaseConnector()
 	cfg := map[string]interface{}{

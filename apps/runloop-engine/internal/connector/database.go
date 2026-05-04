@@ -339,15 +339,21 @@ func (d *DatabaseConnector) ExecuteAction(ctx context.Context, action string, pa
 }
 
 func (d *DatabaseConnector) executeQuery(ctx context.Context, params map[string]interface{}) (*ActionResult, error) {
-	sqlStr := params["sql"].(string)
-	
+	// UI saves SQL into `query`; older API examples / direct callers use
+	// `sql`. Accept both so the same flow definition works from either
+	// path. nil-safe — never type-asserts on a missing key.
+	sqlStr := pickStr(params, "query", "sql", "statement")
+	if sqlStr == "" {
+		return nil, fmt.Errorf("query is required (provide `query` or `sql`)")
+	}
+
 	// Validate it's a SELECT
 	if !strings.HasPrefix(strings.ToUpper(strings.TrimSpace(sqlStr)), "SELECT") {
 		return nil, fmt.Errorf("only SELECT queries allowed for 'query' action")
 	}
-	
+
 	var args []interface{}
-	if paramsStr, ok := params["params"].(string); ok && paramsStr != "" {
+	if paramsStr := pickStr(params, "params", "args"); paramsStr != "" {
 		if err := json.Unmarshal([]byte(paramsStr), &args); err != nil {
 			return nil, fmt.Errorf("invalid params JSON: %w", err)
 		}
@@ -399,10 +405,13 @@ func (d *DatabaseConnector) executeQuery(ctx context.Context, params map[string]
 }
 
 func (d *DatabaseConnector) executeStatement(ctx context.Context, params map[string]interface{}) (*ActionResult, error) {
-	sqlStr := params["sql"].(string)
-	
+	sqlStr := pickStr(params, "query", "sql", "statement")
+	if sqlStr == "" {
+		return nil, fmt.Errorf("query is required (provide `query` or `sql`)")
+	}
+
 	var args []interface{}
-	if paramsStr, ok := params["params"].(string); ok && paramsStr != "" {
+	if paramsStr := pickStr(params, "params", "args"); paramsStr != "" {
 		if err := json.Unmarshal([]byte(paramsStr), &args); err != nil {
 			return nil, fmt.Errorf("invalid params JSON: %w", err)
 		}
