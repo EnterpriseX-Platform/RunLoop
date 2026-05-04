@@ -4,9 +4,11 @@ import crypto from 'crypto';
 import { prisma } from './prisma';
 import { NextRequest } from 'next/server';
 
-// Production guards. Fail loudly at module load if the deployment looks
-// unsafe — never silently sign tokens with a known/weak default.
-const NODE_ENV = process.env.NODE_ENV;
+// Production guards. Validation happens lazily on first use so that
+// `next build` (which loads route modules during "Collecting page data")
+// doesn't fail when JWT_SECRET / SECRET_ENCRYPTION_KEY aren't supplied
+// to the build environment. Runtime — when we actually sign or verify
+// tokens — is where insecure defaults get rejected.
 const KNOWN_INSECURE_SECRETS = new Set([
   'dev-secret-key',
   'dev-secret-key-change-in-production',
@@ -16,9 +18,17 @@ const KNOWN_INSECURE_SECRETS = new Set([
   'secret',
 ]);
 
+function isRuntime(): boolean {
+  // Next.js sets NEXT_PHASE during build; treat anything else as runtime.
+  return process.env.NEXT_PHASE !== 'phase-production-build';
+}
+
+let _cachedSecret: string | null = null;
 function resolveJwtSecret(): string {
+  if (_cachedSecret) return _cachedSecret;
   const raw = process.env.JWT_SECRET;
-  if (NODE_ENV === 'production') {
+  const nodeEnv = process.env.NODE_ENV;
+  if (nodeEnv === 'production' && isRuntime()) {
     if (!raw) {
       throw new Error('JWT_SECRET must be set in production');
     }
@@ -28,24 +38,23 @@ function resolveJwtSecret(): string {
     if (KNOWN_INSECURE_SECRETS.has(raw)) {
       throw new Error('JWT_SECRET is set to a known insecure default — generate a strong random value');
     }
-    return raw;
   }
-  return raw || 'dev-only-secret-do-not-use-in-prod';
+  _cachedSecret = raw || 'dev-only-secret-do-not-use-in-prod';
+  return _cachedSecret;
 }
 
-const JWT_SECRET = resolveJwtSecret();
 const JWT_EXPIRES_IN = '7d';
 
 // SKIP_AUTH bypasses authentication and must NEVER be enabled in production.
 // Note: avoid `NEXT_PUBLIC_*` here — that prefix bakes the value into the
 // client bundle. The skip flag is server-only.
-export const SKIP_AUTH = (() => {
-  const enabled = process.env.SKIP_AUTH === 'true' || process.env.NEXT_PUBLIC_SKIP_AUTH === 'true';
-  if (enabled && NODE_ENV === 'production') {
-    throw new Error('SKIP_AUTH cannot be enabled when NODE_ENV=production');
-  }
-  return enabled;
-})();
+//
+// The "must not be true in prod" check is enforced at the first authenticated
+// request (see getCurrentUser below), not at module load — `next build`
+// imports every route module during page-data collection and would crash
+// if we threw here.
+export const SKIP_AUTH =
+  process.env.SKIP_AUTH === 'true' || process.env.NEXT_PUBLIC_SKIP_AUTH === 'true';
 
 export interface JWTPayload {
   userId: string;
@@ -62,11 +71,11 @@ export async function verifyPassword(password: string, hashedPassword: string): 
 }
 
 export function generateToken(payload: JWTPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign(payload, resolveJwtSecret(), { expiresIn: JWT_EXPIRES_IN });
 }
 
 export function verifyToken(token: string): JWTPayload {
-  return jwt.verify(token, JWT_SECRET) as JWTPayload;
+  return jwt.verify(token, resolveJwtSecret()) as JWTPayload;
 }
 
 // Dev user for SKIP_AUTH mode
@@ -76,8 +85,19 @@ export const DEV_USER: JWTPayload = {
   role: 'ADMIN',
 };
 
+// First request enforces the production guards we deferred from module load.
+let _runtimeGuardsRan = false;
+function enforceRuntimeGuards() {
+  if (_runtimeGuardsRan) return;
+  _runtimeGuardsRan = true;
+  if (process.env.NODE_ENV === 'production' && SKIP_AUTH) {
+    throw new Error('SKIP_AUTH cannot be enabled when NODE_ENV=production');
+  }
+}
+
 // Get current user from request - supports both auth modes
 export async function getCurrentUser(request: NextRequest): Promise<JWTPayload | null> {
+  enforceRuntimeGuards();
   // Skip auth in dev mode
   if (SKIP_AUTH) {
     return DEV_USER;
