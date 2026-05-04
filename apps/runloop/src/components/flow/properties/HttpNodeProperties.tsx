@@ -145,6 +145,47 @@ export function HttpNodeProperties({ config, onChange }: BasePropertiesProps) {
           </div>
         </Section>
       )}
+
+      {/* Body-level success check. HTTP 2xx isn't always a real success —
+          Mendix microflows / GraphQL / SOAP-over-JSON return 200 with an
+          in-body status flag. This expression runs against the response;
+          if it doesn't evaluate to true, the node fails with a precise
+          error in the execution detail (instead of silently SUCCESS). */}
+      <Section title="Success Check (optional)">
+        <div className="text-[11px] text-[#71717a] mb-2 leading-relaxed">
+          Expression evaluated against the response. If false → node fails.
+          Available: <code className="text-[#0ea5e9]">body</code>,{' '}
+          <code className="text-[#0ea5e9]">statusCode</code>,{' '}
+          <code className="text-[#0ea5e9]">headers</code>.
+        </div>
+        <TextArea
+          label="successWhen"
+          value={config.successWhen || ''}
+          onChange={(v) => onChange({ ...config, successWhen: v })}
+          placeholder={'body.responseStatus == "SUCCESS"\n// or\nlen(body.errors) == 0\n// or\nstatusCode == 200 && body.code == "OK"'}
+          rows={3}
+        />
+        <div className="text-[10px] text-[#52525b] mt-1">
+          Examples ·{' '}
+          <button
+            type="button"
+            className="text-[#0ea5e9] hover:underline"
+            onClick={() => onChange({ ...config, successWhen: 'body.responseStatus == "SUCCESS"' })}
+          >Mendix microflow</button>
+          {' · '}
+          <button
+            type="button"
+            className="text-[#0ea5e9] hover:underline"
+            onClick={() => onChange({ ...config, successWhen: 'len(body.errors) == 0' })}
+          >GraphQL</button>
+          {' · '}
+          <button
+            type="button"
+            className="text-[#0ea5e9] hover:underline"
+            onClick={() => onChange({ ...config, successWhen: 'body.success == true' })}
+          >REST {'{success: true}'}</button>
+        </div>
+      </Section>
     </BaseProperties>
   );
 }

@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/expr-lang/expr"
 	"github.com/runloop/runloop-engine/internal/models"
 	"github.com/runloop/runloop-engine/internal/worker"
 )
@@ -194,32 +195,77 @@ func (e *JobExecutor) executeHTTP(ctx context.Context, task *worker.Task) (*mode
 	// when business logic failed. Without this guard a flow shows
 	// SUCCESS while the upstream actually rejected the call.
 	//
-	// Two options the flow author can use:
-	//   successWhenJsonPath: { path: "responseStatus", equals: "SUCCESS" }
-	//   failWhenJsonPath:    { path: "responseStatus", equals: "FAIL" }
-	// (path is dot-notation, e.g. "data.items.0.status").
+	// Three layers of expressivity, chosen by config field:
+	//
+	//   successWhen / failWhen — expr-lang expression (preferred). Full
+	//     boolean logic, with these names available:
+	//       body        decoded response (object/array/scalar/string)
+	//       statusCode  int
+	//       headers     map[string][]string
+	//     Examples:
+	//       successWhen: "body.responseStatus == 'SUCCESS'"
+	//       successWhen: "statusCode == 200 && body.error == nil"
+	//       failWhen:    "len(body.errors) > 0"        // GraphQL
+	//       failWhen:    "body.code != 'OK'"
+	//
+	//   successWhenJsonPath / failWhenJsonPath — simple dot-path equality
+	//     check. Useful when expr-lang is overkill:
+	//       successWhenJsonPath: { path: "responseStatus", equals: "SUCCESS" }
+	//
+	//   expectedStatus — single status-code match (already supported above).
+	//
+	// Body-level checks only run when the HTTP-level success is true; they
+	// can never *promote* a 5xx to success.
 	failureReason := ""
 	if success {
-		if check, ok := config["successWhenJsonPath"].(map[string]interface{}); ok {
-			path, _ := check["path"].(string)
-			expected := check["equals"]
-			actual := jsonPathGet(responseData, path)
-			if !looseEqual(actual, expected) {
+		// 1. expr-lang expression (preferred)
+		if exprStr, ok := config["successWhen"].(string); ok && exprStr != "" {
+			ok, derr := evalHTTPExpr(exprStr, responseData, resp.StatusCode, resp.Header)
+			if derr != nil {
 				success = false
-				failureReason = fmt.Sprintf(
-					"successWhenJsonPath failed: expected %s=%v but got %v",
-					path, expected, actual)
+				failureReason = fmt.Sprintf("successWhen failed to evaluate: %v", derr)
+			} else if !ok {
+				success = false
+				failureReason = fmt.Sprintf("successWhen=%q evaluated to false", exprStr)
 			}
 		}
-		if check, ok := config["failWhenJsonPath"].(map[string]interface{}); ok {
-			path, _ := check["path"].(string)
-			marker := check["equals"]
-			actual := jsonPathGet(responseData, path)
-			if looseEqual(actual, marker) {
-				success = false
-				failureReason = fmt.Sprintf(
-					"failWhenJsonPath matched: %s=%v indicates failure",
-					path, actual)
+		if success {
+			if exprStr, ok := config["failWhen"].(string); ok && exprStr != "" {
+				ok, derr := evalHTTPExpr(exprStr, responseData, resp.StatusCode, resp.Header)
+				if derr != nil {
+					success = false
+					failureReason = fmt.Sprintf("failWhen failed to evaluate: %v", derr)
+				} else if ok {
+					success = false
+					failureReason = fmt.Sprintf("failWhen=%q matched", exprStr)
+				}
+			}
+		}
+		// 2. JSON-path equality (legacy, still supported)
+		if success {
+			if check, ok := config["successWhenJsonPath"].(map[string]interface{}); ok {
+				path, _ := check["path"].(string)
+				expected := check["equals"]
+				actual := jsonPathGet(responseData, path)
+				if !looseEqual(actual, expected) {
+					success = false
+					failureReason = fmt.Sprintf(
+						"successWhenJsonPath failed: expected %s=%v but got %v",
+						path, expected, actual)
+				}
+			}
+		}
+		if success {
+			if check, ok := config["failWhenJsonPath"].(map[string]interface{}); ok {
+				path, _ := check["path"].(string)
+				marker := check["equals"]
+				actual := jsonPathGet(responseData, path)
+				if looseEqual(actual, marker) {
+					success = false
+					failureReason = fmt.Sprintf(
+						"failWhenJsonPath matched: %s=%v indicates failure",
+						path, actual)
+				}
 			}
 		}
 	}
@@ -276,6 +322,39 @@ func (e *JobExecutor) executeHTTP(ctx context.Context, task *worker.Task) (*mode
 	}
 
 	return result, nil
+}
+
+// evalHTTPExpr compiles + runs an expr-lang expression against an HTTP
+// response. Returns the boolean result. Names exposed:
+//
+//	body        the decoded response body
+//	statusCode  HTTP status as int
+//	headers     map of canonicalised header names to []string values
+//
+// Compile errors and runtime errors are returned distinctly so the
+// caller can surface them in the execution detail. The expression must
+// evaluate to bool; any other type is treated as falsy.
+func evalHTTPExpr(source string, body interface{}, statusCode int, hdr http.Header) (bool, error) {
+	// Normalize headers to a plain map[string][]string for expr's runtime.
+	headers := make(map[string][]string, len(hdr))
+	for k, v := range hdr {
+		headers[k] = v
+	}
+	env := map[string]interface{}{
+		"body":       body,
+		"statusCode": statusCode,
+		"headers":    headers,
+	}
+	program, err := expr.Compile(source, expr.Env(env), expr.AsBool())
+	if err != nil {
+		return false, fmt.Errorf("compile: %w", err)
+	}
+	out, err := expr.Run(program, env)
+	if err != nil {
+		return false, fmt.Errorf("run: %w", err)
+	}
+	b, _ := out.(bool)
+	return b, nil
 }
 
 // jsonPathGet walks a dot-notation path into a JSON-decoded value.

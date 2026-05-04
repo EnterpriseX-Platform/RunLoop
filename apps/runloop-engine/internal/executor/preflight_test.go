@@ -115,6 +115,92 @@ func TestJsonPathGet_Basic(t *testing.T) {
 	}
 }
 
+// evalHTTPExpr — per-node expression check on response body.
+func TestEvalHTTPExpr_BodyResponseStatus(t *testing.T) {
+	body := map[string]interface{}{"responseStatus": "SUCCESS", "data": "x"}
+	hdr := map[string][]string{"Content-Type": {"application/json"}}
+
+	cases := []struct {
+		expr string
+		want bool
+	}{
+		{`body.responseStatus == "SUCCESS"`, true},
+		{`body.responseStatus == "FAIL"`, false},
+		{`statusCode == 200`, true},
+		{`statusCode == 500`, false},
+		{`body.responseStatus == "SUCCESS" && statusCode == 200`, true},
+		{`body.responseStatus == "SUCCESS" || statusCode == 500`, true},
+	}
+	for _, c := range cases {
+		got, err := evalHTTPExpr(c.expr, body, 200, hdr)
+		if err != nil {
+			t.Errorf("expr %q errored: %v", c.expr, err)
+			continue
+		}
+		if got != c.want {
+			t.Errorf("expr %q = %v, want %v", c.expr, got, c.want)
+		}
+	}
+}
+
+func TestEvalHTTPExpr_ArrayLen(t *testing.T) {
+	// GraphQL-style: errors is empty array on success
+	body := map[string]interface{}{
+		"data":   map[string]interface{}{"id": "1"},
+		"errors": []interface{}{},
+	}
+	got, err := evalHTTPExpr(`len(body.errors) == 0`, body, 200, nil)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if !got {
+		t.Errorf("expected true for empty errors, got false")
+	}
+
+	body["errors"] = []interface{}{
+		map[string]interface{}{"message": "boom"},
+	}
+	got, _ = evalHTTPExpr(`len(body.errors) == 0`, body, 200, nil)
+	if got {
+		t.Errorf("expected false for non-empty errors, got true")
+	}
+}
+
+func TestEvalHTTPExpr_NestedAccess(t *testing.T) {
+	body := map[string]interface{}{
+		"data": map[string]interface{}{
+			"user": map[string]interface{}{"id": "u1", "active": true},
+		},
+	}
+	got, err := evalHTTPExpr(`body.data.user.active == true`, body, 200, nil)
+	if err != nil || !got {
+		t.Errorf("expected true, got %v err=%v", got, err)
+	}
+}
+
+func TestEvalHTTPExpr_CompileError(t *testing.T) {
+	_, err := evalHTTPExpr(`body.responseStatus ==`, nil, 200, nil)
+	if err == nil {
+		t.Errorf("expected compile error for malformed expression")
+	}
+}
+
+func TestEvalHTTPExpr_NonBoolResult(t *testing.T) {
+	// expr.AsBool() should reject non-bool results at compile time
+	_, err := evalHTTPExpr(`body.responseStatus`, map[string]interface{}{"responseStatus": "OK"}, 200, nil)
+	if err == nil {
+		t.Errorf("expected error for non-bool expression result")
+	}
+}
+
+func TestEvalHTTPExpr_StringBody(t *testing.T) {
+	// Plain-text body — body is the string itself
+	got, err := evalHTTPExpr(`body == "OK"`, "OK", 200, nil)
+	if err != nil || !got {
+		t.Errorf("expected true on string body match, got %v err=%v", got, err)
+	}
+}
+
 func TestLooseEqual(t *testing.T) {
 	cases := []struct {
 		a, b interface{}
