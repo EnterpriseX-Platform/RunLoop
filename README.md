@@ -2,9 +2,9 @@
 
 # 🔁 RunLoop
 
-**Drag-drop workflow engine — in a 50 MB Go binary.**
+**Open-source workflow engine for self-hosters.**
 
-Cron schedules · 4 queue backends · multi-runtime code · real-time WebSocket streams. Self-hosted, AGPL, sub-second cold start.
+Drag-drop DAGs · cron schedules · 4 queue backends · code execution in 6 languages · pub/sub channels · AGPL.
 
 [![CI](https://github.com/EnterpriseX-Platform/RunLoop/actions/workflows/ci.yml/badge.svg)](https://github.com/EnterpriseX-Platform/RunLoop/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/EnterpriseX-Platform/RunLoop?logo=github)](https://github.com/EnterpriseX-Platform/RunLoop/releases)
@@ -22,9 +22,9 @@ Cron schedules · 4 queue backends · multi-runtime code · real-time WebSocket 
 </p>
 
 RunLoop sits between cron and Airflow: visual enough to wire a flow in a
-minute, fast enough to run where Node-based workflows can't, opinionated
-enough that secrets, queues, and multi-tenancy work out of the box.
-**Think n8n's editor with Go's runtime and queues that actually scale.**
+minute, opinionated enough that secrets, queues, and multi-tenancy work
+out of the box. **n8n's editor, real code execution, queues that scale,
+self-hosted under AGPL.**
 
 ```
 ┌──────────────┐   drag-drop    ┌──────────────┐   gocron + pg/redis/kafka  ┌─────────────┐
@@ -38,22 +38,11 @@ enough that secrets, queues, and multi-tenancy work out of the box.
 
 ## Why RunLoop?
 
-The footprint matters more than the feature list. Most workflow engines
-either run heavy (Java/Python — minutes to start, gigabytes of RAM under
-load) or run light but lack queues and code execution (raw cron, simple
-schedulers). RunLoop is the rare middle: drag-drop UI, real queues, real
-code, in a binary you can scp to a VPS.
-
-### Footprint
-
-| | RunLoop | n8n | Airflow | Temporal |
-|---|:-:|:-:|:-:|:-:|
-| Image size | **~50 MB** | ~600 MB | ~1.5 GB | ~400 MB |
-| Cold start | **<1 s** | ~5 s | ~30 s | ~10 s |
-| RAM @ 1k QPS | **~100 MB** | ~600 MB | n/a | ~400 MB |
-| Single static binary | **✅ Go** | ❌ Node | ❌ Python | ❌ Java |
-
-### Capabilities
+Most workflow tools sit at one of two extremes: heavy data-engineering
+platforms (Airflow, Temporal — code-first, JVM/Python, complex setup)
+or light low-code automators (Zapier-style, often SaaS-only). RunLoop
+is the rare middle — drag-drop UI, real queues, real code execution,
+self-hosted on infrastructure you already have.
 
 | | RunLoop | n8n | Temporal | Airflow |
 |---|---|---|---|---|
