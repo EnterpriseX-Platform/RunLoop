@@ -16,3 +16,8 @@ coverage/
 apps/runloop-engine/runloop-engine
 apps/runloop-engine/*.log
 .claude/
+
+# Internal launch playbook — paste-ready posts for HN/Reddit/Twitter/blog.
+# Not published to the public repo (looks unprofessional, exposes the
+# launch plan, has placeholders that look unfinished).
+launch/
