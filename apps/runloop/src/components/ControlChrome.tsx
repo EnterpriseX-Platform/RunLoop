@@ -29,7 +29,7 @@ export function ControlBreadcrumb({
       className="flex items-center gap-2 mb-2"
       style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.14em', color: 'var(--t-text-muted)' }}
     >
-      <span>// CONTROL PLANE / {path.toUpperCase()}</span>
+      <span>{'// CONTROL PLANE / '}{path.toUpperCase()}</span>
       <span
         className="px-1.5 py-0.5"
         style={{

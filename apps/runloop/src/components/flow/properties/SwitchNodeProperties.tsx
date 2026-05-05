@@ -27,9 +27,9 @@ export function SwitchNodeProperties({ config, onChange }: BasePropertiesProps) 
         </div>
         <div className="mt-4 p-3 rounded-lg" style={{ background: 'var(--t-panel-hover)', border: '1px solid var(--t-border)' }}>
           <p className="text-xs leading-relaxed" style={{ color: 'var(--t-text-muted)' }}>
-            Draw one outgoing edge per case and set the edge's condition to the
+            Draw one outgoing edge per case and set the edge&apos;s condition to the
             match value. Any output not matching a case falls through the
-            "default" edge (condition = <code>ON_FAILURE</code>).
+            &quot;default&quot; edge (condition = <code>ON_FAILURE</code>).
           </p>
         </div>
       </Section>

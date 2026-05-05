@@ -31,7 +31,7 @@ export function WaitWebhookNodeProperties({ config, onChange }: BasePropertiesPr
             POST {baseHint}
           </code>
           <p className="text-xs mt-2" style={{ color: 'var(--t-text-muted)' }}>
-            The request body lands in the node's output. Make the correlation id unguessable —
+            The request body lands in the node&apos;s output. Make the correlation id unguessable —
             anyone with the URL can resume the flow.
           </p>
         </div>

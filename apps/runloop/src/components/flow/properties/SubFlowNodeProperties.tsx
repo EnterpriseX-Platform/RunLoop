@@ -43,7 +43,7 @@ export function SubFlowNodeProperties({ config, onChange }: BasePropertiesProps)
           />
         </div>
         <p className="text-xs mt-2" style={{ color: 'var(--t-text-muted)' }}>
-          The sub-flow inherits the parent's variables; `input` is merged on top. Its output is available as <code style={{ color: 'var(--t-accent)' }}>{'${{<thisNodeId>.output}}'}</code>.
+          The sub-flow inherits the parent&apos;s variables; `input` is merged on top. Its output is available as <code style={{ color: 'var(--t-accent)' }}>{'${{<thisNodeId>.output}}'}</code>.
         </p>
       </Section>
     </BaseProperties>
