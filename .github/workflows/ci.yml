@@ -95,6 +95,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # trufflehog is free for org repos; gitleaks-action requires a paid
+      # license for orgs since v2 (https://github.com/gitleaks/gitleaks-action#-announcement).
+      - uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --results=verified,unknown

@@ -70,8 +70,13 @@ func loadKey() ([]byte, error) {
 	if hexKey == "" {
 		// Dev fallback. Mirror Next.js scryptSync('runloop-dev-key', 'salt', 32).
 		// Node's scryptSync defaults: N=16384, r=8, p=1.
-		if env := os.Getenv("ENGINE_ENV"); env != "" && env != "development" && env != "dev" {
-			return nil, errors.New("SECRET_ENCRYPTION_KEY is required outside development")
+		// Require an explicit development signal across the env vars we
+		// recognise. An UNSET environment must NOT silently fall through to
+		// the deterministic dev key, otherwise an operator who forgets both
+		// SECRET_ENCRYPTION_KEY and the env hint ends up running prod with
+		// a publicly-known key.
+		if !isExplicitDev() {
+			return nil, errors.New("SECRET_ENCRYPTION_KEY is required (set NODE_ENV=development or ENGINE_ENV=development to use the deterministic dev key)")
 		}
 		k, err := scrypt.Key([]byte(devKeyHint), []byte(devSalt), 16384, 8, 1, keyLen)
 		if err != nil {
@@ -88,6 +93,19 @@ func loadKey() ([]byte, error) {
 		return nil, fmt.Errorf("decode SECRET_ENCRYPTION_KEY hex: %w", err)
 	}
 	return k, nil
+}
+
+// isExplicitDev reports whether any of the env vars we honour says we're
+// in development. Mirrors main.go isProduction() but inverted — must be
+// explicit, not the absence of a production signal.
+func isExplicitDev() bool {
+	for _, k := range []string{"ENGINE_ENV", "RUNTIME_ENV", "NODE_ENV", "ENV"} {
+		v := strings.ToLower(os.Getenv(k))
+		if v == "development" || v == "dev" {
+			return true
+		}
+	}
+	return false
 }
 
 // GetSecret looks up `name` for the given project, falling back to GLOBAL
