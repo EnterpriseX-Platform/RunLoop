@@ -125,10 +125,10 @@ export default function DashboardPage() {
   ];
 
   const systemServices = [
-    { name: 'RunLoop Engine', status: 'online', port: '8092' },
-    { name: 'PostgreSQL', status: 'online', port: '5481' },
+    { name: 'RunLoop Engine', status: 'online', port: '8080' },
+    { name: 'PostgreSQL', status: 'online', port: '5432' },
     { name: 'Worker Pool', status: 'online', port: '10 workers' },
-    { name: 'Next.js App', status: 'online', port: '3081' },
+    { name: 'Next.js App', status: 'online', port: '3000' },
   ];
 
   const quickActions = [

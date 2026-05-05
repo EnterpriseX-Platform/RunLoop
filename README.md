@@ -87,24 +87,75 @@ code, in a binary you can scp to a VPS.
 
 ## Screenshots
 
-<table>
-  <tr>
-    <td width="50%"><img src="docs/screenshots/schedulers.png" alt="Schedulers list with cron expressions and run history" /></td>
-    <td width="50%"><img src="docs/screenshots/executions.png" alt="Execution log with status, trigger type, and pass/fail counts" /></td>
-  </tr>
-  <tr>
-    <td align="center"><sub><b>Schedulers</b> — cron, manual, webhook triggers with last-run history</sub></td>
-    <td align="center"><sub><b>Executions</b> — every run, every node, pass/fail at a glance</sub></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="docs/screenshots/flows-list.png" alt="Flow definitions with status and type" /></td>
-    <td width="50%"><img src="docs/screenshots/secrets-vault.png" alt="Secrets vault with masked values, categorized by purpose" /></td>
-  </tr>
-  <tr>
-    <td align="center"><sub><b>Flows</b> — DAG definitions, decoupled from schedulers</sub></td>
-    <td align="center"><sub><b>Secrets vault</b> — AES-256-GCM at rest, referenced as <code>${{secrets.NAME}}</code></sub></td>
-  </tr>
-</table>
+### Dashboard — project overview at a glance
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+Stats per project: flow count, scheduler count, total executions with success rate. Recent activity feed. System status pane shows engine + Postgres + worker pool ports.
+
+---
+
+### Schedulers — cron, manual, webhook triggers
+
+![Schedulers](docs/screenshots/schedulers.png)
+
+Each scheduler binds to a flow. Cron expressions are timezone-aware; `Manual` and `Webhook` triggers fire on demand. The history bars on the right are the last N run statuses (green = success, red = failure).
+
+---
+
+### Executions — every run, every node
+
+![Executions](docs/screenshots/executions.png)
+
+The raw log of what the engine actually did. Tabs: All / Running / Success / Failed / Pending / Needs Review (the DLQ entry point). Click any row to drill into per-node timing, output, and live WebSocket stream while the run is in flight.
+
+---
+
+### Flows — DAG definitions, decoupled from schedulers
+
+![Flows](docs/screenshots/flows-list.png)
+
+Flows define **what** runs; schedulers define **when**. The same flow can be wired to multiple triggers (cron + webhook + queue consumer) without duplication.
+
+---
+
+### Queues — 4 backends behind one interface
+
+![Queues](docs/screenshots/queues.png)
+
+`postgres` (default, no extra infra), `rabbitmq`, `kafka`, `redis`. Producers `POST /api/queues/<name>/jobs`; consumers run the bound flow. Concurrency, max-attempts, and DLQ wiring are configured per-queue.
+
+---
+
+### Channels — project-scoped pub/sub over WebSocket
+
+![Channels](docs/screenshots/channels.png)
+
+Flow nodes publish via the `Notify` node; apps subscribe via WS. Useful for mobile/dashboard live-updates from inside flows. Test publish + tap subscriber are built into the UI.
+
+---
+
+### AI integrations — Claude / ChatGPT / Kimi, switched per-project
+
+![AI integrations](docs/screenshots/ai-integrations.png)
+
+The in-app AI assistant routes through whichever provider you've configured. Keys are stored in the secret vault, never sent to third parties. Switch active provider without restarting.
+
+---
+
+### Secrets vault — AES-256-GCM at rest
+
+![Secrets vault](docs/screenshots/secrets-vault.png)
+
+Reference secrets in any node config as `${{secrets.NAME}}`. The engine pulls + decrypts at the point of use, so plaintext only exists inside the executor goroutine — never in execution logs, DLQ, or audit rows.
+
+---
+
+### API reference — built into the running app
+
+![API docs](docs/screenshots/api-docs.png)
+
+Every UI action has a REST endpoint with project-scoped `rl_*` API keys. The full reference is served at `/runloop/p/<projectId>/docs` from the running engine.
 
 ## Quick start
 
