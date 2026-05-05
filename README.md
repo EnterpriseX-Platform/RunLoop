@@ -17,7 +17,9 @@ Cron schedules · 4 queue backends · multi-runtime code · real-time WebSocket 
 
 ---
 
-> **🎬 Demo GIF + screenshots are landing this week** — see [`docs/screenshots/`](./docs/screenshots/) for what's coming.
+<p align="center">
+  <img src="docs/screenshots/flow-editor.png" alt="RunLoop flow editor — drag-drop DAG with HTTP/DB/Shell/Python/Slack/Email node palette" width="900" />
+</p>
 
 RunLoop sits between cron and Airflow: visual enough to wire a flow in a
 minute, fast enough to run where Node-based workflows can't, opinionated
@@ -82,6 +84,27 @@ code, in a binary you can scp to a VPS.
 - **Dead-letter queue** — failed flow executions persist with replay support.
 - **Pub/sub channels** — flows publish via the `Notify` node, mobile apps and
   dashboards subscribe over WebSocket. Project-scoped, ephemeral, non-blocking.
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/schedulers.png" alt="Schedulers list with cron expressions and run history" /></td>
+    <td width="50%"><img src="docs/screenshots/executions.png" alt="Execution log with status, trigger type, and pass/fail counts" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub><b>Schedulers</b> — cron, manual, webhook triggers with last-run history</sub></td>
+    <td align="center"><sub><b>Executions</b> — every run, every node, pass/fail at a glance</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/flows-list.png" alt="Flow definitions with status and type" /></td>
+    <td width="50%"><img src="docs/screenshots/secrets-vault.png" alt="Secrets vault with masked values, categorized by purpose" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub><b>Flows</b> — DAG definitions, decoupled from schedulers</sub></td>
+    <td align="center"><sub><b>Secrets vault</b> — AES-256-GCM at rest, referenced as <code>${{secrets.NAME}}</code></sub></td>
+  </tr>
+</table>
 
 ## Quick start
 
