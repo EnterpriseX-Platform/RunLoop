@@ -15,6 +15,7 @@ build/
 coverage/
 apps/runloop-engine/runloop-engine
 apps/runloop-engine/*.log
+apps/runloop-cli/runloop-cli
 .claude/
 
 # Internal launch playbook — paste-ready posts for HN/Reddit/Twitter/blog.

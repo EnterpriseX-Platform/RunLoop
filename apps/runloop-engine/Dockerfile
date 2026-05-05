@@ -37,8 +37,8 @@ WORKDIR /root/
 # Copy the binary from builder
 COPY --from=builder /app/runloop-engine .
 
-# Expose port
-EXPOSE 8092
+# Expose port (Go HTTP convention; override via EXECUTOR_PORT env var)
+EXPOSE 8080
 
 # Run the binary
 CMD ["./runloop-engine"]

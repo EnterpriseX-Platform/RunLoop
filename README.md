@@ -100,7 +100,7 @@ echo "POSTGRES_PASSWORD=$(openssl rand -hex 16)"     >> .env
 docker compose up -d
 ```
 
-The web UI lands at **<http://localhost:3081/runloop>**. The seed script
+The web UI lands at **<http://localhost:3000/runloop>**. The seed script
 prints a generated admin password on first boot — capture it from the logs:
 
 ```bash
@@ -117,13 +117,13 @@ npm install
 npm run db:start           # starts Postgres in Docker
 npm run db:push            # applies the Prisma schema
 npm run db:seed            # creates admin user; prints password once
-npm run dev                # starts Next.js (3081) + Go engine (8092)
+npm run dev                # starts Next.js (3000) + Go engine (8080)
 ```
 
 ## Architecture at a glance
 
 ```
-Browser  ──▶  Next.js (web · 3081)  ──▶  Go engine (Fiber + gocron · 8092)
+Browser  ──▶  Next.js (web · 3000)  ──▶  Go engine (Fiber + gocron · 8080)
               │                            │
               ▼                            ▼
               Prisma (auth, projects)      Worker pool (goroutines)

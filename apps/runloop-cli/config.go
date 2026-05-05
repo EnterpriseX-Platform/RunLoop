@@ -20,7 +20,7 @@ func defaultBaseURL() string {
 	if v := os.Getenv("RUNLOOP_URL"); v != "" {
 		return v
 	}
-	return "http://localhost:3081/runloop"
+	return "http://localhost:3000/runloop"
 }
 
 func configPath() (string, error) {

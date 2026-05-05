@@ -15,15 +15,15 @@ Browser
   ▼  https://<your-domain>/runloop/*
 ┌────────────────── Ingress (nginx) ──────────────────┐
 │  /runloop/rl/ws/* ─┐                                 │
-│  /runloop/rl/*   ──┼──▶  runloop-engine  (Go :8092)  │
-│  /runloop/*      ───▶    runloop-web     (Next :3081)│
+│  /runloop/rl/*   ──┼──▶  runloop-engine  (Go :8080)  │
+│  /runloop/*      ───▶    runloop-web     (Next :3000)│
 └──────────────────────────────────────────────────────┘
            │                              │
            ▼                              ▼
      runloop-engine  ◀─── SQL ───▶  runloop-postgres (PG 16)
            ▲
            └── server-side rewrite ──── runloop-web
-               ENGINE_URL=http://runloop-engine:8092
+               ENGINE_URL=http://runloop-engine:8080
 ```
 
 **Why the split routes:**
@@ -38,12 +38,12 @@ On the master node:
 
 ```bash
 # 2.1 Create namespace
-ssh <deploy-user>@<k8s-master> 'kubectl create namespace community'
+ssh <deploy-user>@<k8s-master> 'kubectl create namespace runloop'
 
 # 2.2 Create runloop-secret (do NOT commit real values)
 #     DATABASE_URL must NOT contain ?schema=public — pgx (Go engine)
 #     rejects unknown parameters.
-ssh <deploy-user>@<k8s-master> "kubectl -n community create secret generic runloop-secret \
+ssh <deploy-user>@<k8s-master> "kubectl -n runloop create secret generic runloop-secret \
   --from-literal=DATABASE_URL='postgresql://runloop:<PASSWORD>@runloop-postgres:5432/runloop' \
   --from-literal=POSTGRES_PASSWORD='<PASSWORD>' \
   --from-literal=JWT_SECRET='$(openssl rand -hex 32)' \
@@ -53,7 +53,7 @@ ssh <deploy-user>@<k8s-master> "kubectl -n community create secret generic runlo
 #     pods can pull your images. Skip this step if you're using ghcr.io
 #     public images.
 #
-# kubectl -n community create secret docker-registry runloop-regcred \
+# kubectl -n runloop create secret docker-registry runloop-regcred \
 #   --docker-server=<your-registry> \
 #   --docker-username='<user>' \
 #   --docker-password='<pass-or-token>'
@@ -69,7 +69,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: nfs-bootstrap
-  namespace: community
+  namespace: runloop
 spec:
   restartPolicy: Never
   containers:
@@ -81,8 +81,8 @@ spec:
     - name: nfs
       nfs: { server: <nfs-server>, path: /datastore }
 EOF
-kubectl -n community wait --for=condition=Ready pod/nfs-bootstrap --timeout=60s
-kubectl -n community delete pod nfs-bootstrap
+kubectl -n runloop wait --for=condition=Ready pod/nfs-bootstrap --timeout=60s
+kubectl -n runloop delete pod nfs-bootstrap
 
 # 2.5 Apply manifests (run from a checkout of this repo on your laptop)
 for f in k8s/20-postgres.yaml k8s/30-engine.yaml k8s/40-web.yaml; do
@@ -123,7 +123,7 @@ left to your environment-specific tooling.
 
 ```bash
 # Pod status
-ssh <deploy-user>@<k8s-master> 'kubectl get pod -n community -o wide'
+ssh <deploy-user>@<k8s-master> 'kubectl get pod -n runloop -o wide'
 
 # Expected:
 # runloop-web-<hash>      2/2 Running
@@ -131,8 +131,8 @@ ssh <deploy-user>@<k8s-master> 'kubectl get pod -n community -o wide'
 # runloop-postgres-<hash> 1/1 Running
 
 # Tail logs
-ssh <deploy-user>@<k8s-master> 'kubectl logs -n community -l app=runloop-web    --tail=50 -f'
-ssh <deploy-user>@<k8s-master> 'kubectl logs -n community -l app=runloop-engine --tail=50 -f'
+ssh <deploy-user>@<k8s-master> 'kubectl logs -n runloop -l app=runloop-web    --tail=50 -f'
+ssh <deploy-user>@<k8s-master> 'kubectl logs -n runloop -l app=runloop-engine --tail=50 -f'
 
 # Ingress health
 curl -skI https://<your-domain>/runloop | head -3
@@ -144,7 +144,7 @@ curl -sk https://<your-domain>/runloop/rl/health
 
 # Image tag check
 ssh <deploy-user>@<k8s-master> \
-  'kubectl get deployment -n community runloop-web -o jsonpath="{.spec.template.spec.containers[0].image}"'
+  'kubectl get deployment -n runloop runloop-web -o jsonpath="{.spec.template.spec.containers[0].image}"'
 # Expect: ghcr.io/enterprisex-platform/runloop-web:<your-tag>
 ```
 
@@ -155,13 +155,13 @@ ssh <deploy-user>@<k8s-master> \
 ```bash
 # Fast path — undo last change
 ssh <deploy-user>@<k8s-master> \
-  'kubectl rollout undo deployment/runloop-web -n community'
+  'kubectl rollout undo deployment/runloop-web -n runloop'
 ssh <deploy-user>@<k8s-master> \
-  'kubectl rollout undo deployment/runloop-engine -n community'
+  'kubectl rollout undo deployment/runloop-engine -n runloop'
 
 # Pin to a specific known-good tag
 ssh <deploy-user>@<k8s-master> \
-  'kubectl set image deployment/runloop-web -n community web=ghcr.io/enterprisex-platform/runloop-web:v1.20260422-deadbee'
+  'kubectl set image deployment/runloop-web -n runloop web=ghcr.io/enterprisex-platform/runloop-web:v1.20260422-deadbee'
 ```
 
 ---
@@ -170,21 +170,21 @@ ssh <deploy-user>@<k8s-master> \
 
 ```bash
 # Restart (no image change — picks up ConfigMap edits)
-ssh <deploy-user>@<k8s-master> 'kubectl rollout restart deployment/runloop-web -n community'
+ssh <deploy-user>@<k8s-master> 'kubectl rollout restart deployment/runloop-web -n runloop'
 
 # Exec into web pod
 ssh -t <deploy-user>@<k8s-master> \
-  'kubectl exec -it -n community deployment/runloop-web -- sh'
+  'kubectl exec -it -n runloop deployment/runloop-web -- sh'
 
 # Prisma Studio via port-forward
 ssh -f -N -L 15481:localhost:15481 <deploy-user>@<k8s-master>
 ssh <deploy-user>@<k8s-master> \
-  "nohup kubectl port-forward -n community --address 0.0.0.0 svc/runloop-postgres 15481:5432 > /tmp/runloop-pf.log 2>&1 &"
+  "nohup kubectl port-forward -n runloop --address 0.0.0.0 svc/runloop-postgres 15481:5432 > /tmp/runloop-pf.log 2>&1 &"
 # Now: PGPASSWORD=<pwd> psql -h localhost -p 15481 -U runloop -d runloop
 
 # Reset DB schema (dev only!)
 ssh <deploy-user>@<k8s-master> \
-  'kubectl exec -n community deploy/runloop-web -- npx prisma db push --force-reset'
+  'kubectl exec -n runloop deploy/runloop-web -- npx prisma db push --force-reset'
 ```
 
 ---
@@ -206,9 +206,9 @@ Check `DATABASE_URL` in `runloop-secret`. Host must be `runloop-postgres` (the s
 ### ❌ Engine: `unrecognized configuration parameter "schema"`
 pgx doesn't accept Prisma's `?schema=public` query param. Strip it from the secret:
 ```bash
-kubectl -n community patch secret runloop-secret --type='json' \
+kubectl -n runloop patch secret runloop-secret --type='json' \
   -p='[{"op":"replace","path":"/data/DATABASE_URL","value":"'$(printf 'postgresql://runloop:PASS@runloop-postgres:5432/runloop' | base64)'"}]'
-kubectl -n community rollout restart deployment/runloop-engine
+kubectl -n runloop rollout restart deployment/runloop-engine
 ```
 
 ### ❌ Web: ImagePullBackOff `pull access denied`
@@ -220,7 +220,7 @@ Runner image is missing the prisma CLI tree. The current Dockerfile bundles the 
 ### ❌ `prisma db push` hangs in init container
 Postgres pod not ready yet — delete the web pod, it'll retry:
 ```bash
-ssh <deploy-user>@<k8s-master> 'kubectl delete pod -n community -l app=runloop-web'
+ssh <deploy-user>@<k8s-master> 'kubectl delete pod -n runloop -l app=runloop-web'
 ```
 
 ### ❌ External Apache returns 503 for /runloop

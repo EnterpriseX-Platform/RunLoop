@@ -17,7 +17,7 @@ npm run db:seed            # creates an admin user; password is printed once
 npm run dev                # starts Next.js + Go engine via Turborepo
 ```
 
-Open http://localhost:3081/runloop and log in with the seeded credentials.
+Open http://localhost:3000/runloop and log in with the seeded credentials.
 
 ## Project layout
 

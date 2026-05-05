@@ -76,7 +76,7 @@ const nextConfig = {
     ];
   },
   async rewrites() {
-    const engineUrl = process.env.ENGINE_URL || 'http://localhost:8092';
+    const engineUrl = process.env.ENGINE_URL || 'http://localhost:8080';
     const enginePrefix = process.env.ENGINE_BASE_PATH || '/rl';
 
     // The engine groups its public surface under enginePrefix (default /rl).

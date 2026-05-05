@@ -59,9 +59,9 @@ npm run dev
 
 | Service | URL |
 |---|---|
-| Web UI | http://localhost:3081/runloop |
-| Engine (direct) | http://localhost:8092/rl/health |
-| Engine (via Next.js proxy) | http://localhost:3081/runloop/proxy/engine/health |
+| Web UI | http://localhost:3000/runloop |
+| Engine (direct) | http://localhost:8080/rl/health |
+| Engine (via Next.js proxy) | http://localhost:3000/runloop/proxy/engine/health |
 
 ## 4. Skip auth in dev
 
@@ -74,8 +74,8 @@ flag is set with `NODE_ENV=production`, so it can't accidentally ship.
 ## URL structure
 
 ```
-http://localhost:3081/
-├── /runloop/                    ← Next.js web (port 3081)
+http://localhost:3000/
+├── /runloop/                    ← Next.js web (port 3000)
 │   ├── /login
 │   ├── /dashboard
 │   └── /p/<projectId>/...       ← project-scoped pages (settings,
@@ -85,13 +85,13 @@ http://localhost:3081/
 ├── /runloop/api/*               ← Next.js internal API (auth, projects)
 │   └── /auth/{login,logout,me}
 │
-└── /runloop/proxy/engine/*      ← server-side proxy → Go engine (8092)
+└── /runloop/proxy/engine/*      ← server-side proxy → Go engine (8080)
     ├── /health
     └── /api/{schedulers,executions,queues,channels,dlq}/*
 ```
 
 The browser also opens a direct WebSocket to the engine at
-`ws://localhost:8092/rl/ws/executions/<id>` — Next.js doesn't proxy WS,
+`ws://localhost:8080/rl/ws/executions/<id>` — Next.js doesn't proxy WS,
 so the dev setup talks straight to the engine port for live streams.
 
 ---
@@ -127,13 +127,13 @@ The minimum you need locally:
 DATABASE_URL=postgres://runloop:runloop_secret@localhost:5481/runloop?sslmode=disable
 JWT_SECRET=dev-secret-key-change-in-production
 NEXT_PUBLIC_SKIP_AUTH=true
-ENGINE_URL=http://localhost:8092
+ENGINE_URL=http://localhost:8080
 SECRET_ENCRYPTION_KEY=0000000000000000000000000000000000000000000000000000000000000001  # 64 hex chars; dev value
 ```
 
 ```env
 # apps/runloop-engine/.env (or export)
-EXECUTOR_PORT=8092
+EXECUTOR_PORT=8080
 DATABASE_URL=postgres://runloop:runloop_secret@localhost:5481/runloop?sslmode=disable
 JWT_SECRET=dev-secret-key-change-in-production
 SECRET_ENCRYPTION_KEY=0000000000000000000000000000000000000000000000000000000000000001
@@ -158,8 +158,8 @@ npm run db:stop && npm run db:start # full reset
 
 ### Port already in use
 ```bash
-lsof -ti:3081 | xargs kill -9       # web
-lsof -ti:8092 | xargs kill -9       # engine
+lsof -ti:3000 | xargs kill -9       # web
+lsof -ti:8080 | xargs kill -9       # engine
 lsof -ti:5481 | xargs kill -9       # postgres
 ```
 

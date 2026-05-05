@@ -346,7 +346,7 @@ export default function SettingsPage() {
     });
   }, [showToast]);
 
-  const engineUrl = process.env.NEXT_PUBLIC_ENGINE_URL || 'http://localhost:8092';
+  const engineUrl = process.env.NEXT_PUBLIC_ENGINE_URL || 'http://localhost:8080';
   const basePath = '/runloop';
   const appVersion = '0.1.0';
 

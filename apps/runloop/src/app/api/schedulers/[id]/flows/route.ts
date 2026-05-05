@@ -6,7 +6,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const engineUrl = process.env.ENGINE_URL || 'http://localhost:8092';
+    const engineUrl = process.env.ENGINE_URL || 'http://localhost:8080';
     const res = await fetch(`${engineUrl}/rl/api/schedulers/${params.id}/flows`, {
       headers: {
         'Authorization': request.headers.get('authorization') || '',
@@ -28,7 +28,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const engineUrl = process.env.ENGINE_URL || 'http://localhost:8092';
+    const engineUrl = process.env.ENGINE_URL || 'http://localhost:8080';
     const body = await request.json();
     const res = await fetch(`${engineUrl}/rl/api/schedulers/${params.id}/flows`, {
       method: 'POST',

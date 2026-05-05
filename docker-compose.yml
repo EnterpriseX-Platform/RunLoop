@@ -24,7 +24,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     # Bind only to localhost — never expose Postgres to the public internet.
     ports:
-      - "127.0.0.1:5433:5432"
+      - "127.0.0.1:5481:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-runloop}"]
       interval: 5s
@@ -40,7 +40,7 @@ services:
       dockerfile: Dockerfile
     container_name: runloop-engine
     environment:
-      EXECUTOR_PORT: 8092
+      EXECUTOR_PORT: 8080
       BASE_PATH: /rl
       DATABASE_URL: postgres://${POSTGRES_USER:-runloop}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-runloop}?sslmode=disable
       WORKER_COUNT: ${WORKER_COUNT:-10}
@@ -50,7 +50,7 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-info}
       LOG_FORMAT: ${LOG_FORMAT:-json}
     ports:
-      - "8092:8092"
+      - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -65,15 +65,15 @@ services:
     container_name: runloop-web
     environment:
       NODE_ENV: production
-      PORT: 3081
+      PORT: 3000
       DATABASE_URL: postgres://${POSTGRES_USER:-runloop}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-runloop}?sslmode=disable
       JWT_SECRET: ${JWT_SECRET}
       SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY}
-      ENGINE_URL: http://runloop-engine:8092
+      ENGINE_URL: http://runloop-engine:8080
       # SKIP_AUTH must remain unset in production. The auth module hard-fails
       # if it sees SKIP_AUTH=true alongside NODE_ENV=production.
     ports:
-      - "3081:3081"
+      - "3000:3000"
     depends_on:
       postgres:
         condition: service_healthy

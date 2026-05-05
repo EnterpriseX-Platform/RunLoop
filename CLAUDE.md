@@ -5,8 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 RunLoop is a job scheduling platform with a hybrid architecture:
-- **Next.js 14 web app** (`apps/runloop/`, port 3081) — UI, internal API, Prisma ORM
-- **Go engine** (`apps/runloop-engine/`, port 8092) — Scheduling, worker pool, job execution (Fiber + gocron)
+- **Next.js 14 web app** (`apps/runloop/`, port 3000) — UI, internal API, Prisma ORM
+- **Go engine** (`apps/runloop-engine/`, port 8080) — Scheduling, worker pool, job execution (Fiber + gocron)
 - **PostgreSQL 16** — Shared database (dev port 5481)
 - **Turborepo** monorepo with npm workspaces
 
@@ -45,7 +45,7 @@ No automated tests exist yet. Manual testing with `NEXT_PUBLIC_SKIP_AUTH=true` b
 ### Request Flow
 
 ```
-Browser → Next.js (3081/runloop/) → [next.config.js rewrites] → Go Engine (8092/rl/)
+Browser → Next.js (3000/runloop/) → [next.config.js rewrites] → Go Engine (8080/rl/)
 ```
 
 Next.js serves the UI and handles auth/projects/metrics/secrets via Prisma. Scheduler and execution CRUD is **proxied** to the Go engine — there are no Next.js route handlers for these. The proxy mapping in `next.config.js`:
@@ -127,7 +127,7 @@ Enums: `JobType` (HTTP/DATABASE/SHELL/PYTHON/NODEJS/DOCKER), `TriggerType` (SCHE
 ## Known Quirks
 
 - **Naming transition**: Codebase is mid-rename from "Scheduler" to "RunLoop". DB/Prisma still uses `Scheduler`, TypeScript types alias `Scheduler` → `RunLoop`, some UI says "RunLoops".
-- **ENGINE_URL**: defaults to `http://localhost:8092` everywhere; override via env in non-local deployments. The WebSocket hook (`useWebSocket.ts`) defaults to the page's own host; for split dev (web + engine on different hosts) set `NEXT_PUBLIC_ENGINE_WS_HOST`.
+- **ENGINE_URL**: defaults to `http://localhost:8080` everywhere; override via env in non-local deployments. The WebSocket hook (`useWebSocket.ts`) defaults to the page's own host; for split dev (web + engine on different hosts) set `NEXT_PUBLIC_ENGINE_WS_HOST`.
 - **Go toolchain**: `go.mod` requires Go ≥ 1.25. `apps/runloop-engine/Dockerfile` must stay on `golang:1.25-alpine` or newer — older base images break `go mod download`.
 - **Direct-mode schedulers bypass DLQ**: schedulers without an attached flow run via `jobExecutor`, not `FlowExecutor`, so failures do not produce `DeadLetterQueueEntry` rows. Only flow-attached (DAG/SIMPLE) executions populate the DLQ.
 - **Production secrets**: `SECRET_ENCRYPTION_KEY` (64 hex chars) is required in production for both the web and engine deployments. The engine's `internal/secret/store.go` matches Next.js `src/lib/encryption.ts` byte-for-byte (AES-256-GCM, 16-byte IV, 16-byte tag, scrypt fallback in dev).

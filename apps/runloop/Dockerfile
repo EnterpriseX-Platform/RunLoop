@@ -24,7 +24,7 @@ RUN npx prisma generate
 # output (routes-manifest.json) — ENGINE_URL is evaluated at BUILD time,
 # not runtime. Default to the in-cluster service DNS; override via
 # --build-arg if needed.
-ARG ENGINE_URL=http://runloop-engine:8092
+ARG ENGINE_URL=http://runloop-engine:8080
 ENV ENGINE_URL=${ENGINE_URL}
 
 # Build the application
@@ -57,9 +57,9 @@ COPY --from=builder /app/package.json ./package.json
 
 USER nextjs
 
-EXPOSE 3081
+EXPOSE 3000
 
-ENV PORT 3081
+ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
 CMD ["node", "server.js"]

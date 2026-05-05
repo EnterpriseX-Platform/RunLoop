@@ -7,7 +7,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: runloop-web
-  namespace: community
+  namespace: runloop
   labels: { app: runloop-web }
 spec:
   replicas: 2
@@ -39,16 +39,16 @@ spec:
         - name: web
           image: ghcr.io/enterprisex-platform/runloop-web:latest
           imagePullPolicy: Always
-          ports: [{ containerPort: 3081, name: http }]
+          ports: [{ containerPort: 3000, name: http }]
           env:
             - name: PORT
-              value: "3081"
+              value: "3000"
             - name: HOSTNAME
               value: "0.0.0.0"
             - name: NODE_ENV
               value: production
             - name: ENGINE_URL
-              value: http://runloop-engine:8092
+              value: http://runloop-engine:8080
             - name: NEXT_PUBLIC_ENGINE_URL
               value: https://<your-domain>
             - name: DATABASE_URL
@@ -61,11 +61,11 @@ spec:
               valueFrom:
                 secretKeyRef: { name: runloop-secret, key: SECRETS_KEY }
           readinessProbe:
-            httpGet: { path: /runloop, port: 3081 }
+            httpGet: { path: /runloop, port: 3000 }
             initialDelaySeconds: 10
             periodSeconds: 10
           livenessProbe:
-            httpGet: { path: /runloop, port: 3081 }
+            httpGet: { path: /runloop, port: 3000 }
             initialDelaySeconds: 30
             periodSeconds: 30
           resources:
@@ -76,7 +76,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: runloop-web
-  namespace: community
+  namespace: runloop
 spec:
   # NodePort — external Apache proxies /runloop → this NodePort.
   # Port is pinned so ops config doesn't break on re-apply.
@@ -84,6 +84,6 @@ spec:
   selector: { app: runloop-web }
   ports:
     - name: http
-      port: 3081
-      targetPort: 3081
+      port: 3000
+      targetPort: 3000
       nodePort: 31383

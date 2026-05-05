@@ -7,7 +7,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: runloop-engine
-  namespace: community
+  namespace: runloop
   labels: { app: runloop-engine }
 spec:
   replicas: 1   # single scheduler instance — leader election not implemented
@@ -28,12 +28,12 @@ spec:
           image: ghcr.io/enterprisex-platform/runloop-engine:latest
           imagePullPolicy: Always
           ports:
-            - { containerPort: 8092, name: http }
+            - { containerPort: 8080, name: http }
           env:
             # Engine reads EXECUTOR_PORT (not PORT) — see
             # apps/runloop-engine/internal/config/config.go
             - name: EXECUTOR_PORT
-              value: "8092"
+              value: "8080"
             - name: BASE_PATH
               value: /rl
             - name: DATABASE_URL
@@ -46,11 +46,11 @@ spec:
               valueFrom:
                 secretKeyRef: { name: runloop-secret, key: SECRETS_KEY }
           readinessProbe:
-            httpGet: { path: /rl/health, port: 8092 }
+            httpGet: { path: /rl/health, port: 8080 }
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
-            httpGet: { path: /rl/health, port: 8092 }
+            httpGet: { path: /rl/health, port: 8080 }
             initialDelaySeconds: 20
             periodSeconds: 30
           resources:
@@ -61,7 +61,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: runloop-engine
-  namespace: community
+  namespace: runloop
 spec:
   # NodePort — external Apache proxies /runloop/rl → this NodePort.
   # Port is pinned so ops config doesn't break on re-apply.
@@ -69,6 +69,6 @@ spec:
   selector: { app: runloop-engine }
   ports:
     - name: http
-      port: 8092
-      targetPort: 8092
+      port: 8080
+      targetPort: 8080
       nodePort: 31157

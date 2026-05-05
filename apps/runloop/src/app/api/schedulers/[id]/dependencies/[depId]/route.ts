@@ -6,7 +6,7 @@ export async function DELETE(
   { params }: { params: { id: string; depId: string } }
 ) {
   try {
-    const engineUrl = process.env.ENGINE_URL || 'http://localhost:8092';
+    const engineUrl = process.env.ENGINE_URL || 'http://localhost:8080';
     const res = await fetch(`${engineUrl}/rl/api/schedulers/${params.id}/dependencies/${params.depId}`, {
       method: 'DELETE',
       headers: {

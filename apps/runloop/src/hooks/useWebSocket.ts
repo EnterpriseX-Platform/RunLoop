@@ -45,12 +45,12 @@ export function useWebSocket({
     //
     // In prod (behind ingress) the engine is routed at /runloop/rl/*
     // on the SAME host as the browser, so derive from window.location.
-    // In dev, override via NEXT_PUBLIC_ENGINE_WS_HOST=localhost:8092 to
+    // In dev, override via NEXT_PUBLIC_ENGINE_WS_HOST=localhost:8080 to
     // bypass the Next.js rewrite layer (WS doesn't proxy through Next).
     const isBrowser = typeof window !== 'undefined';
     const protocol = isBrowser && window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const envHost = process.env.NEXT_PUBLIC_ENGINE_WS_HOST;
-    const host = envHost || (isBrowser ? window.location.host : 'localhost:8092');
+    const host = envHost || (isBrowser ? window.location.host : 'localhost:8080');
     // When using the ingress host, prefix the engine path with /runloop
     // so it hits the carve-out route; direct dev host uses /rl/ws/* raw.
     const pathPrefix = envHost ? '' : (isBrowser ? '/runloop' : '');
