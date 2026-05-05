@@ -17,16 +17,18 @@ spec:
     metadata:
       labels: { app: runloop-web }
     spec:
-      # avalantglobal/* images on Docker Hub are private.
-      imagePullSecrets:
-        - name: oneweb-regcred
+      # If pulling from a private registry, create an imagePullSecret in
+      # this namespace and uncomment the block below. Public ghcr.io
+      # images don't need it.
+      # imagePullSecrets:
+      #   - name: runloop-regcred
       # Run migrations before the app starts. Safe on re-deploy —
       # `prisma db push` is idempotent. Swap to `prisma migrate deploy`
       # once you commit migration files. Requires the web image to
       # include the full prisma CLI tree (package + engines + wasm).
       initContainers:
         - name: migrate
-          image: avalantglobal/runloop-web:latest
+          image: ghcr.io/enterprisex-platform/runloop-web:latest
           imagePullPolicy: Always
           command: ["npx", "prisma", "db", "push", "--accept-data-loss", "--skip-generate"]
           env:
@@ -35,7 +37,7 @@ spec:
                 secretKeyRef: { name: runloop-secret, key: DATABASE_URL }
       containers:
         - name: web
-          image: avalantglobal/runloop-web:latest
+          image: ghcr.io/enterprisex-platform/runloop-web:latest
           imagePullPolicy: Always
           ports: [{ containerPort: 3081, name: http }]
           env:

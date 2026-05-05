@@ -1,9 +1,9 @@
 # RunLoop — Production Deployment Guide
 
-> **Target cluster:** same K8s as ORCH (`<k8s-master>` master)
-> **Namespace:** `community`
+> **Target cluster:** your K8s cluster (`<k8s-master>` master)
+> **Namespace:** `runloop` (or whatever you choose)
 > **Domain:** `https://<your-domain>/runloop`
-> **Jenkins:** `http://<jenkins-host>:32552/job/COMMUNITY/`
+> **Jenkins:** `http://<your-jenkins-host>/job/<your-folder>/`
 
 ---
 
@@ -49,11 +49,18 @@ ssh <deploy-user>@<k8s-master> "kubectl -n community create secret generic runlo
   --from-literal=JWT_SECRET='$(openssl rand -hex 32)' \
   --from-literal=SECRETS_KEY='$(openssl rand -hex 16)'"   # SECRETS_KEY = 32 chars exactly
 
-# 2.3 Copy Docker Hub imagePullSecret from neb-dev (avalantglobal/* is private).
-#     The secret used by other BB deployments works for our images too.
-ssh <deploy-user>@<k8s-master> 'kubectl get secret oneweb-regcred -n neb-dev -o json \
-  | jq "del(.metadata.namespace, .metadata.uid, .metadata.resourceVersion, .metadata.creationTimestamp, .metadata.managedFields, .metadata.annotations[\"kubectl.kubernetes.io/last-applied-configuration\"])" \
-  | kubectl -n community apply -f -'
+# 2.3 (only if your registry is private) Create an imagePullSecret so the
+#     pods can pull your images. Skip this step if you're using ghcr.io
+#     public images.
+#
+# kubectl -n community create secret docker-registry runloop-regcred \
+#   --docker-server=<your-registry> \
+#   --docker-username='<user>' \
+#   --docker-password='<pass-or-token>'
+#
+# Then reference the secret in k8s/30-engine.yaml + k8s/40-web.yaml under
+# `imagePullSecrets`. The reference is commented out in the manifests by
+# default — uncomment it if you create the secret.
 
 # 2.4 Create the NFS directory for Postgres (PV expects it to exist).
 #     Run this once via a bootstrap pod that mounts /datastore:
@@ -116,9 +123,9 @@ deployment via SSH to the master node.
 ```
 git push origin master
   ↓ (webhook)
-http://<jenkins-host>:32552/job/COMMUNITY/job/runloop/
-  ↓  builds runloop-web + runloop-engine, pushes to Docker Hub
-http://<jenkins-host>:32552/job/COMMUNITY/job/deploy-runloop-to-kube/
+http://<your-jenkins-host>/job/<your-folder>/job/runloop/
+  ↓  builds runloop-web + runloop-engine, pushes to your registry
+http://<your-jenkins-host>/job/<your-folder>/job/deploy-runloop-to-kube/
   ↓  kubectl set image + rollout status
 live at https://<your-domain>/runloop ✅
 ```
@@ -136,7 +143,7 @@ live at https://<your-domain>/runloop ✅
      - Parameter: `APPLY_MANIFESTS` (boolean, default false)
      - Script path: `.jenkins/Jenkinsfile.deploy` (Pipeline from SCM)
 4. **Credentials** (Jenkins → Manage → Credentials → COMMUNITY folder):
-   - `dockerhub-avalantglobal` — Username/password
+   - `dockerhub-creds` — Username/password (only if pushing to a private registry)
    - `kubeconfig-community` — Secret file (kubeconfig scoped to `community` ns)
 
 ---
@@ -167,7 +174,7 @@ curl -sk https://<your-domain>/runloop/rl/health
 # Image tag check
 ssh <deploy-user>@<k8s-master> \
   'kubectl get deployment -n community runloop-web -o jsonpath="{.spec.template.spec.containers[0].image}"'
-# Expect: avalantglobal/runloop-web:<your-tag>
+# Expect: ghcr.io/enterprisex-platform/runloop-web:<your-tag>
 ```
 
 ---
@@ -183,7 +190,7 @@ ssh <deploy-user>@<k8s-master> \
 
 # Pin to a specific known-good tag
 ssh <deploy-user>@<k8s-master> \
-  'kubectl set image deployment/runloop-web -n community web=avalantglobal/runloop-web:v1.20260422-deadbee'
+  'kubectl set image deployment/runloop-web -n community web=ghcr.io/enterprisex-platform/runloop-web:v1.20260422-deadbee'
 ```
 
 ---
@@ -233,8 +240,8 @@ kubectl -n community patch secret runloop-secret --type='json' \
 kubectl -n community rollout restart deployment/runloop-engine
 ```
 
-### ❌ Web: ImagePullBackOff `pull access denied for avalantglobal/*`
-The `oneweb-regcred` imagePullSecret wasn't copied into `community` ns, or its creds don't cover avalantglobal/. Re-run step 2.3 of the bootstrap.
+### ❌ Web: ImagePullBackOff `pull access denied`
+Either you're pulling from a private registry without a matching imagePullSecret, or the secret in this namespace doesn't have credentials for that registry. See step 2.3 of the bootstrap. Public ghcr.io images don't need a pull secret.
 
 ### ❌ Web init: `prisma_schema_build_bg.wasm ENOENT`
 Runner image is missing the prisma CLI tree. The current Dockerfile bundles the full `node_modules/prisma` + `@prisma` + `.bin` — if you see this on a fresh build, verify the Dockerfile still has those COPY lines.
@@ -320,8 +327,8 @@ k8s/
   40-web.yaml             # Next.js deployment (2 replicas) + service + init migrate
   # (no ingress — external Apache routes /runloop/* to NodePorts directly)
 
-Jenkinsfile                      # build + push (at /COMMUNITY/runloop)
-.jenkins/Jenkinsfile.deploy      # deploy (at /COMMUNITY/deploy-runloop-to-kube)
+Jenkinsfile                      # build + push (top-level pipeline)
+.jenkins/Jenkinsfile.deploy      # deploy (parametrised — one job per env)
 scripts/deploy-prod.sh           # manual deploy from laptop
 ```
 

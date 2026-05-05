@@ -1,16 +1,12 @@
-// RunLoop — Build & push images to Docker Hub.
+// RunLoop — Build & push images to a Docker registry.
 //
-// Job locations (one build job per Jenkins folder; both fan out to the
-// same image tag):
-//   http://<jenkins-host>:32552/job/COMMUNITY/job/runloop/
-//   http://<jenkins-host>:32552/job/COMMERCIAL/job/runloop/
-//
-// On success: triggers each downstream deploy job in DEPLOY_TARGETS
-// (default = the deploy job in the same folder).
+// One build job; on success it triggers each downstream deploy job in
+// DEPLOY_TARGETS. Configure REGISTRY and the `docker-credential` Jenkins
+// credential to point at your registry.
 //
 // Publishes two images per build:
-//   avalantglobal/runloop-web:<TAG>
-//   avalantglobal/runloop-engine:<TAG>
+//   <REGISTRY>/runloop-web:<TAG>
+//   <REGISTRY>/runloop-engine:<TAG>
 // where <TAG> = v1.<yyyymmdd-HHMM>-<short-sha>.
 
 pipeline {
@@ -20,12 +16,13 @@ pipeline {
     string(
       name: 'DEPLOY_TARGETS',
       defaultValue: './deploy-runloop-to-kube',
-      description: 'Comma-separated Jenkins job paths to trigger after a successful push. Use "/COMMUNITY/deploy-runloop-to-kube,/COMMERCIAL/deploy-runloop-to-kube" to fan out to multiple environments. Set blank to skip auto-deploy.',
+      description: 'Comma-separated Jenkins job paths to trigger after a successful push. Set blank to skip auto-deploy. Each target can be in a different folder for fan-out across environments.',
     )
   }
 
   environment {
-    REGISTRY   = 'avalantglobal'
+    // Override at the job level (Manage Jenkins → Configure → environment).
+    REGISTRY   = 'ghcr.io/enterprisex-platform'
     WEB_IMAGE  = "${REGISTRY}/runloop-web"
     ENG_IMAGE  = "${REGISTRY}/runloop-engine"
     BUILD_DATE = sh(returnStdout: true, script: "date +%Y%m%d-%H%M").trim()

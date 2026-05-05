@@ -15,6 +15,12 @@ real code execution — self-hosted in minutes.
 
 ---
 
+<p align="center">
+  <!-- Replace with the actual hero GIF once recorded — drag-drop a node,
+       wire it, click Run, see the WebSocket stream tick. ~15 seconds. -->
+  <img src="docs/screenshots/hero.gif" alt="RunLoop in action" width="800" />
+</p>
+
 RunLoop is a self-hostable workflow platform: design DAGs in a visual editor,
 run them on a cron, fan jobs out across a worker pool, and watch executions
 stream in real time. Think of it as **n8n with first-class queues, Go-grade
@@ -62,6 +68,33 @@ performance, and AGPL freedom**.
 - **Dead-letter queue** — failed flow executions persist with replay support.
 - **Pub/sub channels** — flows publish via the `Notify` node, mobile apps and
   dashboards subscribe over WebSocket. Project-scoped, ephemeral, non-blocking.
+
+## Screenshots
+
+<table>
+  <tr>
+    <td><img src="docs/screenshots/flow-editor.png" alt="Flow editor canvas" /></td>
+    <td><img src="docs/screenshots/execution-detail.png" alt="Execution detail with live WebSocket stream" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Flow editor — drag-drop DAG with 23 node types</sub></td>
+    <td align="center"><sub>Execution detail — every node tick streams in real time</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/schedulers.png" alt="Schedulers list" /></td>
+    <td><img src="docs/screenshots/secrets-vault.png" alt="Secrets vault" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Schedulers — cron expressions with timezone-aware next-run</sub></td>
+    <td align="center"><sub>Secrets vault — AES-256-GCM at rest, masked in UI</sub></td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="docs/screenshots/dlq.png" alt="Dead-letter queue with replay" /></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><sub>Dead-letter queue — failed executions with one-click replay</sub></td>
+  </tr>
+</table>
 
 ## Quick start
 

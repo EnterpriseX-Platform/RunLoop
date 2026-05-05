@@ -7,17 +7,19 @@
 #   BUILD_ONLY=1 ./scripts/deploy-prod.sh        # build, no push/deploy
 #   SKIP_BUILD=1 ./scripts/deploy-prod.sh v1.x   # deploy existing tag
 #
-# Requires:
+# Requires (set as env vars or edit defaults below):
 #   • docker (buildx, linux/amd64)
-#   • ssh <deploy-user>@<k8s-master> (has kubectl + admin kubeconfig)
-#   • `docker login -u avalantglobal` done beforehand
+#   • REGISTRY        e.g. ghcr.io/your-org  or  docker.io/your-username
+#   • SSH_HOST        e.g. deploy@k8s-master  (must have kubectl + kubeconfig)
+#   • NAMESPACE       e.g. runloop
+#   • `docker login` to your registry done beforehand
 set -euo pipefail
 
-REGISTRY="avalantglobal"
+REGISTRY="${REGISTRY:-ghcr.io/enterprisex-platform}"
 WEB_IMAGE="${REGISTRY}/runloop-web"
 ENG_IMAGE="${REGISTRY}/runloop-engine"
-SSH_HOST="<deploy-user>@<k8s-master>"
-NAMESPACE="community"
+SSH_HOST="${SSH_HOST:-deploy@k8s-master}"
+NAMESPACE="${NAMESPACE:-runloop}"
 
 TAG="${1:-v1.$(date +%Y%m%d-%H%M)-$(git rev-parse --short HEAD)}"
 WEB_TAGGED="${WEB_IMAGE}:${TAG}"

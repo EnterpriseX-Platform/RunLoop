@@ -58,7 +58,6 @@ export function useWebSocket({
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-      console.log('[WebSocket] Connected:', executionId);
       setIsConnected(true);
       setError(null);
     };
@@ -66,7 +65,6 @@ export function useWebSocket({
     ws.onmessage = (event) => {
       try {
         const message: WebSocketMessage = JSON.parse(event.data);
-        console.log('[WebSocket] Message:', message);
 
         // Call general message handler
         onMessage?.(message);
@@ -93,12 +91,10 @@ export function useWebSocket({
     };
 
     ws.onclose = () => {
-      console.log('[WebSocket] Disconnected');
       setIsConnected(false);
 
       // Auto-reconnect after 3 seconds
       reconnectTimeoutRef.current = setTimeout(() => {
-        console.log('[WebSocket] Attempting to reconnect...');
         connect();
       }, 3000);
     };

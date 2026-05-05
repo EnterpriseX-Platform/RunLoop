@@ -17,13 +17,15 @@ spec:
     metadata:
       labels: { app: runloop-engine }
     spec:
-      # avalantglobal/* images on Docker Hub are private. The secret is
-      # copied from neb-dev during bootstrap (see docs/deployment/DEPLOYMENT.md).
-      imagePullSecrets:
-        - name: oneweb-regcred
+      # If pulling from a private registry, create an imagePullSecret in
+      # this namespace and uncomment the block below (see
+      # docs/deployment/DEPLOYMENT.md step 2.3). Public ghcr.io images
+      # don't need it.
+      # imagePullSecrets:
+      #   - name: runloop-regcred
       containers:
         - name: engine
-          image: avalantglobal/runloop-engine:latest
+          image: ghcr.io/enterprisex-platform/runloop-engine:latest
           imagePullPolicy: Always
           ports:
             - { containerPort: 8092, name: http }

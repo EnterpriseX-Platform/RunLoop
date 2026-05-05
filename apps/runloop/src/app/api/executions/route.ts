@@ -7,8 +7,6 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const targetUrl = `${engineUrl}/rl/api/executions${url.search}`;
 
-    console.log('[executions proxy] GET', targetUrl);
-
     const res = await fetch(targetUrl, {
       headers: {
         'Authorization': request.headers.get('authorization') || '',
@@ -18,7 +16,6 @@ export async function GET(request: NextRequest) {
     });
 
     const text = await res.text();
-    console.log('[executions proxy] response status:', res.status, 'body length:', text.length, 'body preview:', text.substring(0, 200));
     const data = JSON.parse(text);
     return NextResponse.json(data, { status: res.status });
   } catch (error) {

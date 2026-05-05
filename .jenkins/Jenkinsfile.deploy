@@ -4,16 +4,11 @@
 // target environment via parameters (defaults below) so an operator
 // only needs to choose IMAGE_TAG.
 //
-// Existing jobs:
-//   /COMMUNITY/deploy-runloop-to-kube         → community  ns, <your-domain>/runloop
-//   /COMMERCIAL/deploy-runloop-to-kube        → commercial ns, commercial.oneweb.tech/runloop
-//
 // Each job overrides defaults via the "This project is parameterized"
 // section of the job config (NAMESPACE, DOMAIN, KUBECONFIG_CRED_ID,
-// INGRESS_RESOLVE_IP). Defaults below match the COMMUNITY job for
-// backwards compatibility.
+// INGRESS_RESOLVE_IP).
 //
-// Triggered by: /<FOLDER>/runloop (on successful image push).
+// Triggered by: the build job (on successful image push).
 // One-time bootstrap (namespace, PV, secret, postgres, ingress) is done
 // OUTSIDE this pipeline — see docs/deployment/DEPLOYMENT.md.
 
@@ -24,12 +19,17 @@ pipeline {
     string(
       name: 'IMAGE_TAG',
       defaultValue: 'latest',
-      description: 'Image tag to deploy (matches avalantglobal/runloop-*:<tag>)',
+      description: 'Image tag to deploy (matches <REGISTRY>/runloop-*:<tag>)',
+    )
+    string(
+      name: 'REGISTRY',
+      defaultValue: 'ghcr.io/enterprisex-platform',
+      description: 'Container registry path (e.g. ghcr.io/your-org or docker.io/your-username)',
     )
     string(
       name: 'NAMESPACE',
-      defaultValue: 'community',
-      description: 'Target Kubernetes namespace (community | commercial | …)',
+      defaultValue: 'runloop',
+      description: 'Target Kubernetes namespace',
     )
     string(
       name: 'DOMAIN',
@@ -43,8 +43,8 @@ pipeline {
     )
     string(
       name: 'KUBECONFIG_CRED_ID',
-      defaultValue: 'bf9208b3-bbdb-49f1-aeac-e11c197a68a9',
-      description: 'Jenkins "Secret file" credential id holding the kubeconfig with rights in NAMESPACE',
+      defaultValue: '',
+      description: 'Jenkins "Secret file" credential id holding the kubeconfig with rights in NAMESPACE (required)',
     )
     booleanParam(
       name: 'APPLY_MANIFESTS',
@@ -54,8 +54,8 @@ pipeline {
   }
 
   environment {
-    WEB_IMAGE  = "avalantglobal/runloop-web:${params.IMAGE_TAG}"
-    ENG_IMAGE  = "avalantglobal/runloop-engine:${params.IMAGE_TAG}"
+    WEB_IMAGE  = "${params.REGISTRY}/runloop-web:${params.IMAGE_TAG}"
+    ENG_IMAGE  = "${params.REGISTRY}/runloop-engine:${params.IMAGE_TAG}"
   }
 
   options {
