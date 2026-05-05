@@ -138,13 +138,12 @@ Enums: `JobType` (HTTP/DATABASE/SHELL/PYTHON/NODEJS/DOCKER), `TriggerType` (SCHE
 
 ## Deployment
 
-- **Jenkins**: parameterized pipeline at `apps/runloop/.jenkins/Jenkinsfile.deploy` (params: `NAMESPACE`, `DOMAIN`, `INGRESS_RESOLVE_IP`, `KUBECONFIG_CRED_ID`, `APPLY_MANIFESTS`). Root `Jenkinsfile` has `triggers { pollSCM('H/5 * * * *') }` and fans out to `DEPLOY_TARGETS` with `propagate: false`. Manual trigger via API: `curl -u <jenkins-user>:<token> -X POST https://<your-jenkins-host>/job/runloop/build`.
-- **Image rollout**: uses `kubectl patch ... --type=strategic` to update both the `migrate` initContainer and the `web` container atomically — never `kubectl set image` (it can't address initContainers by name in this layout).
-- **Smoke test**: deliberately soft (`sh(returnStatus: true) ... || true`) — some clusters don't expose Apache on :80 from the build agent, so a probe failure must not fail the deploy.
-- See `docs/deployment/COMMERCIAL.md` for the COMMUNITY → COMMERCIAL replication runbook.
+- **Releases**: pushing a `v*` tag triggers `.github/workflows/release.yml` which cross-compiles `runloop-engine` + `runloop-cli` for linux/darwin × amd64/arm64, packages tarballs, and creates a GitHub release.
+- **Manual deploy**: `scripts/deploy-prod.sh` (env vars `REGISTRY`, `SSH_HOST`, `NAMESPACE`) builds + pushes images and patches the k8s deployments via SSH.
+- **Image rollout pattern**: when both an init container (`migrate`) and a main container (`web`) need the same new image, use `kubectl patch ... --type=strategic` instead of `kubectl set image` — the latter can't reliably address initContainers by name.
 
 ## Further Reading
 
 - `README.md` — quick start, Docker deployment.
-- `AGENTS.md` — overlapping agent guide; if it conflicts with this file, this file is authoritative (more recently maintained).
-- `docs/architecture/OVERVIEW.md`, `docs/development/SETUP.md`, `docs/deployment/`.
+- `docs/development/SETUP.md` — local dev workflow.
+- `docs/deployment/DEPLOYMENT.md` — k8s manifests, Apache/Ingress, troubleshooting.

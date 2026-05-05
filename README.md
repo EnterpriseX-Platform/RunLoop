@@ -154,8 +154,7 @@ Browser  ──▶  Next.js (web · 3081)  ──▶  Go engine (Fiber + gocron 
 - **Postgres 16** — single source of truth for projects, flows, schedulers,
   executions, queues, secrets (encrypted), env vars, and DLQ entries.
 
-For deeper dives see [`CLAUDE.md`](./CLAUDE.md), [`docs/architecture/`](./docs/architecture/),
-and [`docs/development/SETUP.md`](./docs/development/SETUP.md).
+For deeper dives see [`CLAUDE.md`](./CLAUDE.md) and [`docs/development/SETUP.md`](./docs/development/SETUP.md).
 
 ## Use cases we've seen
 
@@ -189,10 +188,9 @@ Highlights:
 
 ## Documentation
 
-- [`docs/architecture/OVERVIEW.md`](./docs/architecture/OVERVIEW.md) — request flow, components, design choices
 - [`docs/development/SETUP.md`](./docs/development/SETUP.md) — local dev environment
-- [`docs/deployment/`](./docs/deployment/) — Docker, Kubernetes, reverse-proxy patterns
-- [`CLAUDE.md`](./CLAUDE.md) — quirks, conventions, "things you'll wonder about"
+- [`docs/deployment/DEPLOYMENT.md`](./docs/deployment/DEPLOYMENT.md) — Docker / Kubernetes / reverse-proxy patterns
+- [`CLAUDE.md`](./CLAUDE.md) — architecture, request flow, conventions, quirks
 - API docs are served by the running app at `/runloop/p/<projectId>/docs`
 
 ## Contributing

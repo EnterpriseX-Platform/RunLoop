@@ -92,14 +92,7 @@ done
 
 ---
 
-## 3. Deploy options
-
-| Option | When | Time |
-|---|---|:-:|
-| **A. Manual** (`./scripts/deploy-prod.sh`) | hotfix, first deploy, debugging | ~8 min |
-| **B. Jenkins CI** | normal team workflow (push to master) | ~6 min |
-
-### A. Manual deploy
+## 3. Deploy
 
 ```bash
 # Auto tag (date + git short SHA)
@@ -112,39 +105,17 @@ done
 BUILD_ONLY=1 ./scripts/deploy-prod.sh
 
 # Deploy existing tag (skip build + push)
-SKIP_BUILD=1 ./scripts/deploy-prod.sh v1.20260423-abc1234
+SKIP_BUILD=1 ./scripts/deploy-prod.sh v0.1.0
 ```
 
 Builds + pushes **both** images then does `kubectl set image` for each
 deployment via SSH to the master node.
 
-### B. Jenkins CI
-
-```
-git push origin master
-  ↓ (webhook)
-http://<your-jenkins-host>/job/<your-folder>/job/runloop/
-  ↓  builds runloop-web + runloop-engine, pushes to your registry
-http://<your-jenkins-host>/job/<your-folder>/job/deploy-runloop-to-kube/
-  ↓  kubectl set image + rollout status
-live at https://<your-domain>/runloop ✅
-```
-
-#### Jenkins folder setup (first time)
-
-1. Open `http://<jenkins-host>:32552`
-2. **New Item → Folder** → name = `COMMUNITY` (parallel to existing `BB` folder)
-3. Inside `COMMUNITY/`:
-   - **New Item → Multibranch Pipeline** → `runloop`
-     - Git repo: this project
-     - Script path: `Jenkinsfile`
-   - **New Item → Pipeline** → `deploy-runloop-to-kube`
-     - Parameter: `IMAGE_TAG` (string, default `latest`)
-     - Parameter: `APPLY_MANIFESTS` (boolean, default false)
-     - Script path: `.jenkins/Jenkinsfile.deploy` (Pipeline from SCM)
-4. **Credentials** (Jenkins → Manage → Credentials → COMMUNITY folder):
-   - `dockerhub-creds` — Username/password (only if pushing to a private registry)
-   - `kubeconfig-community` — Secret file (kubeconfig scoped to `community` ns)
+The script reads `REGISTRY`, `SSH_HOST`, and `NAMESPACE` from env vars —
+override the defaults at the top of `scripts/deploy-prod.sh` or export
+them in your shell. For CI integration, GitHub Actions can run the same
+build + push (see `.github/workflows/release.yml`); the deploy step is
+left to your environment-specific tooling.
 
 ---
 
@@ -320,16 +291,15 @@ Channels Tap subscriber (and any browser WS subscriber) will all flow.
 
 ```
 k8s/
-  00-namespace.yaml       # community ns
+  00-namespace.yaml       # namespace
   10-secret.yaml          # template only — real values via `kubectl create secret`
   20-postgres.yaml        # PG 16 + 10Gi PVC
   30-engine.yaml          # Go engine deployment + service
   40-web.yaml             # Next.js deployment (2 replicas) + service + init migrate
-  # (no ingress — external Apache routes /runloop/* to NodePorts directly)
+  # (no ingress shipped — bring your own; see WebSocket notes above)
 
-Jenkinsfile                      # build + push (top-level pipeline)
-.jenkins/Jenkinsfile.deploy      # deploy (parametrised — one job per env)
 scripts/deploy-prod.sh           # manual deploy from laptop
+.github/workflows/release.yml    # tag → build cross-platform binaries + GitHub release
 ```
 
 ---
