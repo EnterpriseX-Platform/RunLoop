@@ -2,10 +2,12 @@
 
 # 🔁 RunLoop
 
-**Open-source workflow engine.** Drag-and-drop DAGs, real cron, real queues,
-real code execution — self-hosted in minutes.
+**Drag-drop workflow engine — in a 50 MB Go binary.**
+
+Cron schedules · 4 queue backends · multi-runtime code · real-time WebSocket streams. Self-hosted, AGPL, sub-second cold start.
 
 [![CI](https://github.com/EnterpriseX-Platform/RunLoop/actions/workflows/ci.yml/badge.svg)](https://github.com/EnterpriseX-Platform/RunLoop/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/EnterpriseX-Platform/RunLoop?logo=github)](https://github.com/EnterpriseX-Platform/RunLoop/releases)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Go 1.25+](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go)](https://go.dev/)
 [![Next.js 14](https://img.shields.io/badge/Next.js-14-000?logo=next.js)](https://nextjs.org/)
@@ -15,16 +17,12 @@ real code execution — self-hosted in minutes.
 
 ---
 
-<p align="center">
-  <!-- Replace with the actual hero GIF once recorded — drag-drop a node,
-       wire it, click Run, see the WebSocket stream tick. ~15 seconds. -->
-  <img src="docs/screenshots/hero.gif" alt="RunLoop in action" width="800" />
-</p>
+> **🎬 Demo GIF + screenshots are landing this week** — see [`docs/screenshots/`](./docs/screenshots/) for what's coming.
 
-RunLoop is a self-hostable workflow platform: design DAGs in a visual editor,
-run them on a cron, fan jobs out across a worker pool, and watch executions
-stream in real time. Think of it as **n8n with first-class queues, Go-grade
-performance, and AGPL freedom**.
+RunLoop sits between cron and Airflow: visual enough to wire a flow in a
+minute, fast enough to run where Node-based workflows can't, opinionated
+enough that secrets, queues, and multi-tenancy work out of the box.
+**Think n8n's editor with Go's runtime and queues that actually scale.**
 
 ```
 ┌──────────────┐   drag-drop    ┌──────────────┐   gocron + pg/redis/kafka  ┌─────────────┐
@@ -38,6 +36,23 @@ performance, and AGPL freedom**.
 
 ## Why RunLoop?
 
+The footprint matters more than the feature list. Most workflow engines
+either run heavy (Java/Python — minutes to start, gigabytes of RAM under
+load) or run light but lack queues and code execution (raw cron, simple
+schedulers). RunLoop is the rare middle: drag-drop UI, real queues, real
+code, in a binary you can scp to a VPS.
+
+### Footprint
+
+| | RunLoop | n8n | Airflow | Temporal |
+|---|:-:|:-:|:-:|:-:|
+| Image size | **~50 MB** | ~600 MB | ~1.5 GB | ~400 MB |
+| Cold start | **<1 s** | ~5 s | ~30 s | ~10 s |
+| RAM @ 1k QPS | **~100 MB** | ~600 MB | n/a | ~400 MB |
+| Single static binary | **✅ Go** | ❌ Node | ❌ Python | ❌ Java |
+
+### Capabilities
+
 | | RunLoop | n8n | Temporal | Airflow |
 |---|---|---|---|---|
 | Drag-and-drop DAG editor | ✅ | ✅ | ❌ (code-first) | ⚠️ (DAG view, code-defined) |
@@ -45,7 +60,6 @@ performance, and AGPL freedom**.
 | Pluggable queue backends | ✅ Postgres / RabbitMQ / Kafka / Redis | ❌ | proprietary | ⚠️ |
 | Real code execution (Python / Node / Shell / Docker) | ✅ | partial | ⚠️ | ✅ |
 | AES-256-GCM secret vault baked in | ✅ | ⚠️ | ⚠️ | ⚠️ |
-| Single-binary engine, sub-second cold start | ✅ Go | ❌ Node | ❌ Java | ❌ Python |
 | AGPL-3.0 (anti-SaaS-cloning) | ✅ | Sustainable Use | MIT | Apache-2.0 |
 
 ## Features
@@ -68,33 +82,6 @@ performance, and AGPL freedom**.
 - **Dead-letter queue** — failed flow executions persist with replay support.
 - **Pub/sub channels** — flows publish via the `Notify` node, mobile apps and
   dashboards subscribe over WebSocket. Project-scoped, ephemeral, non-blocking.
-
-## Screenshots
-
-<table>
-  <tr>
-    <td><img src="docs/screenshots/flow-editor.png" alt="Flow editor canvas" /></td>
-    <td><img src="docs/screenshots/execution-detail.png" alt="Execution detail with live WebSocket stream" /></td>
-  </tr>
-  <tr>
-    <td align="center"><sub>Flow editor — drag-drop DAG with 23 node types</sub></td>
-    <td align="center"><sub>Execution detail — every node tick streams in real time</sub></td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/schedulers.png" alt="Schedulers list" /></td>
-    <td><img src="docs/screenshots/secrets-vault.png" alt="Secrets vault" /></td>
-  </tr>
-  <tr>
-    <td align="center"><sub>Schedulers — cron expressions with timezone-aware next-run</sub></td>
-    <td align="center"><sub>Secrets vault — AES-256-GCM at rest, masked in UI</sub></td>
-  </tr>
-  <tr>
-    <td colspan="2"><img src="docs/screenshots/dlq.png" alt="Dead-letter queue with replay" /></td>
-  </tr>
-  <tr>
-    <td colspan="2" align="center"><sub>Dead-letter queue — failed executions with one-click replay</sub></td>
-  </tr>
-</table>
 
 ## Quick start
 

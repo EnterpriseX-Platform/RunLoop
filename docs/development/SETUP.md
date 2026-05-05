@@ -1,134 +1,149 @@
-# 🚀 Development Guide
+# Local Development
 
-## เริ่มต้น Development Mode
-
-### 1. Start Database (Docker)
+## 1. Database (Docker)
 
 ```bash
 # Start PostgreSQL only
-docker-compose -f docker-compose.db.yml up -d
-
-# หรือใช้ npm script
 npm run db:start
+
+# Stops + removes the volume:
+npm run db:stop
 ```
 
-Database จะรันที่:
-- **Host**: localhost:5433
-- **Database**: runloop
-- **User**: runloop
-- **Password**: runloop_secret
+The dev database listens on:
 
-### 2. Setup Database Schema
+| | Value |
+|---|---|
+| Host | `localhost:5481` |
+| Database | `runloop` |
+| User | `runloop` |
+| Password | `runloop_secret` |
+
+The non-default port (5481, not 5432) is intentional — it avoids
+conflicting with a system Postgres if you have one.
+
+## 2. Schema + seed
 
 ```bash
-# Install dependencies
 npm install
-
-# Generate Prisma Client
-cd apps/runloop
-npx prisma generate
-
-# Push schema to database
-npx prisma db push
-
-# Seed data (optional)
-npx prisma db seed
+npm run db:push      # apply Prisma schema
+npm run db:seed      # creates an admin user; password is printed once
 ```
 
-### 3. Start Applications (Dev Mode)
+The seed prints the generated admin password to stdout. Capture it on
+first boot — it isn't recoverable. To pick your own:
 
-#### Terminal 1: Go Engine
 ```bash
-cd apps/runloop-engine
-go mod download
-go run main.go
+SEED_ADMIN_EMAIL=you@example.com SEED_ADMIN_PASSWORD='<your-pw>' npm run db:seed
 ```
-Engine จะรันที่: http://localhost:8092
 
-#### Terminal 2: Next.js Web
+## 3. Run the apps (dev mode)
+
+The simplest path — start both apps via Turborepo:
+
 ```bash
-cd apps/runloop
-npm install
 npm run dev
 ```
-Web จะรันที่: http://localhost:3081/runloop
 
-### 4. Access Application
+Or run them in separate terminals if you want logs split:
 
-- **Web App**: http://localhost:3081/runloop
-- **Engine Health**: http://localhost:3081/runloop/proxy/engine/health
-- **Engine Stats**: http://localhost:3081/runloop/proxy/engine/stats
-- **Direct Engine**: http://localhost:8092/runloop-engine/health
+```bash
+# Terminal 1 — Go engine
+cd apps/runloop-engine
+go run main.go
+
+# Terminal 2 — Next.js web
+cd apps/runloop
+npm run dev
+```
+
+| Service | URL |
+|---|---|
+| Web UI | http://localhost:3081/runloop |
+| Engine (direct) | http://localhost:8092/rl/health |
+| Engine (via Next.js proxy) | http://localhost:3081/runloop/proxy/engine/health |
+
+## 4. Skip auth in dev
+
+Setting `NEXT_PUBLIC_SKIP_AUTH=true` in `apps/runloop/.env.local`
+bypasses the login flow. The auth layer hard-fails on startup if this
+flag is set with `NODE_ENV=production`, so it can't accidentally ship.
 
 ---
 
-## URL Structure
+## URL structure
 
 ```
 http://localhost:3081/
-├── /runloop/                    ← Next.js Frontend (Port 3081)
+├── /runloop/                    ← Next.js web (port 3081)
 │   ├── /login
 │   ├── /dashboard
-│   ├── /projects
-│   ├── /schedulers
-│   ├── /executions
-│   └── /settings
+│   └── /p/<projectId>/...       ← project-scoped pages (settings,
+│                                   secrets, env, schedulers,
+│                                   executions, queues, channels, dlq)
 │
-├── /runloop/api/*               ← Next.js Internal API
-│   ├── /auth/login
-│   ├── /auth/logout
-│   ├── /auth/me
-│   └── /projects
+├── /runloop/api/*               ← Next.js internal API (auth, projects)
+│   └── /auth/{login,logout,me}
 │
-└── /runloop/proxy/engine/*      ← Proxy → Go Engine (Port 8092)
+└── /runloop/proxy/engine/*      ← server-side proxy → Go engine (8092)
     ├── /health
-    ├── /stats
-    ├── /api/schedulers
-    ├── /api/executions
-    └── /api/executions/metrics
+    └── /api/{schedulers,executions,queues,channels,dlq}/*
 ```
+
+The browser also opens a direct WebSocket to the engine at
+`ws://localhost:8092/rl/ws/executions/<id>` — Next.js doesn't proxy WS,
+so the dev setup talks straight to the engine port for live streams.
 
 ---
 
-## Common Commands
+## Common commands
 
 ```bash
 # Database
-npm run db:start     # Start database
-npm run db:stop      # Stop database
-npm run db:logs      # View database logs
+npm run db:start            # start Postgres in Docker
+npm run db:stop             # stop + remove
+npm run db:logs             # tail Postgres logs
+npm run db:push             # apply Prisma schema
+npm run db:migrate          # create + apply a migration
+npm run db:generate         # regenerate Prisma client
+npm run db:studio           # open Prisma Studio
 
-# Development
-npm run dev          # Start all apps (turbo)
-
-# Database Operations
-cd apps/runloop
-npx prisma db push         # Push schema
-npx prisma migrate dev     # Create migration
-npx prisma db seed         # Seed data
-npx prisma studio          # Open Prisma Studio
+# Dev / build
+npm run dev                 # start both apps (turbo)
+npm run build               # build everything
+npm run lint                # eslint + go vet
+npm run typecheck           # tsc + go vet
 ```
 
 ---
 
-## Environment Variables
+## Environment variables
 
-### apps/runloop/.env.local
+`.env.example` at the repo root has the full set with comments.
+The minimum you need locally:
+
 ```env
-DATABASE_URL=postgres://runloop:runloop_secret@localhost:5433/runloop?sslmode=disable
+# apps/runloop/.env.local
+DATABASE_URL=postgres://runloop:runloop_secret@localhost:5481/runloop?sslmode=disable
 JWT_SECRET=dev-secret-key-change-in-production
 NEXT_PUBLIC_SKIP_AUTH=true
 ENGINE_URL=http://localhost:8092
+SECRET_ENCRYPTION_KEY=0000000000000000000000000000000000000000000000000000000000000001  # 64 hex chars; dev value
 ```
 
-### apps/runloop-engine/.env
 ```env
+# apps/runloop-engine/.env (or export)
 EXECUTOR_PORT=8092
-BASE_PATH=/runloop-engine
-DATABASE_URL=postgres://runloop:runloop_secret@localhost:5433/runloop?sslmode=disable
+DATABASE_URL=postgres://runloop:runloop_secret@localhost:5481/runloop?sslmode=disable
 JWT_SECRET=dev-secret-key-change-in-production
+SECRET_ENCRYPTION_KEY=0000000000000000000000000000000000000000000000000000000000000001
+NODE_ENV=development
 LOG_LEVEL=debug
 ```
+
+In production, both `JWT_SECRET` and `SECRET_ENCRYPTION_KEY` must be
+real secrets (32+ random bytes). The runtime guards refuse weak values
+when `NODE_ENV=production`.
 
 ---
 
@@ -136,28 +151,28 @@ LOG_LEVEL=debug
 
 ### Database connection failed
 ```bash
-# Check if database is running
-docker ps
-
-# Restart database
-npm run db:stop
-npm run db:start
+docker ps | grep runloop-postgres   # is the container up?
+npm run db:logs                     # what does Postgres say?
+npm run db:stop && npm run db:start # full reset
 ```
 
 ### Port already in use
 ```bash
-# Kill process on port 3081
-lsof -ti:3081 | xargs kill -9
-
-# Kill process on port 8092
-lsof -ti:8092 | xargs kill -9
-
-# Kill process on port 5433
-lsof -ti:5433 | xargs kill -9
+lsof -ti:3081 | xargs kill -9       # web
+lsof -ti:8092 | xargs kill -9       # engine
+lsof -ti:5481 | xargs kill -9       # postgres
 ```
 
-### Prisma Client not found
+### Prisma client missing
 ```bash
-cd apps/runloop
-npx prisma generate
+npm run db:generate -w apps/runloop
 ```
+
+### Engine fails on boot — `SECRET_ENCRYPTION_KEY is required`
+You're missing the env var and `NODE_ENV` is not `development`. Either
+set the key or set `NODE_ENV=development` to use the deterministic dev
+key (only valid for dev — see `apps/runloop-engine/internal/secret/store.go`).
+
+### Engine fails on boot — `ALLOWED_ORIGINS is required in production`
+Same shape — `NODE_ENV` thinks it's prod but `ALLOWED_ORIGINS` isn't
+set. For dev, leave `NODE_ENV=development` and the engine accepts `*`.
