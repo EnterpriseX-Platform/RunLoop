@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Blocks, Plus, Trash2, Power, AlertCircle, Loader2, CheckCircle2, Link as LinkIcon, Code2, FileJson,
+  Blocks, Plus, Trash2, Power, AlertCircle, Loader2, CheckCircle2, Link as LinkIcon, Code2,
 } from 'lucide-react';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
@@ -318,22 +318,6 @@ export default function PluginsPage() {
         </div>
       )}
 
-      {/* Footer: spec hint */}
-      <div className="mt-6 p-4 rounded-lg" style={{ background: T.panel, border: `1px solid ${T.border}` }}>
-        <div className="flex items-start gap-2">
-          <FileJson className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: T.accent }} />
-          <div>
-            <h4 style={{ fontSize: 13, fontWeight: 600, color: T.text, marginBottom: 4 }}>Plugin contract</h4>
-            <p style={{ fontSize: 12, color: T.textMuted, lineHeight: 1.6 }}>
-              Plugins are HTTP handlers. The engine POSTs{' '}
-              <code style={{ color: T.accent }}>{`{ nodeId, executionId, projectId, config }`}</code>
-              {' '}and expects{' '}
-              <code style={{ color: T.accent }}>{`{ success: bool, output: {...}, error?: string }`}</code>.
-              The manifest declares the node's UI (inputs/outputs/icon/color) so the editor renders automatically.
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
