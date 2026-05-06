@@ -67,10 +67,15 @@ image_size_bytes=$(docker image inspect "rl-bench-engine:$$" --format='{{.Size}}
 image_size_human=$(human_bytes "$image_size_bytes")
 
 # -- 3. Bring up isolated postgres + engine --------------------------------
+# Ephemeral DB password — never persisted, exists only for the duration
+# of this script's docker network. Generated to keep secret scanners from
+# tripping on hardcoded postgres credentials in the script body.
+PG_PASS=$(openssl rand -hex 12)
+
 log "→ creating ephemeral network + Postgres..."
 docker network create "$NET" >/dev/null
 docker run -d --rm --name "$PG" --network "$NET" \
-  -e POSTGRES_USER=runloop -e POSTGRES_PASSWORD=bench -e POSTGRES_DB=runloop \
+  -e POSTGRES_USER=runloop -e POSTGRES_PASSWORD="$PG_PASS" -e POSTGRES_DB=runloop \
   -p "127.0.0.1:$PG_PORT:5432" postgres:16-alpine >/dev/null
 log "→ waiting for postgres healthy..."
 until docker exec "$PG" pg_isready -U runloop >/dev/null 2>&1; do sleep 0.5; done
@@ -79,7 +84,7 @@ until docker exec "$PG" pg_isready -U runloop >/dev/null 2>&1; do sleep 0.5; don
 log "→ applying schema..."
 (
   cd "$ROOT/apps/runloop"
-  DATABASE_URL="postgres://runloop:bench@127.0.0.1:$PG_PORT/runloop?sslmode=disable" \
+  DATABASE_URL="postgres://runloop:${PG_PASS}@127.0.0.1:${PG_PORT}/runloop?sslmode=disable" \
     npx prisma db push --skip-generate --accept-data-loss >/dev/null 2>&1
 )
 
@@ -90,7 +95,7 @@ SECRET_ENCRYPTION_KEY=$(openssl rand -hex 32)
 
 t_start=$(perl -e 'use Time::HiRes qw(time); print time()')
 docker run -d --rm --name "$ENG" --network "$NET" \
-  -e DATABASE_URL="postgres://runloop:bench@$PG:5432/runloop?sslmode=disable" \
+  -e DATABASE_URL="postgres://runloop:${PG_PASS}@${PG}:5432/runloop?sslmode=disable" \
   -e JWT_SECRET="$JWT_SECRET" \
   -e SECRET_ENCRYPTION_KEY="$SECRET_ENCRYPTION_KEY" \
   -e EXECUTOR_PORT=8080 \

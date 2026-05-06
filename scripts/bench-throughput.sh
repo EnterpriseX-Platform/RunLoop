@@ -48,17 +48,22 @@ log "→ building engine docker image..."
 docker build -q -t "rl-tput-engine:$$" "$ENGINE_DIR" >/dev/null
 
 # -- 2. Postgres + schema -------------------------------------------------
+# Ephemeral DB password — never persisted, exists only for the duration
+# of this script's docker network. Generated to keep secret scanners from
+# tripping on hardcoded postgres credentials in the script body.
+PG_PASS=$(openssl rand -hex 12)
+
 log "→ starting postgres on 127.0.0.1:$PG_PORT..."
 docker network create "$NET" >/dev/null
 docker run -d --rm --name "$PG" --network "$NET" \
-  -e POSTGRES_USER=runloop -e POSTGRES_PASSWORD=tput -e POSTGRES_DB=runloop \
+  -e POSTGRES_USER=runloop -e POSTGRES_PASSWORD="$PG_PASS" -e POSTGRES_DB=runloop \
   -p "127.0.0.1:$PG_PORT:5432" postgres:16-alpine >/dev/null
 until docker exec "$PG" pg_isready -U runloop >/dev/null 2>&1; do sleep 0.5; done
 
 log "→ applying schema..."
 (
   cd "$ROOT/apps/runloop"
-  DATABASE_URL="postgres://runloop:tput@127.0.0.1:$PG_PORT/runloop?sslmode=disable" \
+  DATABASE_URL="postgres://runloop:${PG_PASS}@127.0.0.1:${PG_PORT}/runloop?sslmode=disable" \
     npx prisma db push --skip-generate --accept-data-loss >/dev/null 2>&1
 )
 
@@ -109,7 +114,7 @@ log "→ starting engine with WORKER_COUNT=$WORKERS, queue.concurrency=$QUEUE_CO
 JWT_SECRET=$(openssl rand -hex 48)
 SECRET_ENCRYPTION_KEY=$(openssl rand -hex 32)
 docker run -d --rm --name "$ENG" --network "$NET" \
-  -e DATABASE_URL="postgres://runloop:tput@$PG:5432/runloop?sslmode=disable" \
+  -e DATABASE_URL="postgres://runloop:${PG_PASS}@${PG}:5432/runloop?sslmode=disable" \
   -e JWT_SECRET="$JWT_SECRET" \
   -e SECRET_ENCRYPTION_KEY="$SECRET_ENCRYPTION_KEY" \
   -e EXECUTOR_PORT=8080 \
