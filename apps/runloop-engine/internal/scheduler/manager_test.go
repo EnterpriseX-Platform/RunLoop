@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"testing"
+	"time"
 
 	"github.com/runloop/runloop-engine/internal/models"
 )
@@ -91,5 +92,56 @@ func TestHasFlowGraph_MalformedNodeIgnored(t *testing.T) {
 	}
 	if !hasFlowGraph(cfg) {
 		t.Errorf("malformed node should be skipped; the HTTP node still qualifies")
+	}
+}
+
+// computeNextRun is the fallback used when gocron's NextRun() returns zero
+// after a fresh AddJob (the bug that caused every freshly-seeded scheduler
+// to render as "Overdue" in the UI). The fallback parses the cron itself
+// and returns the next firing in the scheduler's configured timezone.
+
+func TestComputeNextRun_HourlyAdvances(t *testing.T) {
+	got, err := computeNextRun("0 * * * *", "Asia/Bangkok")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	now := time.Now()
+	if !got.After(now) {
+		t.Errorf("next run %v should be after now %v", got, now)
+	}
+	if got.Sub(now) > time.Hour+time.Minute {
+		t.Errorf("hourly cron next-run should be ≤ 1h away, got %v", got.Sub(now))
+	}
+}
+
+func TestComputeNextRun_TimezoneApplies(t *testing.T) {
+	// Daily at 02:00 ICT — the next firing should be at hour=2 in Bangkok,
+	// regardless of where the test runs.
+	got, err := computeNextRun("0 2 * * *", "Asia/Bangkok")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	bkk, _ := time.LoadLocation("Asia/Bangkok")
+	if got.In(bkk).Hour() != 2 {
+		t.Errorf("expected hour=2 in Asia/Bangkok, got %v (= %d in BKK)", got, got.In(bkk).Hour())
+	}
+}
+
+func TestComputeNextRun_FallsBackToUTC(t *testing.T) {
+	got, err := computeNextRun("0 * * * *", "Not/A_Real_Zone")
+	if err != nil {
+		t.Fatalf("unexpected error on bad timezone: %v", err)
+	}
+	if got.IsZero() {
+		t.Error("expected a real next-run time even with a bogus timezone")
+	}
+}
+
+func TestComputeNextRun_RejectsBadCron(t *testing.T) {
+	if _, err := computeNextRun("not a cron expression", "UTC"); err == nil {
+		t.Error("expected parse error for bad cron")
+	}
+	if _, err := computeNextRun("", "UTC"); err == nil {
+		t.Error("expected error for empty schedule")
 	}
 }

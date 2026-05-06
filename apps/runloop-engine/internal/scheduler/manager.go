@@ -8,13 +8,54 @@ import (
 	"time"
 
 	"github.com/go-co-op/gocron/v2"
+	"github.com/robfig/cron/v3"
+	"github.com/rs/zerolog/log"
 	"github.com/runloop/runloop-engine/internal/db"
 	"github.com/runloop/runloop-engine/internal/idgen"
 	"github.com/runloop/runloop-engine/internal/models"
 	"github.com/runloop/runloop-engine/internal/websocket"
 	"github.com/runloop/runloop-engine/internal/worker"
-	"github.com/rs/zerolog/log"
 )
+
+// computeNextRun returns the next firing time for `schedule` in the given
+// IANA `timezone`. Falls back to UTC if the timezone isn't recognised.
+//
+// gocron's job.NextRun() can return a zero time.Time before the job has
+// fired at least once (e.g. immediately after registration). When that
+// happens, callers should use this helper so the persisted next_run_at is
+// always a real future instant.
+func computeNextRun(schedule, timezone string) (time.Time, error) {
+	if schedule == "" {
+		return time.Time{}, fmt.Errorf("empty schedule")
+	}
+	loc, err := time.LoadLocation(timezone)
+	if err != nil || loc == nil {
+		loc = time.UTC
+	}
+	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
+	expr, err := parser.Parse(schedule)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("parse cron %q: %w", schedule, err)
+	}
+	return expr.Next(time.Now().In(loc)), nil
+}
+
+// resolveNextRun prefers gocron's NextRun() value, but falls back to a
+// hand-computed cron next-fire if gocron returns zero. The fallback ensures
+// callers don't persist 0001-01-01 to the database after AddJob/firing.
+func (m *Manager) resolveNextRun(s *models.Scheduler, job gocron.Job) time.Time {
+	if job != nil {
+		if nr, err := job.NextRun(); err == nil && !nr.IsZero() {
+			return nr
+		}
+	}
+	if s != nil && s.Schedule != nil && *s.Schedule != "" {
+		if nr, err := computeNextRun(*s.Schedule, s.Timezone); err == nil {
+			return nr
+		}
+	}
+	return time.Time{}
+}
 
 // Manager manages scheduled jobs
 type Manager struct {
@@ -144,13 +185,17 @@ func (m *Manager) AddJob(s *models.Scheduler) error {
 
 	m.jobs[s.ID] = job
 
-	// Update next run time
-	nextRun, _ := job.NextRun()
-	if err := m.updateNextRun(s.ID, &nextRun); err != nil {
-		log.Error().
-			Err(err).
-			Str("scheduler_id", s.ID).
-			Msg("Failed to update next run time")
+	// Update next run time. gocron's job.NextRun() can return zero before the
+	// first firing — fall back to hand-computed cron in that case so the UI
+	// never has to render "Overdue" against 0001-01-01.
+	nextRun := m.resolveNextRun(s, job)
+	if !nextRun.IsZero() {
+		if err := m.updateNextRun(s.ID, &nextRun); err != nil {
+			log.Error().
+				Err(err).
+				Str("scheduler_id", s.ID).
+				Msg("Failed to update next run time")
+		}
 	}
 
 	log.Info().
@@ -552,8 +597,10 @@ func (m *Manager) createJobFunc(s *models.Scheduler) func() {
 		// Update next run time
 		m.mu.RLock()
 		if job, exists := m.jobs[s.ID]; exists {
-			nextRun, _ := job.NextRun()
-			m.updateNextRun(s.ID, &nextRun)
+			nextRun := m.resolveNextRun(s, job)
+			if !nextRun.IsZero() {
+				m.updateNextRun(s.ID, &nextRun)
+			}
 		}
 		m.mu.RUnlock()
 	}
@@ -885,7 +932,6 @@ func (m *Manager) executeSchedulerDirect(ctx context.Context, s *models.Schedule
 
 	return nil
 }
-
 
 // hasFlowGraph reports whether the JSONMap looks like a flow editor
 // flowConfig (object with `nodes` array containing at least one entry).
