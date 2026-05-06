@@ -44,3 +44,45 @@ build a leaner image (`FROM alpine:latest` + binary only ≈ 35 MiB).
   the web UI is optional. Add ~75 MiB if you also bring up `runloop-web`.
 - **Multi-arch**: only linux/amd64. arm64 binary is ~25 MiB; image overhead
   is similar.
+
+---
+
+# Throughput benchmark — Postgres queue, no-op flow
+
+Reproducible from `scripts/bench-throughput.sh`. Measures how fast the
+worker pool drains a Postgres-backed queue when the bound flow does no
+real work (Start → End). This is the queue+worker ceiling — real flows
+scale down from here in proportion to per-node cost.
+
+## Latest reading on this hardware
+
+| Workers | Jobs | Wall-clock | Throughput |
+|---:|---:|---:|---:|
+| 20 | 10,000 | 10.19s | **981 jobs/sec** |
+| 40 | 10,000 | 6.16s  | **1,622 jobs/sec** |
+| 40 | 20,000 | 11.76s | **1,700 jobs/sec** |
+
+The Apple-Silicon laptop saturates around 1.7k jobs/sec at 40 workers
+with the default Postgres-backend tunings. Further scaling needs more
+workers + Postgres connection pool headroom (`DATABASE_MAX_CONNS`),
+or a different backend (Redis Streams, Kafka).
+
+## What this measures
+
+The cost of pulling a row from `job_queue_items` (Postgres
+`SELECT … FOR UPDATE SKIP LOCKED`), dispatching it onto a worker
+goroutine, walking the flow DAG (two flow-shape nodes that return
+instantly), and updating the row to `COMPLETED`. Real flows with HTTP /
+DB / Shell / Python / Node / Docker nodes will run slower in proportion
+to the work the nodes actually do.
+
+## Methodology
+
+1. Spin up the same isolated stack as the footprint bench.
+2. Insert one project, one flow (Start → End), one queue with the
+   given concurrency cap.
+3. Start the engine — queue manager registers the consumer at boot.
+4. Bulk `INSERT … SELECT FROM generate_series(1, N)` — single
+   statement, no API path, no per-row latency.
+5. Time from the bulk-insert return until
+   `count(*) WHERE status = 'COMPLETED'` reaches `N`.
