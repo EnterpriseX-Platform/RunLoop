@@ -5,6 +5,34 @@ versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.1] — Patch release
+
+First patch on top of v0.1.0. Two bugs surfaced while preparing the
+launch sandbox; both are fixed here.
+
+### Fixed
+
+- **Engine no longer persists `0001-01-01` as `next_run_at`.** After
+  registering a cron job with gocron, the engine called `job.NextRun()`
+  immediately and wrote the result to `schedulers.next_run_at`. For a
+  freshly added job that hadn't fired yet, gocron returned a zero
+  `time.Time` — Postgres stored it as `0001-01-01 00:00:00`, and the web
+  UI rendered every freshly-seeded scheduler as "Overdue" until the
+  first firing landed. Falls back to `robfig/cron` (an existing
+  dependency) when gocron returns zero, applying the scheduler's
+  `timezone`. Skips the DB write entirely when both sources fail.
+  ([#1](https://github.com/EnterpriseX-Platform/RunLoop/issues/1),
+  [#8](https://github.com/EnterpriseX-Platform/RunLoop/pull/8))
+- **Bounded `int → int32` casts in pgxpool config and Kafka requeue.**
+  CodeQL flagged three sites where attacker-controllable or env-derived
+  integers were narrowed without an upper-bound check. Adds a
+  `clampInt32` helper for the Postgres pool, and rewrites the Kafka
+  `x-attempts` increment to do the `+1` in `int64` and clamp into
+  `[1, MaxInt32]` before the cast. No behavior change in normal use,
+  but malicious headers can no longer wrap into a negative attempt
+  count and bypass the max-attempts guard.
+  ([#9](https://github.com/EnterpriseX-Platform/RunLoop/pull/9))
+
 ## [0.1.0] — First public release
 
 The first version published under AGPL-3.0 on GitHub. Pre-1.0, so
