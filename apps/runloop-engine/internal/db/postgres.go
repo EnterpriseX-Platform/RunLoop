@@ -3,16 +3,31 @@ package db
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/runloop/runloop-engine/internal/config"
 	"github.com/rs/zerolog/log"
+	"github.com/runloop/runloop-engine/internal/config"
 )
 
 // Postgres represents a PostgreSQL database connection
 type Postgres struct {
 	Pool *pgxpool.Pool
+}
+
+// clampInt32 narrows an int from config (env-var-derived) to the int32 range
+// pgxpool requires. Values ≤ 0 produce 0 so callers can fall back to library
+// defaults; large values are pinned to math.MaxInt32 instead of silently
+// wrapping into a negative number.
+func clampInt32(v int) int32 {
+	if v <= 0 {
+		return 0
+	}
+	if v >= math.MaxInt32 {
+		return math.MaxInt32
+	}
+	return int32(v)
 }
 
 // NewPostgres creates a new PostgreSQL connection pool
@@ -25,9 +40,12 @@ func NewPostgres(cfg *config.Config) (*Postgres, error) {
 		return nil, fmt.Errorf("unable to parse database URL: %w", err)
 	}
 
-	// Set pool configuration
-	poolConfig.MaxConns = int32(cfg.DatabaseMaxConns)
-	poolConfig.MinConns = int32(cfg.DatabaseMaxIdle)
+	// Set pool configuration. pgxpool stores pool sizes as int32, so clamp
+	// the int values from config to the int32 range. In practice these come
+	// from env vars and are small (≤ a few hundred); the clamp is a safety
+	// belt that also satisfies CodeQL's incorrect-integer-conversion rule.
+	poolConfig.MaxConns = clampInt32(cfg.DatabaseMaxConns)
+	poolConfig.MinConns = clampInt32(cfg.DatabaseMaxIdle)
 
 	// Create connection pool
 	pool, err := pgxpool.NewWithConfig(ctx, poolConfig)
