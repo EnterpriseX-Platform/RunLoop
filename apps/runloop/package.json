@@ -6,9 +6,9 @@
     "seed": "tsx prisma/seed.ts"
   },
   "scripts": {
-    "dev": "next dev -p 3081",
+    "dev": "next dev -p 3000",
     "build": "next build",
-    "start": "next start -p 3081",
+    "start": "next start -p 3000",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "db:generate": "prisma generate",

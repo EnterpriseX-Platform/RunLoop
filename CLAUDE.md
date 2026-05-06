@@ -38,7 +38,7 @@ npm run db:seed         # Seeds an admin user; password is auto-generated and pr
 cd apps/runloop-engine && go run main.go
 ```
 
-No automated tests exist yet. Manual testing with `NEXT_PUBLIC_SKIP_AUTH=true` bypasses auth.
+Tests live in `apps/runloop/src/**/*.test.ts` (Vitest, run via `npm test`) and `apps/runloop-engine/internal/**/*_test.go` (Go's `testing`, run via `go test ./...`). Coverage today: ~7 web tests (encryption, rate-limit, log redaction) + ~48 engine tests (config validation, scheduler manager, connector aliases, flow executor, preflight). Full-flow integration tests are still TODO. Manual testing with `NEXT_PUBLIC_SKIP_AUTH=true` bypasses auth.
 
 ## Architecture
 

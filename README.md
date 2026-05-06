@@ -35,6 +35,19 @@ multi-tenant. All in three containers, under 140 MB RAM idle, AGPL-3.0.
                                   HTTP · DB · Shell · Python · Node · Docker · Slack · Email · …
 ```
 
+## Footprint
+
+| | Size |
+|---|---|
+| Engine binary (linux/amd64, stripped) | **27 MB** |
+| Engine Docker image | **46 MB** |
+| Stack RAM idle (engine + web + Postgres) | **140 MiB** |
+| Engine cold start (warm cache) | **~0.78s** |
+| Web cold start (Next.js ready) | **~0.28s** |
+| Min running components | **3** (web · engine · Postgres) |
+
+Measured on Apple Silicon, Docker 27.x, Postgres 16-alpine, RunLoop v0.1.0.
+
 ## Why RunLoop?
 
 For teams that want visual flows, real code execution, and queue-grade
@@ -58,10 +71,11 @@ real-time over WebSocket.
 
 ## Features
 
-- **23 built-in node types** — Start/End, Condition, Switch, Loop (for-each / batch / parallel),
+- **24 built-in node types** — Start/End, Condition, Switch, Loop (for-each / batch / parallel),
   Transform, Merge, Delay, Set Variable, Sub-flow, Log, HTTP, Database (Postgres/MySQL),
   Shell, Python, Node.js, Docker, Slack, Email (SMTP), Webhook (signed outbound),
-  Wait Webhook (inbound park), Enqueue (push to a queue), Notify (publish to a channel).
+  Wait Webhook (inbound park), Enqueue (push to a queue), Notify (publish to a channel),
+  Plugin (custom user-defined).
 - **Variable substitution everywhere** — `${{nodeId.field}}`, `${{input.X}}`,
   `${{env.X}}`, `${{secrets.X}}`, plus `${{NOW}}` / `${{TODAY}}` and
   `${{loop.item}}` inside loop bodies.
@@ -157,12 +171,7 @@ Every UI action has a REST endpoint with project-scoped `rl_*` API keys. The ful
 git clone https://github.com/EnterpriseX-Platform/RunLoop.git
 cd RunLoop
 cp .env.example .env
-
-# Generate strong secrets
-echo "JWT_SECRET=$(openssl rand -hex 48)"            >> .env
-echo "SECRET_ENCRYPTION_KEY=$(openssl rand -hex 32)" >> .env
-echo "POSTGRES_PASSWORD=$(openssl rand -hex 16)"     >> .env
-
+scripts/gen-secrets.sh >> .env       # writes JWT/encryption/db secrets
 docker compose up -d
 ```
 
