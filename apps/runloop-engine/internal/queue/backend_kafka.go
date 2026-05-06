@@ -305,20 +305,23 @@ func (k *KafkaBackend) Nack(ctx context.Context, q *QueueDef, handle string, req
 	}
 
 	// Increment attempts header and re-publish. The header's previous count
-	// is read from an attacker-controllable bytestream, so clamp before the
-	// int32 cast — a maliciously huge value shouldn't wrap into a negative
-	// attempt count and bypass the max-attempts check below.
+	// is read from an attacker-controllable bytestream, so do the +1 in int64
+	// (no overflow) and clamp into int32 right at the cast — a maliciously
+	// huge value shouldn't wrap into a negative attempt count and bypass the
+	// max-attempts check below.
 	attempts := int32(0)
 	out := make([]kafka.Header, 0, len(msg.Headers))
 	for _, h := range msg.Headers {
 		if h.Key == "x-attempts" {
 			n, _ := strconv.Atoi(string(h.Value))
-			if n < 0 {
-				n = 0
-			} else if n >= math.MaxInt32 {
-				n = math.MaxInt32 - 1
+			v := int64(n) + 1
+			if v < 1 {
+				v = 1
 			}
-			attempts = int32(n) + 1 //nolint:gosec // bounded above
+			if v > math.MaxInt32 {
+				v = math.MaxInt32
+			}
+			attempts = int32(v)
 			continue
 		}
 		if h.Key == "x-last-error" {
