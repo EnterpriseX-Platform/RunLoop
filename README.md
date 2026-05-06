@@ -21,10 +21,9 @@ Drag-drop DAGs · cron schedules · 4 queue backends · code execution in 6 lang
   <img src="docs/screenshots/flow-editor.png" alt="RunLoop flow editor — drag-drop DAG with HTTP/DB/Shell/Python/Slack/Email node palette" width="900" />
 </p>
 
-RunLoop sits between cron and Airflow: visual enough to wire a flow in a
-minute, opinionated enough that secrets, queues, and multi-tenancy work
-out of the box. **n8n's editor, real code execution, queues that scale,
-self-hosted under AGPL.**
+Visual DAG editor. Multi-runtime code execution. Pluggable queue backends.
+Encrypted secret vault. WebSocket-streamed executions. Project-scoped
+multi-tenant. All in three containers, under 140 MB RAM idle, AGPL-3.0.
 
 ```
 ┌──────────────┐   drag-drop    ┌──────────────┐   gocron + pg/redis/kafka  ┌─────────────┐
@@ -38,20 +37,24 @@ self-hosted under AGPL.**
 
 ## Why RunLoop?
 
-Most workflow tools sit at one of two extremes: heavy data-engineering
-platforms (Airflow, Temporal — code-first, JVM/Python, complex setup)
-or light low-code automators (Zapier-style, often SaaS-only). RunLoop
-is the rare middle — drag-drop UI, real queues, real code execution,
-self-hosted on infrastructure you already have.
+For teams that want visual flows, real code execution, and queue-grade
+reliability — on infrastructure they own. Self-hosted, encrypted at rest,
+real-time over WebSocket.
 
-| | RunLoop | n8n | Temporal | Airflow |
-|---|---|---|---|---|
-| Drag-and-drop DAG editor | ✅ | ✅ | ❌ (code-first) | ⚠️ (DAG view, code-defined) |
-| Visual cron scheduling with timezones | ✅ | ✅ | ⚠️ | ✅ |
-| Pluggable queue backends | ✅ Postgres / RabbitMQ / Kafka / Redis | ❌ | proprietary | ⚠️ |
-| Real code execution (Python / Node / Shell / Docker) | ✅ | partial | ⚠️ | ✅ |
-| AES-256-GCM secret vault baked in | ✅ | ⚠️ | ⚠️ | ⚠️ |
-| AGPL-3.0 (anti-SaaS-cloning) | ✅ | Sustainable Use | MIT | Apache-2.0 |
+### How it compares
+
+|  | RunLoop | Cronicle | Dkron | Apache Airflow | DolphinScheduler |
+|---|---|---|---|---|---|
+| Drag-drop visual DAG editor | ✅ | ❌ form-based | ❌ | ❌ Python-defined | ✅ |
+| Multi-runtime code execution<br/>(Python · Node · Shell · Docker) | ✅ all 4 | ⚠️ via plugins | Shell only | Python-first | ✅ via plugins |
+| Pluggable queue backends<br/>(Postgres · RabbitMQ · Kafka · Redis) | ✅ 4 backends | ❌ | ❌ | ⚠️ via Celery only | ❌ |
+| Built-in AES-256-GCM secret vault | ✅ | ❌ | ❌ | ⚠️ Connections (Fernet) | ❌ DB-stored |
+| WebSocket per-node execution stream | ✅ | ⚠️ live log tail | ❌ | ❌ poll | ❌ poll |
+| Pub/sub channels<br/>(project-scoped, WS fan-out) | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Project-scoped multi-tenant | ✅ | ❌ | ❌ | RBAC roles | ✅ |
+| Dead-letter queue + replay | ✅ | ❌ | ❌ | ⚠️ retries only | ⚠️ retries only |
+| External deps to run | Postgres | Disk | Backend store | DB + Celery infra | DB + ZooKeeper |
+| License | AGPL-3.0 | MIT | LGPL-3.0 | Apache-2.0 | Apache-2.0 |
 
 ## Features
 
