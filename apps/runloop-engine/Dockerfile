@@ -23,9 +23,13 @@ FROM alpine:latest
 # (see internal/executor — Python/NodeJS/Docker spawn the respective binary
 # in $PATH; without these the node fails immediately with "executable not
 # found"). docker-cli only — the daemon must be reached via mounted socket.
+# curl is included so Shell scheduler tasks can call internal/external HTTP
+# endpoints (e.g. webhook fan-out, pipeline executor APIs) without bundling
+# their own binary — it's the most common dependency in user shell scripts.
 RUN apk --no-cache add \
         ca-certificates \
         bash \
+        curl \
         python3 \
         py3-pip \
         nodejs \
