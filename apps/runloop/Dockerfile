@@ -55,6 +55,14 @@ COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/package.json ./package.json
 
+# Startup wrapper that runs `prisma db push` before `node server.js`.
+# Without this, the first `docker compose up` against an empty Postgres
+# hits a fatal "relation does not exist" in the engine because no init
+# container ran the migration. K8s deployments still use their real init
+# container; this just covers the docker-compose / single-host path.
+COPY --chown=nextjs:nodejs docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
 USER nextjs
 
 EXPOSE 3000
@@ -62,4 +70,4 @@ EXPOSE 3000
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
-CMD ["node", "server.js"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
