@@ -5,6 +5,45 @@ versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.2] — Patch release
+
+Three small improvements driven by external feedback in the first 48
+hours after launch.
+
+### Added
+
+- **`POST /api/queues/:name/purge`** — operator endpoint that deletes
+  every `PENDING` row from a queue in one call, leaving in-flight
+  `PROCESSING` rows alone. Use after fixing a flow's code to clear
+  stuck messages instead of waiting for `max_attempts` retries to
+  drain (~15 minutes for a `visibility=300s` queue). Returns the
+  deleted count. PG backend only.
+  ([#13](https://github.com/EnterpriseX-Platform/RunLoop/issues/13),
+  [#15](https://github.com/EnterpriseX-Platform/RunLoop/pull/15))
+- **`docs/BENCHMARKS.md` + `scripts/bench.sh`** — reproducible
+  footprint numbers (binary size / image size / RAM idle / cold
+  start) so the README's claims aren't a one-off measurement.
+  Self-contained: random ports, ephemeral DB password, full teardown
+  on exit.
+  ([#5](https://github.com/EnterpriseX-Platform/RunLoop/issues/5),
+  [#11](https://github.com/EnterpriseX-Platform/RunLoop/pull/11))
+
+### Fixed
+
+- **Engine image now ships `curl`.** Shell scheduler tasks commonly
+  call HTTP endpoints (webhook fan-out, internal pipeline APIs,
+  smoke tests); without `curl` every shell flow either bundles its
+  own binary or falls back to `wget`. ~1.4 MiB additional image
+  size, negligible against the existing Python + Node + Docker CLI
+  bundle.
+  ([#12](https://github.com/EnterpriseX-Platform/RunLoop/issues/12),
+  [#14](https://github.com/EnterpriseX-Platform/RunLoop/pull/14))
+- **CI secret scan no longer flags template URLs as leaks.** Switched
+  TruffleHog from `--results=verified,unknown` to `--results=verified`
+  — `postgres://user:${PG_PASS}@host` template literals in shell
+  scripts are no longer reported as unverified secrets. We still fail
+  the build on real verified credentials.
+
 ## [0.1.1] — Patch release
 
 First patch on top of v0.1.0. Two bugs surfaced while preparing the
@@ -133,4 +172,6 @@ are not supported. Migration path is clean install.
 ---
 
 [0.1.0]: https://github.com/EnterpriseX-Platform/RunLoop/releases/tag/v0.1.0
-[Unreleased]: https://github.com/EnterpriseX-Platform/RunLoop/compare/v0.1.0...HEAD
+[0.1.1]: https://github.com/EnterpriseX-Platform/RunLoop/releases/tag/v0.1.1
+[0.1.2]: https://github.com/EnterpriseX-Platform/RunLoop/releases/tag/v0.1.2
+[Unreleased]: https://github.com/EnterpriseX-Platform/RunLoop/compare/v0.1.2...HEAD
