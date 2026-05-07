@@ -97,6 +97,12 @@ jobs:
 
       # trufflehog is free for org repos; gitleaks-action requires a paid
       # license for orgs since v2 (https://github.com/gitleaks/gitleaks-action#-announcement).
+      #
+      # --results=verified — fail only on credentials TruffleHog could verify
+      # against the live provider (a real leak). The previous "verified,unknown"
+      # setting flagged any literal `postgres://user:${VAR}@...` template, which
+      # gives false positives for shell scripts that build connection strings
+      # at runtime (see scripts/bench.sh) without ever committing real secrets.
       - uses: trufflesecurity/trufflehog@main
         with:
-          extra_args: --results=verified,unknown
+          extra_args: --results=verified
