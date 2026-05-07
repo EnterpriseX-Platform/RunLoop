@@ -436,3 +436,27 @@ func (h *Handler) DeleteJob(c *fiber.Ctx) error {
 	}
 	return c.JSON(fiber.Map{"success": true})
 }
+
+// PurgeQueue removes every PENDING job from a queue. PROCESSING jobs are
+// left alone so we don't yank a row out from under an in-flight worker —
+// they'll naturally age out via visibility timeout if their handler dies.
+//
+// Use case: an operator updated a flow's code to fix a bug, but messages
+// enqueued under the old broken code are still occupying the queue and
+// being retried on a 5-minute visibility cycle until max_attempts is hit.
+// Without purge the only options are wait (~15+ minutes per stuck msg) or
+// rebind the queue to a new flow id. PG backend only — Redis/Kafka/Rabbit
+// have their own native purge mechanisms exposed by the broker UI.
+func (h *Handler) PurgeQueue(c *fiber.Ctx) error {
+	name := c.Params("name")
+	tag, err := h.db.Pool.Exec(c.Context(),
+		`DELETE FROM job_queue_items WHERE queue_name=$1 AND status='PENDING'`, name,
+	)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{
+		"success": true,
+		"deleted": tag.RowsAffected(),
+	})
+}

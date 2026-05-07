@@ -447,6 +447,7 @@ func setupRoutes(app *fiber.App, handler *api.Handler, webhookHandler *webhook.H
 	apiGroup.Get("/queues/:name/stats", handler.QueueStats)
 	apiGroup.Post("/queues/:name/jobs/:id/retry", handler.RetryJob)
 	apiGroup.Delete("/queues/:name/jobs/:id", handler.DeleteJob)
+	apiGroup.Post("/queues/:name/purge", handler.PurgeQueue)
 
 	// Plugins (SDK-style extension nodes)
 	apiGroup.Get("/plugins", handler.ListPlugins)
