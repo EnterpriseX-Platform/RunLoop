@@ -39,14 +39,14 @@ multi-tenant. All in three containers, under 140 MB RAM idle, AGPL-3.0.
 
 | | Size |
 |---|---|
-| Engine binary (linux/amd64, stripped) | **27 MB** |
-| Engine Docker image | **46 MB** |
-| Stack RAM idle (engine + web + Postgres) | **140 MiB** |
-| Engine cold start (warm cache) | **~0.78s** |
-| Web cold start (Next.js ready) | **~0.28s** |
-| Min running components | **3** (web · engine · Postgres) |
+| Engine binary (linux/amd64, stripped) | **27 MiB** |
+| Engine Docker image | **204 MiB** (includes Python / Node / Docker CLI for code-exec nodes) |
+| Engine + Postgres RAM idle | **47 MiB** |
+| Full stack RAM idle (+ Web) | **~140 MiB** |
+| Engine cold start | **<1s** |
+| Min components | **3** (web · engine · Postgres) |
 
-Measured on Apple Silicon, Docker 27.x, Postgres 16-alpine, RunLoop v0.1.0.
+Reproduce: [`scripts/bench.sh`](scripts/bench.sh) · methodology + last reading: [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md).
 
 ## Why RunLoop?
 
