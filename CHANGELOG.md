@@ -5,6 +5,34 @@ versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.3] — Patch release
+
+Two improvements that surfaced while validating v0.1.2 against a clean
+checkout, plus a tooling addition for the README hero animation.
+
+### Fixed
+
+- **`docker compose up -d` now boots cleanly on an empty Postgres.**
+  The previous release fatal-crashed the engine on first start with
+  `relation "schedulers" does not exist` because nothing in the compose
+  stack ran the Prisma migration. The web container now uses a thin
+  shell wrapper that runs `npx prisma db push` before exec'ing into
+  Next.js. K8s deployments are unaffected (they keep using their real
+  init container). Opt-out via `SKIP_DB_MIGRATE=true` for ops setups
+  that prefer to time migrations externally.
+  ([#6](https://github.com/EnterpriseX-Platform/RunLoop/issues/6),
+  [#16](https://github.com/EnterpriseX-Platform/RunLoop/pull/16))
+
+### Added
+
+- **`scripts/make-demo-gif.sh`** — turns a `.mov` screen recording
+  (QuickTime / OBS) into a README-ready optimized GIF. Two-stage
+  pipeline (ffmpeg trim+scale → gifski high-quality encode, with
+  ffmpeg palettegen fallback). Defaults: 15 s, 900 px, 15 fps, 10 MiB
+  soft cap. All overridable.
+  ([#7](https://github.com/EnterpriseX-Platform/RunLoop/issues/7),
+  [#17](https://github.com/EnterpriseX-Platform/RunLoop/pull/17))
+
 ## [0.1.2] — Patch release
 
 Three small improvements driven by external feedback in the first 48
@@ -174,4 +202,5 @@ are not supported. Migration path is clean install.
 [0.1.0]: https://github.com/EnterpriseX-Platform/RunLoop/releases/tag/v0.1.0
 [0.1.1]: https://github.com/EnterpriseX-Platform/RunLoop/releases/tag/v0.1.1
 [0.1.2]: https://github.com/EnterpriseX-Platform/RunLoop/releases/tag/v0.1.2
-[Unreleased]: https://github.com/EnterpriseX-Platform/RunLoop/compare/v0.1.2...HEAD
+[0.1.3]: https://github.com/EnterpriseX-Platform/RunLoop/releases/tag/v0.1.3
+[Unreleased]: https://github.com/EnterpriseX-Platform/RunLoop/compare/v0.1.3...HEAD
