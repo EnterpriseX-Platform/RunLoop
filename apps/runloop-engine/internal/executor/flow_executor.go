@@ -23,6 +23,7 @@ import (
 	"github.com/runloop/runloop-engine/internal/connector"
 	"github.com/runloop/runloop-engine/internal/db"
 	"github.com/runloop/runloop-engine/internal/idgen"
+	"github.com/runloop/runloop-engine/internal/llm"
 	"github.com/runloop/runloop-engine/internal/logging"
 	"github.com/runloop/runloop-engine/internal/models"
 	"github.com/runloop/runloop-engine/internal/worker"
@@ -659,6 +660,9 @@ func (fe *FlowExecutor) dispatchNode(
 
 	case "SLACK", "EMAIL", "WEBHOOK":
 		return fe.executeConnectorNode(ctx, string(node.Type), config)
+
+	case models.JobTypeAI:
+		return fe.executeAINode(ctx, task, config)
 	}
 
 	// Fall through to plugin registry. The node's type string becomes the
@@ -1435,6 +1439,186 @@ func (fe *FlowExecutor) executeConnectorNode(ctx context.Context, connType strin
 	return &models.JobResult{
 		Success:      false,
 		ErrorMessage: strPtr("connector does not support actions"),
+	}, nil
+}
+
+// aiModelSecret maps a provider to the secret name that holds its default
+// model override, mirroring the Next.js assistant proxy.
+var aiModelSecret = map[llm.Provider]string{
+	llm.ProviderClaude: "CLAUDE_DEFAULT_MODEL",
+	llm.ProviderOpenAI: "OPENAI_DEFAULT_MODEL",
+	llm.ProviderKimi:   "KIMI_DEFAULT_MODEL",
+}
+
+var aiKeySecret = map[llm.Provider]string{
+	llm.ProviderClaude: "CLAUDE_API_KEY",
+	llm.ProviderOpenAI: "OPENAI_API_KEY",
+	llm.ProviderKimi:   "KIMI_API_KEY",
+}
+
+// executeAINode runs an AI/LLM completion node. Config (post substitution):
+//
+//	prompt        string  required — the user message; ${{...}} already resolved
+//	systemPrompt  string  optional — system steer
+//	provider      string  optional — claude | openai | kimi (else auto-detect)
+//	model         string  optional — overrides the provider default
+//	apiKey        string  optional — explicit key (e.g. ${{secrets.X}}); else vault
+//	maxTokens     number  optional — capped at llm.MaxTokensCap
+//	temperature   number  optional
+//	responseFormat string optional — "json" asks for a single JSON object
+//	timeout       number  optional — seconds; default 60
+//
+// Output: response, model, provider, stopReason, usage{...}, and (json mode)
+// a parsed `json` object. Reference downstream as ${{nodeId.response}},
+// ${{nodeId.json.field}}, ${{nodeId.usage.totalTokens}}.
+func (fe *FlowExecutor) executeAINode(ctx context.Context, task *worker.Task, config models.JSONMap) (*models.JobResult, error) {
+	prompt, _ := config["prompt"].(string)
+	if strings.TrimSpace(prompt) == "" {
+		if m, ok := config["message"].(string); ok {
+			prompt = m
+		}
+	}
+	if strings.TrimSpace(prompt) == "" {
+		return &models.JobResult{
+			Success:      false,
+			ErrorMessage: strPtr("AI node: 'prompt' is required"),
+		}, nil
+	}
+
+	getSecret := func(name string) string {
+		if fe.secretStore == nil {
+			return ""
+		}
+		v, err := fe.secretStore.GetSecret(ctx, name, task.ProjectID)
+		if err != nil {
+			return ""
+		}
+		return v
+	}
+
+	// --- provider + key resolution (mirrors the assistant proxy) ---
+	keys := map[llm.Provider]string{
+		llm.ProviderClaude: getSecret(aiKeySecret[llm.ProviderClaude]),
+		llm.ProviderOpenAI: getSecret(aiKeySecret[llm.ProviderOpenAI]),
+		llm.ProviderKimi:   getSecret(aiKeySecret[llm.ProviderKimi]),
+	}
+
+	var provider llm.Provider
+	if p, _ := config["provider"].(string); strings.TrimSpace(p) != "" {
+		provider = llm.Provider(strings.ToLower(strings.TrimSpace(p)))
+	} else if pref := strings.ToLower(strings.TrimSpace(getSecret("CLAUDE_DEFAULT_PROVIDER"))); pref != "" {
+		provider = llm.Provider(pref)
+	}
+	switch provider {
+	case llm.ProviderClaude, llm.ProviderOpenAI, llm.ProviderKimi:
+		// explicit/preferred provider is valid
+	default:
+		// auto-detect: first provider with a configured key
+		switch {
+		case keys[llm.ProviderClaude] != "":
+			provider = llm.ProviderClaude
+		case keys[llm.ProviderOpenAI] != "":
+			provider = llm.ProviderOpenAI
+		case keys[llm.ProviderKimi] != "":
+			provider = llm.ProviderKimi
+		default:
+			return &models.JobResult{
+				Success:      false,
+				ErrorMessage: strPtr("AI node: no provider configured — set CLAUDE_API_KEY, OPENAI_API_KEY, or KIMI_API_KEY (or a node 'provider')"),
+			}, nil
+		}
+	}
+
+	apiKey, _ := config["apiKey"].(string)
+	if strings.TrimSpace(apiKey) == "" {
+		apiKey = keys[provider]
+	}
+	if strings.TrimSpace(apiKey) == "" {
+		return &models.JobResult{
+			Success:      false,
+			ErrorMessage: strPtr(fmt.Sprintf("AI node: provider %q selected but %s is not set in this project's secrets", provider, aiKeySecret[provider])),
+		}, nil
+	}
+
+	// --- model + tuning ---
+	model, _ := config["model"].(string)
+	if strings.TrimSpace(model) == "" {
+		model = getSecret(aiModelSecret[provider])
+	}
+
+	maxTokens := 1024
+	if v, ok := config["maxTokens"].(float64); ok && v > 0 {
+		maxTokens = int(v)
+	}
+
+	var temperature *float64
+	if v, ok := config["temperature"].(float64); ok {
+		t := v
+		temperature = &t
+	}
+
+	jsonMode := false
+	if rf, _ := config["responseFormat"].(string); strings.EqualFold(rf, "json") {
+		jsonMode = true
+	}
+
+	timeout := 60 * time.Second
+	if v, ok := config["timeout"].(float64); ok && v > 0 {
+		timeout = time.Duration(v) * time.Second
+	}
+
+	system, _ := config["systemPrompt"].(string)
+	if system == "" {
+		system, _ = config["system"].(string)
+	}
+
+	client := llm.New(&http.Client{Timeout: timeout})
+	resp, err := client.Complete(ctx, llm.Request{
+		Provider:    provider,
+		APIKey:      apiKey,
+		Model:       model,
+		System:      system,
+		Messages:    []llm.Message{{Role: "user", Content: prompt}},
+		MaxTokens:   maxTokens,
+		Temperature: temperature,
+		JSONMode:    jsonMode,
+	})
+	if err != nil {
+		return &models.JobResult{
+			Success:      false,
+			ErrorMessage: strPtr(err.Error()),
+		}, nil
+	}
+
+	output := models.JSONMap{
+		"response":   resp.Text,
+		"model":      resp.Model,
+		"provider":   string(resp.Provider),
+		"stopReason": resp.StopReason,
+		"usage": map[string]interface{}{
+			"promptTokens":     resp.Usage.PromptTokens,
+			"completionTokens": resp.Usage.CompletionTokens,
+			"totalTokens":      resp.Usage.TotalTokens,
+		},
+	}
+
+	// In JSON mode, surface the parsed object as `json` so downstream nodes can
+	// reference ${{nodeId.json.field}}. A parse failure isn't fatal — the raw
+	// text is still available on `response` — but we flag it in the logs.
+	parseNote := ""
+	if jsonMode {
+		var parsed interface{}
+		if err := json.Unmarshal([]byte(strings.TrimSpace(resp.Text)), &parsed); err == nil {
+			output["json"] = parsed
+		} else {
+			parseNote = " (responseFormat=json but output was not valid JSON)"
+		}
+	}
+
+	return &models.JobResult{
+		Success: true,
+		Output:  output,
+		Logs:    fmt.Sprintf("%s/%s · %d prompt + %d completion = %d tokens · stop=%s%s", resp.Provider, resp.Model, resp.Usage.PromptTokens, resp.Usage.CompletionTokens, resp.Usage.TotalTokens, resp.StopReason, parseNote),
 	}, nil
 }
 

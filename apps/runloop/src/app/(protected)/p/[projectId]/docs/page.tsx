@@ -60,7 +60,7 @@ const RAW_ENDPOINTS: EndpointDef[] = [
   { group: 'Flows', method: 'POST', path: '/api/flows',
     summary: 'Create a flow. flowConfig has nodes[] + edges[].',
     body: '{\n  "projectId": "demo-project",\n  "name": "send-welcome",\n  "type": "DAG",\n  "flowConfig": { "edges": [...], "nodes": [...] }\n}',
-    notes: 'Node types: START · END · CONDITION · DELAY · LOOP · TRANSFORM · MERGE · SWITCH · LOG · SET_VARIABLE · SUBFLOW · WEBHOOK_OUT · WAIT_WEBHOOK · ENQUEUE · NOTIFY · HTTP · DATABASE · SHELL · PYTHON · NODEJS · DOCKER · SLACK · EMAIL.' },
+    notes: 'Node types: START · END · CONDITION · DELAY · LOOP · TRANSFORM · MERGE · SWITCH · LOG · SET_VARIABLE · SUBFLOW · WEBHOOK_OUT · WAIT_WEBHOOK · ENQUEUE · NOTIFY · HTTP · DATABASE · SHELL · PYTHON · NODEJS · DOCKER · SLACK · EMAIL · AI.' },
 
   // Channels
   { group: 'Channels', method: 'GET',  path: '/api/channels',                  summary: 'Active pub/sub channels with live subscriber counts.' },

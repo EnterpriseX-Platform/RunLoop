@@ -5,6 +5,20 @@ versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **AI node** — a new flow node that calls an LLM (Claude / OpenAI / Kimi)
+  from inside a DAG. Provider, API keys, and default models resolve from the
+  project secret vault exactly like the in-app assistant
+  (`CLAUDE_API_KEY` / `OPENAI_API_KEY` / `KIMI_API_KEY`,
+  `*_DEFAULT_MODEL`, `CLAUDE_DEFAULT_PROVIDER`), or per-node overrides.
+  Prompts support full `${{...}}` variable substitution; an optional
+  JSON-object response mode parses the output so downstream nodes can read
+  `${{nodeId.json.field}}`. Output also carries `model`, `provider`,
+  `stopReason`, and token `usage`. Runs through the engine's existing retry
+  and circuit-breaker machinery. New engine package `internal/llm`
+  (standard-library only, no vendor SDK).
+
 ## [0.1.3] — Patch release
 
 Two improvements that surfaced while validating v0.1.2 against a clean

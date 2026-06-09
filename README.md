@@ -71,11 +71,17 @@ real-time over WebSocket.
 
 ## Features
 
-- **24 built-in node types** — Start/End, Condition, Switch, Loop (for-each / batch / parallel),
+- **25 built-in node types** — Start/End, Condition, Switch, Loop (for-each / batch / parallel),
   Transform, Merge, Delay, Set Variable, Sub-flow, Log, HTTP, Database (Postgres/MySQL),
   Shell, Python, Node.js, Docker, Slack, Email (SMTP), Webhook (signed outbound),
   Wait Webhook (inbound park), Enqueue (push to a queue), Notify (publish to a channel),
+  AI (LLM completion — Claude / OpenAI / Kimi, with JSON-mode output),
   Plugin (custom user-defined).
+- **AI node** — call Claude, OpenAI, or Kimi from inside a flow. Provider and
+  keys come from the same project vault as the in-app assistant; templated
+  prompts (`${{input.X}}`), optional JSON-object mode for structured output
+  (`${{nodeId.json.field}}`), and token usage on every result. Runs through
+  the engine's retry + circuit-breaker path like any other executor.
 - **Variable substitution everywhere** — `${{nodeId.field}}`, `${{input.X}}`,
   `${{env.X}}`, `${{secrets.X}}`, plus `${{NOW}}` / `${{TODAY}}` and
   `${{loop.item}}` inside loop bodies.

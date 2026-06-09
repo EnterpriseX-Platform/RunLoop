@@ -24,7 +24,7 @@ import 'reactflow/dist/style.css';
 import {
   Play, Square, Globe, Database, Terminal, Code2, Hash,
   Container as Docker, Slack, Mail, GitBranch, Clock, RotateCcw, Variable,
-  GitMerge, Split, FileText, PenLine, Workflow, Webhook, Hourglass, Inbox, BellRing,
+  GitMerge, Split, FileText, PenLine, Workflow, Webhook, Hourglass, Inbox, BellRing, Sparkles,
   Save, TestTube2, Wand2, Plus, Settings, X, AlertCircle, Search, ChevronDown,
 } from 'lucide-react';
 import { nodeTypes as importedNodeTypes } from './nodes';
@@ -50,6 +50,9 @@ const PALETTE = [
     { type: 'pythonNode', label: 'Python', nodeType: 'python', icon: Code2, color: '#EAB308' },
     { type: 'nodejsNode', label: 'Node.js', nodeType: 'nodejs', icon: Hash, color: '#22C55E' },
     { type: 'dockerNode', label: 'Docker', nodeType: 'docker', icon: Docker, color: '#0EA5E9' },
+  ]},
+  { category: 'AI', items: [
+    { type: 'aiNode', label: 'AI', nodeType: 'ai', icon: Sparkles, color: '#8B5CF6' },
   ]},
   { category: 'Notifications', items: [
     { type: 'slackNode', label: 'Slack', nodeType: 'slack', icon: Slack, color: '#A855F7' },

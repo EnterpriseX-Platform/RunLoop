@@ -80,7 +80,7 @@ Real-time execution updates: browser connects directly to Go engine at `ws://hos
 ### Flow Editor
 
 - `src/components/flow/FlowCanvas.tsx` — React Flow surface (uses `reactflow` v11).
-- `src/components/flow/nodes/` — 23 node types built on shared `BaseNode` with `iconMap`/`colorMap`. Adding a node = component in `nodes/`, register in `nodes/index.ts`, properties editor in `properties/`, and (if the engine should execute it) a case in `internal/executor/flow_executor.go`.
+- `src/components/flow/nodes/` — 25 node types built on shared `BaseNode` with `iconMap`/`colorMap`. Adding a node = component in `nodes/`, register in `nodes/index.ts`, properties editor in `properties/`, and (if the engine should execute it) a case in `internal/executor/flow_executor.go`. The AI node (LLM completion) is dispatched to `internal/llm` from `flow_executor.go`.
 - `src/components/flow/properties/` — Per-node-type property editors.
 - `src/components/Combobox.tsx` — In-house searchable dropdown (no third-party lib). Used everywhere instead of native `<select>`.
 
