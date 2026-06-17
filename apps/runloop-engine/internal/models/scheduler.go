@@ -51,6 +51,7 @@ const (
 	JobTypeDocker    JobType = "DOCKER"
 	JobTypeSlack     JobType = "SLACK"
 	JobTypeEmail     JobType = "EMAIL"
+	JobTypeAI        JobType = "AI"
 	// Flow-shape nodes: handled directly by FlowExecutor, not by per-type executors.
 	JobTypeStart     JobType = "START"
 	JobTypeEnd       JobType = "END"

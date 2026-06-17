@@ -4,7 +4,7 @@
 
 **Open-source workflow engine for self-hosters.**
 
-Drag-drop DAGs · cron schedules · 4 queue backends · code execution in 6 languages · pub/sub channels · AGPL.
+Drag-drop DAGs · **AI/LLM nodes** · cron schedules · 4 queue backends · code execution in 6 languages · pub/sub channels · AGPL.
 
 [![CI](https://github.com/EnterpriseX-Platform/RunLoop/actions/workflows/ci.yml/badge.svg)](https://github.com/EnterpriseX-Platform/RunLoop/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/EnterpriseX-Platform/RunLoop?logo=github)](https://github.com/EnterpriseX-Platform/RunLoop/releases)
@@ -21,9 +21,10 @@ Drag-drop DAGs · cron schedules · 4 queue backends · code execution in 6 lang
   <img src="docs/screenshots/flow-editor.png" alt="RunLoop flow editor — drag-drop DAG with HTTP/DB/Shell/Python/Slack/Email node palette" width="900" />
 </p>
 
-Visual DAG editor. Multi-runtime code execution. Pluggable queue backends.
-Encrypted secret vault. WebSocket-streamed executions. Project-scoped
-multi-tenant. All in three containers, under 140 MB RAM idle, AGPL-3.0.
+Visual DAG editor. Multi-runtime code execution. In-flow AI/LLM nodes.
+Pluggable queue backends. Encrypted secret vault. WebSocket-streamed
+executions. Project-scoped multi-tenant. All in three containers, under
+140 MB RAM idle, AGPL-3.0.
 
 ```
 ┌──────────────┐   drag-drop    ┌──────────────┐   gocron + pg/redis/kafka  ┌─────────────┐
@@ -60,6 +61,7 @@ real-time over WebSocket.
 |---|---|---|---|---|---|
 | Drag-drop visual DAG editor | ✅ | ❌ form-based | ❌ | ❌ Python-defined | ✅ |
 | Multi-runtime code execution<br/>(Python · Node · Shell · Docker) | ✅ all 4 | ⚠️ via plugins | Shell only | Python-first | ✅ via plugins |
+| AI / LLM node in a step<br/>(Claude · OpenAI · Kimi) | ✅ built-in | ❌ | ❌ | ⚠️ provider pkg + code | ❌ |
 | Pluggable queue backends<br/>(Postgres · RabbitMQ · Kafka · Redis) | ✅ 4 backends | ❌ | ❌ | ⚠️ via Celery only | ❌ |
 | Built-in AES-256-GCM secret vault | ✅ | ❌ | ❌ | ⚠️ Connections (Fernet) | ❌ DB-stored |
 | WebSocket per-node execution stream | ✅ | ⚠️ live log tail | ❌ | ❌ poll | ❌ poll |
@@ -71,11 +73,26 @@ real-time over WebSocket.
 
 ## Features
 
-- **24 built-in node types** — Start/End, Condition, Switch, Loop (for-each / batch / parallel),
+- **25 built-in node types** — Start/End, Condition, Switch, Loop (for-each / batch / parallel),
   Transform, Merge, Delay, Set Variable, Sub-flow, Log, HTTP, Database (Postgres/MySQL),
   Shell, Python, Node.js, Docker, Slack, Email (SMTP), Webhook (signed outbound),
   Wait Webhook (inbound park), Enqueue (push to a queue), Notify (publish to a channel),
+  AI (LLM completion — Claude / OpenAI / Kimi, with JSON-mode output),
   Plugin (custom user-defined).
+- **🤖 AI node — drop an LLM into any flow, no glue code.** Summarize a
+  payload, classify an incoming webhook, extract fields, or draft a reply in a
+  single node. Pick Claude, OpenAI, or Kimi (keys live in the same encrypted
+  vault as the assistant — never in the flow), template the prompt with
+  upstream data (`${{input.body}}`), and flip on **JSON mode** to get
+  structured output the next node can branch on:
+
+  ```
+  Webhook ─▶ AI node ─▶ Switch ─┬─▶ Slack   (severity == "high")
+            classify to JSON    └─▶ Queue   (everything else)
+  ```
+
+  Token usage rides on every result, and the call retries through the same
+  circuit-breaker as every other node. No model SDK, no extra service.
 - **Variable substitution everywhere** — `${{nodeId.field}}`, `${{input.X}}`,
   `${{env.X}}`, `${{secrets.X}}`, plus `${{NOW}}` / `${{TODAY}}` and
   `${{loop.item}}` inside loop bodies.
@@ -221,6 +238,9 @@ For deeper dives see [`CLAUDE.md`](./CLAUDE.md) and [`docs/development/SETUP.md`
 ## Use cases we've seen
 
 - **Cron → external API → Slack alert** — three nodes, two minutes.
+- **AI triage** — Inbound webhook → **AI node** classifies the payload to JSON
+  (`{ "severity": "high", "team": "billing" }`) → Switch routes high-severity
+  to a Slack alert and the rest to a queue. Five nodes, no model SDK.
 - **Postgres ETL** — DB query → Transform → DB upsert, on a schedule, with
   a retry policy and a dead-letter queue.
 - **Webhook fan-out** — Inbound webhook (`WAIT_WEBHOOK`) parks until your

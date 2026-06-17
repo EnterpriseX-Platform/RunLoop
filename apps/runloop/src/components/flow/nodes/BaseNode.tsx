@@ -5,7 +5,7 @@ import { Handle, Position, NodeProps } from 'reactflow';
 import {
   Play, Square, Globe, Database, Terminal, Code2, Hash,
   Slack, Mail, GitBranch, Clock, RotateCcw, Variable, Container,
-  GitMerge, Split, FileText, PenLine, Workflow, Webhook, Hourglass, Inbox, BellRing,
+  GitMerge, Split, FileText, PenLine, Workflow, Webhook, Hourglass, Inbox, BellRing, Sparkles,
 } from 'lucide-react';
 
 export interface BaseNodeData {
@@ -40,6 +40,7 @@ const iconMap: Record<string, React.ElementType> = {
   wait_webhook: Hourglass,
   enqueue: Inbox,
   notify: BellRing,
+  ai: Sparkles,
 };
 
 const colorMap: Record<string, { hex: string; label: string }> = {
@@ -66,6 +67,7 @@ const colorMap: Record<string, { hex: string; label: string }> = {
   wait_webhook: { hex: '#FB923C', label: 'Wait Webhook' },
   enqueue:      { hex: '#0EA5E9', label: 'Enqueue' },
   notify:       { hex: '#F59E0B', label: 'Notify' },
+  ai:           { hex: '#8B5CF6', label: 'AI' },
 };
 
 const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
