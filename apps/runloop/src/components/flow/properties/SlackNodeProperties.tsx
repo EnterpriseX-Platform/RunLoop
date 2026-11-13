@@ -57,8 +57,8 @@ export function SlackNodeProperties({ config, onChange }: BasePropertiesProps) {
               />
             </>
           ) : (
-            <div className="p-4 bg-[#1a1a1d] border border-[#232326] rounded-lg">
-              <p className="text-sm text-[#71717a]">
+            <div className="p-4 bg-[var(--t-input)] border border-[var(--t-border-strong)] rounded-lg">
+              <p className="text-sm text-[var(--t-text-secondary)]">
                 This will send a formatted notification with execution status, duration, and details.
               </p>
             </div>

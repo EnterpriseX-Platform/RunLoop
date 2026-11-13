@@ -26,7 +26,7 @@ import {
   Play, Square, Globe, Database, Terminal, Code2, Hash,
   Container as Docker, Slack, Mail, GitBranch, Clock, RotateCcw, Variable,
   GitMerge, Split, FileText, PenLine, Workflow, Webhook, Hourglass, Inbox, BellRing, Sparkles,
-  Save, TestTube2, Wand2, Plus, Minus, Maximize, Settings, X, AlertCircle, Search, ChevronDown,
+  Save, TestTube2, Wand2, Plus, Minus, Maximize, Settings, Trash2, X, AlertCircle, Search, ChevronDown,
 } from 'lucide-react';
 import { nodeTypes as importedNodeTypes } from './nodes';
 import { propertiesComponents } from './properties';
@@ -843,94 +843,45 @@ function InnerFlow({
           <div
             className="flex-shrink-0 flex flex-col"
             style={{
-              width: 340,
+              width: 372,
               background: 'var(--t-panel)',
               borderLeft: '1px solid var(--t-border)',
             }}
           >
-            {/* Header: icon + colored dot + name + type badge + close */}
-            <div
-              className="px-4 pt-3.5 pb-3"
-              style={{ borderBottom: '1px solid var(--t-border)' }}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2.5 min-w-0">
+            {/* Header: icon tile, type label, step name, close; then tabs */}
+            <div style={{ borderBottom: '1px solid var(--t-border)' }}>
+              <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+                <div
+                  className="flex items-center justify-center flex-shrink-0"
+                  style={{
+                    width: 40,
+                    height: 40,
+                    background: selectedPaletteMeta
+                      ? `color-mix(in srgb, ${selectedPaletteMeta.color} 16%, transparent)`
+                      : 'var(--t-input)',
+                    color: selectedPaletteMeta ? selectedPaletteMeta.color : 'var(--t-text-secondary)',
+                  }}
+                >
                   {selectedNode && selectedPaletteMeta ? (
-                    <div
-                      className="flex items-center justify-center flex-shrink-0"
-                      style={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: 2,
-                        background: `color-mix(in srgb, ${selectedPaletteMeta.color} 14%, transparent)`,
-                        border: `1px solid color-mix(in srgb, ${selectedPaletteMeta.color} 40%, transparent)`,
-                      }}
-                    >
-                      <selectedPaletteMeta.icon
-                        style={{ color: selectedPaletteMeta.color, width: 16, height: 16 }}
-                        strokeWidth={1.75}
-                      />
-                    </div>
+                    <selectedPaletteMeta.icon style={{ width: 20, height: 20 }} strokeWidth={1.7} />
                   ) : (
-                    <div
-                      className="flex items-center justify-center flex-shrink-0"
-                      style={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: 2,
-                        background: 'var(--t-input)',
-                        border: '1px solid var(--t-border)',
-                      }}
-                    >
-                      <Settings className="w-4 h-4" style={{ color: 'var(--t-text-muted)' }} />
-                    </div>
+                    <Settings className="w-5 h-5" />
                   )}
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      {selectedPaletteMeta && (
-                        <span
-                          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                          style={{ background: selectedPaletteMeta.color }}
-                        />
-                      )}
-                      <div
-                        className="text-[13px] font-semibold truncate"
-                        style={{ color: 'var(--t-text)' }}
-                      >
-                        {editingEdge
-                          ? 'Edge'
-                          : selectedNode?.data?.config?.name ||
-                            selectedNode?.data?.label ||
-                            'Node'}
-                      </div>
-                    </div>
-                    {(selectedNode || editingEdge) && (
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span
-                          className="inline-block text-[9px] font-mono  px-1.5 py-0.5 rounded"
-                          style={{
-                            background: selectedPaletteMeta
-                              ? selectedPaletteMeta.color + '18'
-                              : 'var(--t-input)',
-                            color: selectedPaletteMeta
-                              ? selectedPaletteMeta.color
-                              : 'var(--t-text-muted)',
-                            letterSpacing: 0,
-                          }}
-                        >
-                          {editingEdge ? 'connection' : selectedNode?.data?.type || 'unknown'}
-                        </span>
-                        {selectedNode && (
-                          <span
-                            className="text-[10px] font-mono truncate"
-                            style={{ color: 'var(--t-text-muted)' }}
-                            title={selectedNode.id}
-                          >
-                            #{selectedNode.id.slice(-6)}
-                          </span>
-                        )}
-                      </div>
-                    )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div
+                    style={{ fontSize: 11, lineHeight: '15px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.02em', color: 'var(--t-text-secondary)' }}
+                  >
+                    {editingEdge ? 'Connection' : selectedPaletteMeta?.label || selectedNode?.data?.type || 'Step'}
+                  </div>
+                  <div
+                    className="truncate"
+                    style={{ fontSize: 18, lineHeight: '24px', fontWeight: 600, color: 'var(--t-text)' }}
+                    title={selectedNode?.id}
+                  >
+                    {editingEdge
+                      ? 'Edge'
+                      : selectedNode?.data?.config?.name || selectedNode?.data?.label || 'Node'}
                   </div>
                 </div>
                 <button
@@ -938,41 +889,43 @@ function InnerFlow({
                     setSelectedNodeId(null);
                     setEditingEdgeId(null);
                   }}
-                  className="flex-shrink-0 p-1 rounded-md hover:bg-[var(--t-input)]"
-                  style={{ color: 'var(--t-text-muted)' }}
+                  className="flex-shrink-0 flex items-center justify-center hover:bg-[var(--t-panel-hover)]"
+                  style={{ width: 32, height: 32, color: 'var(--t-text)' }}
                   title="Close"
+                  aria-label="Close"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* Segmented tabs — only for node properties */}
+              {/* Carbon tabs: text with a 2px underline on the open one */}
               {selectedNode && !editingEdge && PropertiesComponent && (
-                <div
-                  className="mt-3 p-0.5 rounded-lg flex"
-                  style={{ background: 'var(--t-input)', border: '1px solid var(--t-border)' }}
-                >
-                  {(['config', 'retry', 'errors'] as const).map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setPropsTab(t)}
-                      className="flex-1 text-[11px] font-semibold capitalize py-1.5 rounded-md transition-all"
-                      style={{
-                        background:
-                          propsTab === t
-                            ? 'var(--t-panel)'
-                            : 'transparent',
-                        color:
-                          propsTab === t ? 'var(--t-text)' : 'var(--t-text-muted)',
-                        boxShadow:
-                          propsTab === t
-                            ? '0 1px 2px rgba(0,0,0,0.08), 0 0 0 1px var(--t-border)'
-                            : 'none',
-                      }}
-                    >
-                      {t === 'errors' ? 'Errors' : t === 'retry' ? 'Retry' : 'Config'}
-                    </button>
-                  ))}
+                <div className="flex px-4" role="tablist">
+                  {(['config', 'retry', 'errors'] as const).map((t) => {
+                    const on = propsTab === t;
+                    return (
+                      <button
+                        key={t}
+                        role="tab"
+                        aria-selected={on}
+                        onClick={() => setPropsTab(t)}
+                        className="hover:text-[var(--t-text)]"
+                        style={{
+                          height: 40,
+                          padding: '0 16px 0 0',
+                          marginRight: 16,
+                          fontSize: 14,
+                          fontWeight: on ? 600 : 400,
+                          color: on ? 'var(--t-text)' : 'var(--t-text-secondary)',
+                          background: 'transparent',
+                          border: 'none',
+                          boxShadow: on ? 'inset 0 -2px 0 var(--t-accent)' : 'none',
+                        }}
+                      >
+                        {t === 'errors' ? 'On error' : t === 'retry' ? 'Retry' : 'Settings'}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1106,26 +1059,17 @@ function InnerFlow({
             {/* Footer with delete action */}
             {selectedNode && !editingEdge && !readOnly && (
               <div
-                className="px-4 py-2.5 flex items-center justify-between"
+                className="px-2 py-2 flex items-center"
                 style={{ borderTop: '1px solid var(--t-border)' }}
               >
-                <span
-                  className="text-[10px] font-mono"
-                  style={{ color: 'var(--t-text-muted)' }}
-                >
-                  Del to remove · Esc to close
-                </span>
                 <button
                   onClick={deleteSelectedNode}
-                  className="text-[11px] font-semibold px-2.5 py-1 rounded-md transition-colors"
-                  style={{
-                    color: '#EF4444',
-                    background: '#EF444410',
-                    border: '1px solid #EF444430',
-                  }}
-                  title="Delete node (Del)"
+                  className="flex items-center gap-2 hover:bg-[var(--tag-red-bg)]"
+                  style={{ height: 32, padding: '0 12px', fontSize: 14, color: 'var(--t-error)', background: 'transparent', border: 'none' }}
+                  title="Delete step (Del)"
                 >
-                  Delete node
+                  <Trash2 className="w-4 h-4" />
+                  Delete step
                 </button>
               </div>
             )}

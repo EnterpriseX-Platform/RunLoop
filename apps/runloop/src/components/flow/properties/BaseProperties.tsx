@@ -9,14 +9,17 @@ export interface BasePropertiesProps {
   errors?: Record<string, string>;
 }
 
+// Carbon field: filled, square, a bottom rule; focus draws a 2px inset ring.
 const inputStyle: React.CSSProperties = {
   background: 'var(--t-input)',
-  border: '1px solid var(--t-border)',
+  border: 'none',
+  borderBottom: '1px solid var(--t-border-strong)',
   color: 'var(--t-text)',
+  minHeight: 40,
 };
 
 const inputClass =
-  'w-full px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-[var(--t-accent)] focus:ring-2 focus:ring-[var(--t-accent)]/20 transition-all';
+  'w-full px-4 py-2 text-sm focus:outline-none focus:shadow-[inset_0_0_0_2px_var(--t-accent)] placeholder:text-[var(--t-text-muted)]';
 
 export function BaseProperties({ config, onChange, children }: BasePropertiesProps & { children: React.ReactNode }) {
   return (
@@ -124,15 +127,8 @@ export function Section({ title, children }: { title: string; children: React.Re
       className="pb-5 mb-5 last:border-0 last:mb-0 last:pb-0"
       style={{ borderBottom: '1px solid var(--t-border)' }}
     >
-      <div className="flex items-center gap-2 mb-4">
-        <span
-          className="inline-block w-1 h-3 rounded-full"
-          style={{ background: 'var(--t-accent)', opacity: 0.6 }}
-        />
-        <h3
-          className="text-[11px] font-semibold "
-          style={{ color: 'var(--t-text-secondary)', letterSpacing: 0 }}
-        >
+      <div className="mb-4">
+        <h3 style={{ fontSize: 14, lineHeight: '18px', fontWeight: 600, color: 'var(--t-text)' }}>
           {title}
         </h3>
       </div>
@@ -144,8 +140,8 @@ export function Section({ title, children }: { title: string; children: React.Re
 function Label({ children }: { children: React.ReactNode }) {
   return (
     <label
-      className="block text-sm font-medium mb-1.5"
-      style={{ color: 'var(--t-text-secondary)' }}
+      className="block mb-2"
+      style={{ fontSize: 12, lineHeight: '16px', color: 'var(--t-text-secondary)' }}
     >
       {children}
     </label>
@@ -167,10 +163,10 @@ export function TextField({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className={inputClass}
-        style={{ ...inputStyle, borderColor: error ? '#EF4444' : 'var(--t-border)' }}
+        style={{ ...inputStyle, boxShadow: error ? 'inset 0 0 0 2px var(--t-error)' : undefined }}
       />
       {error && (
-        <p className="text-xs mt-1.5 flex items-center gap-1" style={{ color: '#EF4444' }}>
+        <p className="text-xs mt-1.5 flex items-center gap-1" style={{ color: 'var(--t-error)' }}>
           <AlertCircle className="w-3 h-3" />
           {error}
         </p>
@@ -292,7 +288,7 @@ export function SecretField({
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
-        <label className="text-sm font-medium" style={{ color: 'var(--t-text-secondary)' }}>{label}</label>
+        <label style={{ fontSize: 12, lineHeight: '16px', color: 'var(--t-text-secondary)' }}>{label}</label>
         <button
           onClick={() => setShowSecrets(!showSecrets)}
           className="text-xs"
@@ -346,7 +342,7 @@ export function CodeEditor({
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
-        <label className="text-sm font-medium" style={{ color: 'var(--t-text-secondary)' }}>{label}</label>
+        <label style={{ fontSize: 12, lineHeight: '16px', color: 'var(--t-text-secondary)' }}>{label}</label>
         <span className="text-xs " style={{ color: 'var(--t-text-muted)' }}>{language}</span>
       </div>
       <textarea

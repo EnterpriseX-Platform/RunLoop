@@ -25,13 +25,13 @@ export function ShellNodeProperties({ config, onChange }: BasePropertiesProps) {
             options={SHELL_TYPES}
           />
 
-          <div className="flex gap-2 p-1 bg-[#0a0a0b] border border-[#232326] rounded-lg">
+          <div className="flex gap-2 p-1 bg-[var(--t-input)] border border-[var(--t-border-strong)] rounded-lg">
             <button
               onClick={() => onChange({ ...config, mode: 'command' })}
               className={`flex-1 px-3 py-1.5 rounded text-sm font-medium transition-all ${
                 !isScriptMode
-                  ? 'bg-[#1a1a1d] text-white'
-                  : 'text-[#71717a] hover:text-white'
+                  ? 'bg-[var(--t-input)] text-[var(--t-text)]'
+                  : 'text-[var(--t-text-secondary)] hover:text-[var(--t-text)]'
               }`}
             >
               Single Command
@@ -40,8 +40,8 @@ export function ShellNodeProperties({ config, onChange }: BasePropertiesProps) {
               onClick={() => onChange({ ...config, mode: 'script' })}
               className={`flex-1 px-3 py-1.5 rounded text-sm font-medium transition-all ${
                 isScriptMode
-                  ? 'bg-[#1a1a1d] text-white'
-                  : 'text-[#71717a] hover:text-white'
+                  ? 'bg-[var(--t-input)] text-[var(--t-text)]'
+                  : 'text-[var(--t-text-secondary)] hover:text-[var(--t-text)]'
               }`}
             >
               Script File

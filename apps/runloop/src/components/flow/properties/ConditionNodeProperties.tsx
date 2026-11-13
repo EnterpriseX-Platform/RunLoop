@@ -22,8 +22,8 @@ export function ConditionNodeProperties({ config, onChange }: BasePropertiesProp
     <BaseProperties config={config} onChange={onChange}>
       <Section title="Condition">
         <div className="space-y-4">
-          <div className="p-3 bg-[#1a1a1d] border border-[#232326] rounded-lg">
-            <p className="text-xs text-[#71717a]">
+          <div className="p-3 bg-[var(--t-input)] border border-[var(--t-border-strong)] rounded-lg">
+            <p className="text-xs text-[var(--t-text-secondary)]">
               If condition is TRUE → continue to <strong>True</strong> branch<br/>
               If condition is FALSE → continue to <strong>False</strong> branch
             </p>
@@ -63,9 +63,9 @@ export function ConditionNodeProperties({ config, onChange }: BasePropertiesProp
               type="checkbox"
               checked={config.caseSensitive || false}
               onChange={(e) => onChange({ ...config, caseSensitive: e.target.checked })}
-              className="rounded border-[#232326] bg-[#0a0a0b] text-[#0ea5e9]"
+              className="rounded border-[var(--t-border-strong)] bg-[var(--t-input)] text-[var(--t-accent)]"
             />
-            <span className="text-sm text-[#a1a1aa]">Case Sensitive</span>
+            <span className="text-sm text-[var(--t-text-secondary)]">Case Sensitive</span>
           </label>
 
           <TextField

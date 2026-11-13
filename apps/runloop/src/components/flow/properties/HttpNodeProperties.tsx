@@ -152,11 +152,11 @@ export function HttpNodeProperties({ config, onChange }: BasePropertiesProps) {
           if it doesn't evaluate to true, the node fails with a precise
           error in the execution detail (instead of silently SUCCESS). */}
       <Section title="Success Check (optional)">
-        <div className="text-[11px] text-[#71717a] mb-2 leading-relaxed">
+        <div className="text-[11px] text-[var(--t-text-secondary)] mb-2 leading-relaxed">
           Expression evaluated against the response. If false → node fails.
-          Available: <code className="text-[#0ea5e9]">body</code>,{' '}
-          <code className="text-[#0ea5e9]">statusCode</code>,{' '}
-          <code className="text-[#0ea5e9]">headers</code>.
+          Available: <code className="text-[var(--t-accent)]">body</code>,{' '}
+          <code className="text-[var(--t-accent)]">statusCode</code>,{' '}
+          <code className="text-[var(--t-accent)]">headers</code>.
         </div>
         <TextArea
           label="successWhen"
@@ -165,23 +165,23 @@ export function HttpNodeProperties({ config, onChange }: BasePropertiesProps) {
           placeholder={'body.responseStatus == "SUCCESS"\n// or\nlen(body.errors) == 0\n// or\nstatusCode == 200 && body.code == "OK"'}
           rows={3}
         />
-        <div className="text-[10px] text-[#52525b] mt-1">
+        <div className="text-[10px] text-[var(--t-text-muted)] mt-1">
           Examples ·{' '}
           <button
             type="button"
-            className="text-[#0ea5e9] hover:underline"
+            className="text-[var(--t-accent)] hover:underline"
             onClick={() => onChange({ ...config, successWhen: 'body.responseStatus == "SUCCESS"' })}
           >Mendix microflow</button>
           {' · '}
           <button
             type="button"
-            className="text-[#0ea5e9] hover:underline"
+            className="text-[var(--t-accent)] hover:underline"
             onClick={() => onChange({ ...config, successWhen: 'len(body.errors) == 0' })}
           >GraphQL</button>
           {' · '}
           <button
             type="button"
-            className="text-[#0ea5e9] hover:underline"
+            className="text-[var(--t-accent)] hover:underline"
             onClick={() => onChange({ ...config, successWhen: 'body.success == true' })}
           >REST {'{success: true}'}</button>
         </div>
@@ -218,14 +218,14 @@ function HeadersEditor({ headers, onChange }: { headers: Record<string, string>;
             value={key}
             onChange={(e) => updateHeader(index, e.target.value, value)}
             placeholder="Header name"
-            className="px-3 py-2 bg-[#0a0a0b] border border-[#232326] rounded-lg text-white placeholder-[#52525b] focus:outline-none focus:border-[#0ea5e9] text-sm"
+            className="px-3 py-2 bg-[var(--t-input)] border border-[var(--t-border-strong)] rounded-lg text-[var(--t-text)] placeholder-[var(--t-text-muted)] focus:outline-none focus:border-[var(--t-accent)] text-sm"
           />
           <input
             type="text"
             value={value}
             onChange={(e) => updateHeader(index, key, e.target.value)}
             placeholder="Value"
-            className="px-3 py-2 bg-[#0a0a0b] border border-[#232326] rounded-lg text-white placeholder-[#52525b] focus:outline-none focus:border-[#0ea5e9] text-sm font-mono"
+            className="px-3 py-2 bg-[var(--t-input)] border border-[var(--t-border-strong)] rounded-lg text-[var(--t-text)] placeholder-[var(--t-text-muted)] focus:outline-none focus:border-[var(--t-accent)] text-sm font-mono"
           />
         </div>
       ))}
