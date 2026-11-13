@@ -301,36 +301,34 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
       <div className="max-h-48 overflow-auto py-0.5">
         <button
           onClick={() => handleSelect(null)}
-          className="w-full px-3 py-1.5 text-left flex items-center gap-2 transition-colors hover:bg-[var(--t-panel-hover)]"
+          className="w-full h-10 px-4 text-left flex items-center gap-3 transition-colors hover:bg-[var(--t-panel-hover)]"
           style={{
-            fontFamily: MONO,
-            fontSize: 11,
+            fontSize: 14,
             letterSpacing: 0,
             color: !selectedProject ? 'var(--t-accent)' : 'var(--t-text-secondary)',
           }}
         >
-          <Layers className="w-3 h-3" style={{ color: 'var(--t-text-muted)' }} />
-          <span className="flex-1">all projects</span>
-          {!selectedProject && <Check className="w-3 h-3" style={{ color: 'var(--t-accent)' }} />}
+          <Layers className="w-4 h-4" style={{ color: 'var(--t-text-muted)' }} />
+          <span className="flex-1">All projects</span>
+          {!selectedProject && <Check className="w-4 h-4" style={{ color: 'var(--t-accent)' }} />}
         </button>
         {projects.map((project) => (
           <button
             key={project.id}
             onClick={() => handleSelect(project)}
-            className="w-full px-3 py-1.5 text-left flex items-center gap-2 transition-colors hover:bg-[var(--t-panel-hover)]"
+            className="w-full h-10 px-4 text-left flex items-center gap-3 transition-colors hover:bg-[var(--t-panel-hover)]"
             style={{
-              fontFamily: MONO,
-              fontSize: 11,
+              fontSize: 14,
               letterSpacing: 0,
               color: selectedProject?.id === project.id ? 'var(--t-accent)' : 'var(--t-text-secondary)',
             }}
           >
             <div
-              className="w-2 h-2 flex-shrink-0"
+              className="w-3 h-3 flex-shrink-0"
               style={{ backgroundColor: project.color || 'var(--t-accent)' }}
             />
             <span className="flex-1 truncate">{project.name}</span>
-            {selectedProject?.id === project.id && <Check className="w-3 h-3" style={{ color: 'var(--t-accent)' }} />}
+            {selectedProject?.id === project.id && <Check className="w-4 h-4" style={{ color: 'var(--t-accent)' }} />}
           </button>
         ))}
       </div>
@@ -338,16 +336,15 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
         {!showCreateForm ? (
           <button
             onClick={() => setShowCreateForm(true)}
-            className="w-full px-3 py-1.5 text-left flex items-center gap-2 transition-colors hover:bg-[var(--t-panel-hover)]"
+            className="w-full h-10 px-4 text-left flex items-center gap-3 transition-colors hover:bg-[var(--t-panel-hover)]"
             style={{
-              fontFamily: MONO,
-              fontSize: 11,
+              fontSize: 14,
               letterSpacing: 0,
               color: 'var(--t-accent)',
             }}
           >
-            <Plus className="w-3 h-3" />
-            new project
+            <Plus className="w-4 h-4" />
+            New project
           </button>
         ) : (
           <div className="px-2.5 py-2 space-y-1.5">
@@ -410,17 +407,18 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
   }
 
   return (
-    <div className="relative w-full" ref={dropdownRef}>
+    <div className="relative h-full" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
         style={{
-          borderRadius: 0,
           border: 'none',
-          borderBottom: '1px solid var(--t-border-strong)',
-          background: 'var(--t-input)',
-          height: 40,
+          background: isOpen ? 'var(--t-panel-hover)' : 'transparent',
+          height: 48,
+          maxWidth: 240,
         }}
-        className="w-full flex items-center gap-2 px-4 transition-colors hover:bg-[var(--t-panel-hover)]"
+        className="flex items-center gap-2 px-4 transition-colors hover:bg-[var(--t-panel-hover)]"
         title={selectedProject?.name || 'Select Project'}
       >
         <span
@@ -441,9 +439,9 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
         >
           {selectedProject?.name || 'All projects'}
         </span>
-        <ChevronDown className="w-3 h-3 flex-shrink-0" style={{ color: 'var(--t-text-muted)' }} />
+        <ChevronDown className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--t-text-secondary)', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.1s' }} />
       </button>
-      {isOpen && dropdownMenu('absolute left-0 top-full mt-1 w-full')}
+      {isOpen && dropdownMenu('absolute left-0 top-full w-64')}
     </div>
   );
 }
@@ -770,23 +768,6 @@ export function Layout({ children }: { children?: React.ReactNode }) {
           sidebarCollapsed ? 'w-16' : 'w-56'
         }`}
       >
-        {/* Project selector — now a prominent row under the brand */}
-        {!sidebarCollapsed && (
-          <div className="px-4 pt-4 pb-3">
-            <p className="pb-2" style={{ fontSize: 12, lineHeight: '16px', color: 'var(--t-text-secondary)' }}>
-              Project
-            </p>
-            <ProjectSelector collapsed={false} />
-          </div>
-        )}
-        {sidebarCollapsed && (
-          <div className="px-2 pb-2 flex justify-center">
-            <ProjectSelector collapsed={true} />
-          </div>
-        )}
-
-        <div className="border-t" style={{ borderColor: 'var(--t-border)' }} />
-
         {/* Navigation */}
         <nav className="flex-1 pt-2 pb-3 overflow-y-auto">
           <div className="space-y-0.5">
@@ -870,6 +851,8 @@ export function Layout({ children }: { children?: React.ReactNode }) {
               <LogoMark size={20} />
               <span>Run<span style={{ fontWeight: 600 }}>Loop</span></span>
             </Link>
+            <span aria-hidden style={{ width: 1, height: 24, background: '#393939' }} />
+            <ProjectSelector collapsed={false} />
             <span aria-hidden className="hidden md:block" style={{ width: 1, height: 24, background: '#393939', marginRight: 16 }} />
             <div className="hidden md:flex min-w-0">
               <Breadcrumb />
