@@ -13,7 +13,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
+const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
 
 // ─────────────────────────────────────────────────────────────────
 // Endpoint catalog
@@ -144,9 +144,9 @@ function CodeBlock({ code, lang }: { code: string; lang?: string }) {
         <div
           style={{
             fontSize: 9.5, padding: '4px 10px',
-            color: 'var(--t-text-muted)', letterSpacing: '0.12em',
+            color: 'var(--t-text-muted)', letterSpacing: 0,
             borderBottom: '1px solid var(--t-border-light)',
-            fontFamily: MONO, textTransform: 'uppercase',
+            fontFamily: MONO,
           }}
         >
           {lang}
@@ -179,7 +179,7 @@ function MethodBadge({ method }: { method: string }) {
         padding: '2px 7px', borderRadius: 3,
         background: METHOD_COLORS[method] + '22',
         color: METHOD_COLORS[method],
-        letterSpacing: '0.06em',
+        letterSpacing: 0,
         minWidth: 50, textAlign: 'center', display: 'inline-block',
       }}
     >
@@ -209,7 +209,7 @@ function Endpoint({ ep, baseUrl }: { ep: EndpointDef; baseUrl: string }) {
         )}
         {ep.body && (
           <details className="mt-3" open>
-            <summary style={{ fontSize: 11, color: 'var(--t-text-muted)', letterSpacing: '0.08em', cursor: 'pointer', marginBottom: 6 }}>
+            <summary style={{ fontSize: 11, color: 'var(--t-text-muted)', letterSpacing: 0, cursor: 'pointer', marginBottom: 6 }}>
               REQUEST BODY
             </summary>
             <CodeBlock code={ep.body} lang="json" />
@@ -217,14 +217,14 @@ function Endpoint({ ep, baseUrl }: { ep: EndpointDef; baseUrl: string }) {
         )}
         {ep.response && (
           <details className="mt-3">
-            <summary style={{ fontSize: 11, color: 'var(--t-text-muted)', letterSpacing: '0.08em', cursor: 'pointer', marginBottom: 6 }}>
+            <summary style={{ fontSize: 11, color: 'var(--t-text-muted)', letterSpacing: 0, cursor: 'pointer', marginBottom: 6 }}>
               RESPONSE
             </summary>
             <CodeBlock code={ep.response} lang="json" />
           </details>
         )}
         <details className="mt-3">
-          <summary style={{ fontSize: 11, color: 'var(--t-text-muted)', letterSpacing: '0.08em', cursor: 'pointer', marginBottom: 6 }}>
+          <summary style={{ fontSize: 11, color: 'var(--t-text-muted)', letterSpacing: 0, cursor: 'pointer', marginBottom: 6 }}>
             CURL
           </summary>
           <CodeBlock
@@ -350,8 +350,7 @@ export default function ApiDocsPage() {
           <div
             style={{
               fontSize: 10.5, fontWeight: 600, color: 'var(--t-text-muted)',
-              letterSpacing: '0.14em', marginBottom: 8, paddingLeft: 6,
-              textTransform: 'uppercase',
+              letterSpacing: 0, marginBottom: 8, paddingLeft: 6,
             }}
           >
             Reference
@@ -365,8 +364,7 @@ export default function ApiDocsPage() {
               <div
                 style={{
                   fontSize: 10.5, fontWeight: 600, color: 'var(--t-text-muted)',
-                  letterSpacing: '0.14em', marginTop: 16, marginBottom: 8, paddingLeft: 6,
-                  textTransform: 'uppercase',
+                  letterSpacing: 0, marginTop: 16, marginBottom: 8, paddingLeft: 6,
                 }}
               >
                 Endpoints
@@ -390,8 +388,7 @@ export default function ApiDocsPage() {
           <div
             style={{
               fontSize: 10.5, fontWeight: 600, color: 'var(--t-text-muted)',
-              letterSpacing: '0.14em', marginTop: 16, marginBottom: 8, paddingLeft: 6,
-              textTransform: 'uppercase',
+              letterSpacing: 0, marginTop: 16, marginBottom: 8, paddingLeft: 6,
             }}
           >
             Guides
@@ -405,7 +402,7 @@ export default function ApiDocsPage() {
       {/* ── Main content ──────────────────────────────────────── */}
       <div ref={contentRef} className="flex-1 min-w-0 px-6 py-6 max-w-[920px]">
         <div className="mb-5">
-          <h1 style={{ fontSize: 26, fontWeight: 600, color: 'var(--t-text)', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: 26, fontWeight: 600, color: 'var(--t-text)', letterSpacing: 0 }}>
             API Reference
           </h1>
           <p style={{ fontSize: 13.5, color: 'var(--t-text-muted)', marginTop: 6 }}>

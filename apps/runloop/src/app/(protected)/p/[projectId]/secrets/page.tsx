@@ -214,7 +214,7 @@ export default function SecretsPage() {
         <div className="max-w-7xl mx-auto px-6 pt-4 pb-3">
           <div className="flex items-end justify-between mb-6 gap-4">
             <div>
-              <h1 style={{ fontSize: 24, fontWeight: 600, color: THEME.text.primary, letterSpacing: '-0.02em' }}>Secrets</h1>
+              <h1 style={{ fontSize: 24, fontWeight: 600, color: THEME.text.primary, letterSpacing: 0 }}>Secrets</h1>
               <p style={{ fontSize: 13, color: THEME.text.muted, marginTop: 6 }}>
                 Encrypted credentials and API keys. Reference inside flows as <code style={{fontFamily:MONO,fontSize:12}}>{'${{secrets.NAME}}'}</code>.
               </p>
@@ -258,7 +258,7 @@ export default function SecretsPage() {
                       style={{
                         padding: '5px 10px', borderRadius: 2,
                         fontFamily: MONO, fontSize: 10.5, fontWeight: 500,
-                        letterSpacing: '0.08em',
+                        letterSpacing: 0,
                         background: active ? THEME.accent : 'transparent',
                         color: active ? '#fff' : THEME.text.secondary,
                         border: `1px solid ${active ? THEME.accent : THEME.border}`,
@@ -485,7 +485,7 @@ function SecretRow({
       {showValue && (
         <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${THEME.border}` }}>
           <div className="flex items-center gap-3">
-            <span className="text-xs uppercase tracking-wider" style={{ color: THEME.text.secondary }}>Value</span>
+            <span className="text-xs  " style={{ color: THEME.text.secondary }}>Value</span>
             <code className="flex-1 px-3 py-2 rounded-lg text-sm font-mono" style={{ background: THEME.bg, color: THEME.text.secondary }}>
               ••••••••••••••••••••••••••••••••
             </code>
@@ -937,10 +937,10 @@ function AuditLogModal({ secret, onClose }: { secret: Secret; onClose: () => voi
             <table className="w-full">
               <thead className="sticky top-0" style={{ background: THEME.bg }}>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{ color: THEME.text.secondary }}>Action</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{ color: THEME.text.secondary }}>User</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{ color: THEME.text.secondary }}>Time</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{ color: THEME.text.secondary }}>Details</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium " style={{ color: THEME.text.secondary }}>Action</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium " style={{ color: THEME.text.secondary }}>User</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium " style={{ color: THEME.text.secondary }}>Time</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium " style={{ color: THEME.text.secondary }}>Details</th>
                 </tr>
               </thead>
               <tbody>

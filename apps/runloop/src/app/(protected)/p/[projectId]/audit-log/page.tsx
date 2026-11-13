@@ -414,41 +414,41 @@ export default function AuditLogPage() {
                 <thead>
                   <tr style={{ background: THEME.bg, borderBottom: `1px solid ${THEME.border}` }}>
                     <th
-                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider w-8"
+                      className="px-4 py-3 text-left text-xs font-medium   w-8"
                       style={{ color: THEME.text.secondary }}
                     />
                     <th
-                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                      className="px-4 py-3 text-left text-xs font-medium  "
                       style={{ color: THEME.text.secondary }}
                     >
                       Timestamp
                     </th>
                     <th
-                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                      className="px-4 py-3 text-left text-xs font-medium  "
                       style={{ color: THEME.text.secondary }}
                     >
                       User
                     </th>
                     <th
-                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                      className="px-4 py-3 text-left text-xs font-medium  "
                       style={{ color: THEME.text.secondary }}
                     >
                       Action
                     </th>
                     <th
-                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                      className="px-4 py-3 text-left text-xs font-medium  "
                       style={{ color: THEME.text.secondary }}
                     >
                       Resource
                     </th>
                     <th
-                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                      className="px-4 py-3 text-left text-xs font-medium  "
                       style={{ color: THEME.text.secondary }}
                     >
                       Details
                     </th>
                     <th
-                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                      className="px-4 py-3 text-left text-xs font-medium  "
                       style={{ color: THEME.text.secondary }}
                     >
                       IP

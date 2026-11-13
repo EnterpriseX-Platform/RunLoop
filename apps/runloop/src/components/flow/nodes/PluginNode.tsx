@@ -33,7 +33,7 @@ export function PluginNode({ data, selected }: NodeProps<PluginNodeData>) {
       >
         <div
           style={{ width: 40, height: 40, borderRadius: 8, background: color, color: '#FFF' }}
-          className="flex items-center justify-center text-[10px] font-bold tracking-wider"
+          className="flex items-center justify-center text-[10px] font-bold "
         >
           PL
         </div>
@@ -45,7 +45,7 @@ export function PluginNode({ data, selected }: NodeProps<PluginNodeData>) {
         style={{ top: size + 6, width: 140, fontSize: 12, fontWeight: 600, color: '#111827', lineHeight: 1.25, pointerEvents: 'none' }}
       >
         <div className="truncate">{data.label}</div>
-        <div style={{ fontSize: 9, fontWeight: 700, color, letterSpacing: '0.08em', marginTop: 2 }}>
+        <div style={{ fontSize: 9, fontWeight: 700, color, letterSpacing: 0, marginTop: 2 }}>
           PLUGIN
         </div>
       </div>

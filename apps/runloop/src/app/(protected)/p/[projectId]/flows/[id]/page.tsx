@@ -72,6 +72,18 @@ function backendNodesToReactFlow(flow: BackendFlow): { nodes: Node[]; edges: Edg
   }
 
   const nodes: Node[] = (cfg.nodes || []).map((n: any, idx: number) => {
+    // Some flows (e.g. the demo seed) are stored in React Flow's own shape:
+    // `type: 'databaseNode'` plus `data.label`. Keep those as-is instead of
+    // pushing them through the backend jobType mapping, which would turn
+    // every node into an HTTP node labelled with its id.
+    if (typeof n.type === 'string' && /Node$/.test(n.type) && n.data) {
+      return {
+        id: n.id || `node_${idx}`,
+        type: n.type,
+        position: n.position || { x: 80 + idx * 260, y: 200 },
+        data: { ...n.data, label: n.data.label || n.id || 'Node', config: n.data.config || {} },
+      };
+    }
     const nodeKind = n.nodeKind || jobTypeToNodeKind(n.type);
     const nodeTypeData = (n.type || '').toLowerCase() === 'start' ? 'start'
       : (n.type || '').toLowerCase() === 'end' ? 'end'
@@ -317,29 +329,30 @@ export default function FlowDetailPage() {
           <button
             onClick={handleRunNow}
             disabled={running}
-            className="text-xs px-3 py-1.5 rounded flex items-center gap-1.5 disabled:opacity-50"
-            style={{ background: `${THEME.colors.emerald}15`, color: THEME.colors.emerald, border: `1px solid ${THEME.colors.emerald}40` }}
+            className="h-8 text-sm flex items-center gap-2 disabled:opacity-50 pl-3 pr-4 hover:bg-[var(--t-panel-hover)]"
+            style={{ background: 'transparent', color: 'var(--t-accent)', border: '1px solid var(--t-accent)' }}
             title="Run this flow once with its saved config"
           >
             {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-            Run Now
+            Run now
           </button>
           <button
             onClick={() => { setShowVersions(true); fetchVersions(); }}
-            className="text-xs px-3 py-1.5 rounded flex items-center gap-1.5"
-            style={{ background: `${THEME.accent}15`, color: THEME.accent, border: `1px solid ${THEME.accent}40` }}
+            className="h-8 text-sm flex items-center gap-2 disabled:opacity-50 px-3 hover:bg-[var(--t-panel-hover)]"
+            style={{ background: 'transparent', color: 'var(--t-accent)' }}
           >
             <History className="w-3.5 h-3.5" />
-            Version History
+            Version history
           </button>
           <button
             onClick={handleDelete}
             disabled={deleting}
-            className="text-xs px-3 py-1.5 rounded flex items-center gap-1.5 disabled:opacity-50"
-            style={{ background: `${THEME.colors.red}15`, color: THEME.colors.red, border: `1px solid ${THEME.colors.red}40` }}
+            className="h-8 text-sm flex items-center gap-2 disabled:opacity-50 w-8 justify-center hover:bg-[var(--tag-red-bg)]"
+            style={{ background: 'transparent', color: 'var(--t-error)' }}
+            title="Delete flow"
+            aria-label="Delete flow"
           >
-            <Trash2 className="w-3.5 h-3.5" />
-            Delete Flow
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -372,7 +385,7 @@ export default function FlowDetailPage() {
             <div className="px-5 py-4 flex items-center justify-between sticky top-0" style={{ background: THEME.panel, borderBottom: `1px solid ${THEME.border}` }}>
               <h3 className="flex items-center gap-2 font-semibold" style={{ color: THEME.text.primary }}>
                 <History className="w-4 h-4" />
-                Version History
+                Version history
               </h3>
               <button onClick={() => setShowVersions(false)} style={{ color: THEME.text.secondary }}>
                 <X className="w-4 h-4" />

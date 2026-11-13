@@ -129,14 +129,13 @@ export function SettingsTabs() {
               fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
               fontSize: 11,
               fontWeight: 500,
-              letterSpacing: '0.08em',
+              letterSpacing: 0,
               borderRadius: 0,
               whiteSpace: 'nowrap',
               background: 'transparent',
               color: active ? 'var(--t-text)' : 'var(--t-text-muted)',
               borderBottom: `2px solid ${active ? 'var(--t-accent)' : 'transparent'}`,
               marginBottom: -1,
-              textTransform: 'uppercase',
               transition: 'color 0.12s, border-color 0.12s',
             }}
             className="hover:!text-[var(--t-text)]"

@@ -206,7 +206,7 @@ export default function NewSchedulerPage() {
       </Link>
 
       <div className="mb-6">
-        <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>
+        <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: 0 }}>
           New Scheduler
         </h1>
         <p style={{ fontSize: 13, color: T.textMuted, marginTop: 6 }}>
@@ -224,7 +224,7 @@ export default function NewSchedulerPage() {
           }}
         >
           <AlertCircle className="w-4 h-4 flex-shrink-0" style={{ color: T.red }} />
-          <span style={{ fontFamily: MONO, fontSize: 12, color: T.red, letterSpacing: '0.04em' }}>
+          <span style={{ fontFamily: MONO, fontSize: 12, color: T.red, letterSpacing: 0 }}>
             {submitError}
           </span>
         </div>
@@ -351,8 +351,7 @@ Body: { "input": {...} }`}
                         style={{
                           fontFamily: MONO, fontSize: 10.5, padding: '4px 8px',
                           borderRadius: 2, background: 'transparent', color: T.textSec,
-                          border: `1px solid ${T.border}`, letterSpacing: '0.06em',
-                          textTransform: 'uppercase', cursor: 'pointer',
+                          border: `1px solid ${T.border}`, letterSpacing: 0, cursor: 'pointer',
                         }}
                       >
                         {preset.label}
@@ -448,7 +447,7 @@ Body: { "input": {...} }`}
                   <h3
                     style={{
                       fontFamily: MONO, fontSize: 10, fontWeight: 600, color: T.textSec,
-                      letterSpacing: '0.14em', textTransform: 'uppercase',
+                      letterSpacing: 0,
                     }}
                   >
                     // FLOWS TO RUN
@@ -459,7 +458,7 @@ Body: { "input": {...} }`}
                 </div>
                 <Link
                   href={`/p/${projectId}/flows/new`}
-                  style={{ fontFamily: MONO, fontSize: 10.5, color: T.accent, letterSpacing: '0.08em' }}
+                  style={{ fontFamily: MONO, fontSize: 10.5, color: T.accent, letterSpacing: 0 }}
                 >
                   + NEW FLOW
                 </Link>
@@ -553,7 +552,7 @@ Body: { "input": {...} }`}
                     <p style={{ color: T.textSec, fontSize: 12 }}>No flows found</p>
                     <Link
                       href={`/p/${projectId}/flows/new`}
-                      style={{ color: T.accent, fontFamily: MONO, fontSize: 11, display: 'inline-block', marginTop: 6, letterSpacing: '0.06em' }}
+                      style={{ color: T.accent, fontFamily: MONO, fontSize: 11, display: 'inline-block', marginTop: 6, letterSpacing: 0 }}
                     >
                       + CREATE YOUR FIRST FLOW
                     </Link>
@@ -574,7 +573,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h3
         style={{
           fontFamily: MONO, fontSize: 10, fontWeight: 600, color: T.textSec,
-          marginBottom: 14, letterSpacing: '0.14em', textTransform: 'uppercase',
+          marginBottom: 14, letterSpacing: 0,
         }}
       >
         // {title}
@@ -598,7 +597,7 @@ function Field({
         style={{
           fontFamily: MONO, fontSize: 10.5, fontWeight: 500, color: T.textSec,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          marginBottom: 5, letterSpacing: '0.08em', textTransform: 'uppercase',
+          marginBottom: 5, letterSpacing: 0,
         }}
       >
         <span>
@@ -625,7 +624,7 @@ function Callout({
     >
       <div className="flex items-center gap-2 mb-1.5">
         <Icon className="w-3.5 h-3.5" style={{ color }} />
-        <span style={{ fontFamily: MONO, fontSize: 10.5, color, fontWeight: 600, letterSpacing: '0.1em' }}>
+        <span style={{ fontFamily: MONO, fontSize: 10.5, color, fontWeight: 600, letterSpacing: 0 }}>
           {label}
         </span>
       </div>
@@ -637,7 +636,7 @@ function Callout({
 function preStyle(): React.CSSProperties {
   return {
     fontFamily: MONO, fontSize: 10.5, color: T.textMuted,
-    marginTop: 8, lineHeight: 1.5, whiteSpace: 'pre-wrap', letterSpacing: '0.02em',
+    marginTop: 8, lineHeight: 1.5, whiteSpace: 'pre-wrap', letterSpacing: 0,
   };
 }
 

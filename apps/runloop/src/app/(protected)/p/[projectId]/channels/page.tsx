@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { BellRing, Send, Loader2, RefreshCcw, Wifi } from 'lucide-react';
 import { SharpButton } from '@/components/ControlChrome';
 
-const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
+const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
 
 interface ChannelRow {
   name: string;
@@ -124,7 +124,7 @@ export default function ChannelsPage() {
           className="fixed bottom-6 right-6 z-50 px-4 py-2 rounded-sm"
           style={{
             background: 'var(--t-accent)', color: '#fff',
-            fontFamily: MONO, fontSize: 12, letterSpacing: '0.04em',
+            fontFamily: MONO, fontSize: 12, letterSpacing: 0,
           }}
         >
           {toast}
@@ -133,7 +133,7 @@ export default function ChannelsPage() {
 
       <div className="flex items-end justify-between mb-6 gap-4 flex-wrap">
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 600, color: 'var(--t-text)', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: 24, fontWeight: 600, color: 'var(--t-text)', letterSpacing: 0 }}>
             Channels
           </h1>
           <p style={{ fontSize: 13, color: 'var(--t-text-muted)', marginTop: 6 }}>
@@ -148,7 +148,7 @@ export default function ChannelsPage() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-2 mb-6">
         <div className="p-3" style={{ background: 'var(--t-panel)', border: '1px solid var(--t-border)', borderRadius: 2 }}>
-          <div style={{ fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: 0, }}>
             Active channels
           </div>
           <div style={{ fontFamily: MONO, fontSize: 26, fontWeight: 600, color: 'var(--t-text)', marginTop: 4 }}>
@@ -156,7 +156,7 @@ export default function ChannelsPage() {
           </div>
         </div>
         <div className="p-3" style={{ background: 'var(--t-panel)', border: '1px solid var(--t-border)', borderRadius: 2 }}>
-          <div style={{ fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: 0, }}>
             Live subscribers
           </div>
           <div style={{ fontFamily: MONO, fontSize: 26, fontWeight: 600, color: 'var(--t-text)', marginTop: 4 }}>
@@ -164,7 +164,7 @@ export default function ChannelsPage() {
           </div>
         </div>
         <div className="p-3" style={{ background: 'var(--t-panel)', border: '1px solid var(--t-border)', borderRadius: 2 }}>
-          <div style={{ fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: 0, }}>
             Lifetime publishes
           </div>
           <div style={{ fontFamily: MONO, fontSize: 26, fontWeight: 600, color: 'var(--t-text)', marginTop: 4 }}>
@@ -257,7 +257,7 @@ export default function ChannelsPage() {
               <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--t-text)' }}>Tap subscriber (live)</span>
               <span
                 style={{
-                  fontFamily: MONO, fontSize: 10, letterSpacing: '0.1em',
+                  fontFamily: MONO, fontSize: 10, letterSpacing: 0,
                   color:
                     tapStatus === 'open' ? 'var(--t-success)' :
                     tapStatus === 'connecting' ? 'var(--t-text)' :

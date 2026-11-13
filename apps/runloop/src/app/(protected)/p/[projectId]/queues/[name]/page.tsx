@@ -236,7 +236,7 @@ export default function QueueDetailPage() {
           style={{
             background: T.panel, border: `1px solid ${T.border}`,
             fontFamily: MONO, fontSize: 12, color: T.text, borderRadius: 2,
-            letterSpacing: '0.04em',
+            letterSpacing: 0,
           }}
         >
           {toast}
@@ -254,7 +254,7 @@ export default function QueueDetailPage() {
       <div className="flex items-end justify-between mb-6 gap-4 flex-wrap">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>
+            <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: 0 }}>
               {def.Name}
             </h1>
             <MonoTag tone="accent">{def.Backend}</MonoTag>
@@ -457,8 +457,7 @@ export default function QueueDetailPage() {
             fontSize: 11,
             fontWeight: 600,
             color: T.textMuted,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
+            letterSpacing: 0,
             marginBottom: 12,
           }}
         >
@@ -581,7 +580,7 @@ export default function QueueDetailPage() {
                 <span
                   style={{
                     fontFamily: MONO, fontSize: 10, fontWeight: 500,
-                    color: T.textMuted, letterSpacing: '0.12em', textTransform: 'uppercase',
+                    color: T.textMuted, letterSpacing: 0,
                   }}
                 >
                   {meta.label}
@@ -591,14 +590,14 @@ export default function QueueDetailPage() {
                 style={{
                   fontFamily: MONO, fontSize: 26, fontWeight: 600,
                   color: v > 0 ? meta.color : T.textMuted, lineHeight: 1,
-                  letterSpacing: '-0.02em',
+                  letterSpacing: 0,
                 }}
               >
                 {v}
               </div>
               {s === 'PENDING' && oldestSec > 0 && (
                 <div
-                  style={{ fontFamily: MONO, fontSize: 10, color: T.textMuted, marginTop: 6, letterSpacing: '0.04em' }}
+                  style={{ fontFamily: MONO, fontSize: 10, color: T.textMuted, marginTop: 6, letterSpacing: 0 }}
                 >
                   oldest {formatAge(oldestSec)}
                 </div>
@@ -618,8 +617,7 @@ export default function QueueDetailPage() {
               onClick={() => setFilterStatus(s)}
               style={{
                 padding: '4px 10px', borderRadius: 2,
-                fontFamily: MONO, fontSize: 10.5, fontWeight: 500, letterSpacing: '0.08em',
-                textTransform: 'uppercase',
+                fontFamily: MONO, fontSize: 10.5, fontWeight: 500, letterSpacing: 0,
                 background: active ? T.accent : 'transparent',
                 color: active ? '#fff' : T.textSec,
                 border: `1px solid ${active ? T.accent : T.border}`,
@@ -633,7 +631,7 @@ export default function QueueDetailPage() {
           onClick={fetchAll}
           style={{
             marginLeft: 'auto', fontFamily: MONO, fontSize: 10.5,
-            color: T.textMuted, letterSpacing: '0.08em',
+            color: T.textMuted, letterSpacing: 0,
           }}
           className="flex items-center gap-1.5 hover:opacity-80"
         >
@@ -657,7 +655,7 @@ export default function QueueDetailPage() {
         {jobs.length === 0 ? (
           <div className="text-center py-12" style={{ color: T.textMuted }}>
             <Inbox className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p style={{ fontFamily: MONO, fontSize: 11, letterSpacing: '0.08em' }}>
+            <p style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 0 }}>
               {def.Backend === 'postgres'
                 ? '// NO JOBS MATCH THIS FILTER'
                 : `// ${def.Backend.toUpperCase()} STORES JOBS IN BROKER — ONLY DLQ MIRRORED`}
@@ -679,7 +677,7 @@ export default function QueueDetailPage() {
                   <span
                     style={{
                       width: 40, fontFamily: MONO, fontSize: 10.5,
-                      color: T.textMuted, letterSpacing: '0.06em',
+                      color: T.textMuted, letterSpacing: 0,
                     }}
                   >
                     {String(i + 1).padStart(3, '0')}
@@ -698,7 +696,7 @@ export default function QueueDetailPage() {
                     className="flex items-center gap-1.5"
                     style={{
                       width: 90, fontFamily: MONO, fontSize: 10.5,
-                      color: meta.color, letterSpacing: '0.08em', textTransform: 'uppercase',
+                      color: meta.color, letterSpacing: 0,
                     }}
                   >
                     <StatusDot color={meta.color} soft />
@@ -723,7 +721,7 @@ export default function QueueDetailPage() {
                   <span
                     style={{
                       width: 170, fontFamily: MONO, fontSize: 10.5,
-                      color: T.textMuted, letterSpacing: '0.02em',
+                      color: T.textMuted, letterSpacing: 0,
                     }}
                   >
                     {j.createdAt ? new Date(j.createdAt).toLocaleString() : '—'}

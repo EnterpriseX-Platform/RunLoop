@@ -317,7 +317,7 @@ export default function SchedulersPage() {
     );
   }
 
-  const MONO = "'IBM Plex Mono', ui-monospace, monospace";
+  const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
   const runningCount = schedulers.filter((s) => s.status === 'ACTIVE').length;
   const pausedCount = schedulers.filter((s) => s.status === 'PAUSED').length;
 
@@ -357,7 +357,7 @@ export default function SchedulersPage() {
                 fontFamily: MONO,
                 fontSize: 11,
                 fontWeight: 500,
-                letterSpacing: '0.06em',
+                letterSpacing: 0,
               }}
             >
               {tab.toUpperCase()}
@@ -366,7 +366,7 @@ export default function SchedulersPage() {
         })}
         <div
           className="ml-auto flex items-center gap-3"
-          style={{ fontFamily: MONO, fontSize: 10.5, color: THEME.text.muted, letterSpacing: '0.04em' }}
+          style={{ fontFamily: MONO, fontSize: 10.5, color: THEME.text.muted, letterSpacing: 0 }}
         >
           <span>
             <span style={{ color: '#10B981' }}>●</span> {runningCount} ACTIVE
@@ -408,7 +408,7 @@ export default function SchedulersPage() {
           <div
             className="flex items-center gap-3 px-4 py-2"
             style={{
-              fontFamily: MONO, fontSize: 10, letterSpacing: '0.14em',
+              fontFamily: MONO, fontSize: 10, letterSpacing: 0,
               color: THEME.text.muted,
               borderBottom: `1px solid ${THEME.border}`,
               background: 'color-mix(in srgb, var(--t-bg) 40%, transparent)',
@@ -439,7 +439,7 @@ export default function SchedulersPage() {
                 </div>
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <p style={{ fontSize: 13, fontWeight: 500, color: THEME.text.primary, letterSpacing: '-0.005em' }} className="truncate">
+                  <p style={{ fontSize: 13, fontWeight: 500, color: THEME.text.primary, letterSpacing: 0 }} className="truncate">
                     {scheduler.name}
                   </p>
                   <p style={{ fontFamily: MONO, fontSize: 10.5, color: THEME.text.muted }} className="truncate">
@@ -456,7 +456,7 @@ export default function SchedulersPage() {
                 </span>
                 <span
                   className="flex items-center justify-end gap-1.5"
-                  style={{ width: 70, fontFamily: MONO, fontSize: 10.5, color: st.color, letterSpacing: '0.04em' }}
+                  style={{ width: 70, fontFamily: MONO, fontSize: 10.5, color: st.color, letterSpacing: 0 }}
                 >
                   <span
                     style={{

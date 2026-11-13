@@ -18,7 +18,7 @@ import type { Flow, FlowStatus, FlowType, JobType } from '@/types';
 import { HeroHeader, MetricChip, SharpButton } from '@/components/ControlChrome';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
-const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
+const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
 const THEME = {
   bg: 'var(--t-bg)',
   panel: 'var(--t-panel)',
@@ -123,7 +123,7 @@ export default function FlowsPage() {
 
   // Monospace font chain reused across headings/tags. Kept local so the
   // component file stays self-contained; Layout.tsx ships the same chain.
-  const MONO = "'IBM Plex Mono', ui-monospace, monospace";
+  const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
   const activeCount = flows.filter((f) => f.status === 'ACTIVE').length;
   const draftCount = flows.filter((f) => f.status === 'DRAFT').length;
 
@@ -161,7 +161,7 @@ export default function FlowsPage() {
                 fontFamily: MONO,
                 fontSize: 11,
                 fontWeight: 500,
-                letterSpacing: '0.06em',
+                letterSpacing: 0,
               }}
             >
               {tab.toUpperCase()}
@@ -170,7 +170,7 @@ export default function FlowsPage() {
         })}
         <div
           className="ml-auto flex items-center gap-3"
-          style={{ fontFamily: MONO, fontSize: 10.5, color: THEME.text.muted, letterSpacing: '0.04em' }}
+          style={{ fontFamily: MONO, fontSize: 10.5, color: THEME.text.muted, letterSpacing: 0 }}
         >
           <span>
             <span style={{ color: '#10B981' }}>●</span> {activeCount} ACTIVE
@@ -216,7 +216,7 @@ export default function FlowsPage() {
             style={{
               fontFamily: MONO,
               fontSize: 10,
-              letterSpacing: '0.14em',
+              letterSpacing: 0,
               color: THEME.text.muted,
               borderBottom: `1px solid ${THEME.border}`,
               background: 'color-mix(in srgb, var(--t-bg) 40%, transparent)',
@@ -264,7 +264,7 @@ export default function FlowsPage() {
                 </div>
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <p style={{ fontSize: 13, fontWeight: 500, color: THEME.text.primary, letterSpacing: '-0.005em' }} className="truncate">
+                  <p style={{ fontSize: 13, fontWeight: 500, color: THEME.text.primary, letterSpacing: 0 }} className="truncate">
                     {flow.name}
                   </p>
                   <p
@@ -277,7 +277,7 @@ export default function FlowsPage() {
                 {/* Status dot + label — denser than the old pill badges */}
                 <span
                   className="flex items-center justify-end gap-1.5"
-                  style={{ width: 70, fontFamily: MONO, fontSize: 10.5, color: status.color, letterSpacing: '0.04em' }}
+                  style={{ width: 70, fontFamily: MONO, fontSize: 10.5, color: status.color, letterSpacing: 0 }}
                 >
                   <span
                     style={{
@@ -291,7 +291,7 @@ export default function FlowsPage() {
                 <span
                   style={{
                     width: 60, textAlign: 'right',
-                    fontFamily: MONO, fontSize: 10.5, color: iconColor, letterSpacing: '0.04em',
+                    fontFamily: MONO, fontSize: 10.5, color: iconColor, letterSpacing: 0,
                   }}
                 >
                   {ft.label.toUpperCase()}

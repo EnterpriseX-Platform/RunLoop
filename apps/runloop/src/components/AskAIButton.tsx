@@ -34,7 +34,7 @@ export function AskAIButton({ prompt, label, size = 'sm', className = '' }: Prop
         padding,
         fontSize,
         fontWeight: 500,
-        letterSpacing: '0.01em',
+        letterSpacing: 0,
         cursor: 'pointer',
         whiteSpace: 'nowrap',
       }}

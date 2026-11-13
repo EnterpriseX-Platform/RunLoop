@@ -130,8 +130,8 @@ export function Section({ title, children }: { title: string; children: React.Re
           style={{ background: 'var(--t-accent)', opacity: 0.6 }}
         />
         <h3
-          className="text-[11px] font-semibold uppercase"
-          style={{ color: 'var(--t-text-secondary)', letterSpacing: '0.1em' }}
+          className="text-[11px] font-semibold "
+          style={{ color: 'var(--t-text-secondary)', letterSpacing: 0 }}
         >
           {title}
         </h3>
@@ -347,7 +347,7 @@ export function CodeEditor({
     <div>
       <div className="flex items-center justify-between mb-1.5">
         <label className="text-sm font-medium" style={{ color: 'var(--t-text-secondary)' }}>{label}</label>
-        <span className="text-xs uppercase" style={{ color: 'var(--t-text-muted)' }}>{language}</span>
+        <span className="text-xs " style={{ color: 'var(--t-text-muted)' }}>{language}</span>
       </div>
       <textarea
         value={value}

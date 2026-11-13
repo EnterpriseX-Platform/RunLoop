@@ -380,7 +380,7 @@ export default function ExecutionsPage() {
     );
   }
 
-  const MONO = "'IBM Plex Mono', ui-monospace, monospace";
+  const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
   return (
     <div style={{ fontFamily: FONT }}>
       <HeroHeader
@@ -642,7 +642,7 @@ export default function ExecutionsPage() {
                           background: `${THEME.colors.red}14`,
                           color: THEME.colors.red,
                           border: `1px solid ${THEME.colors.red}30`,
-                          letterSpacing: '0.04em',
+                          letterSpacing: 0,
                         }}
                       >
                         {entry.reason}
@@ -669,7 +669,7 @@ export default function ExecutionsPage() {
                     <div
                       style={{
                         fontFamily: MONO, fontSize: 10.5,
-                        color: THEME.text.muted, letterSpacing: '0.02em',
+                        color: THEME.text.muted, letterSpacing: 0,
                       }}
                       className="flex items-center gap-3 flex-wrap"
                     >
@@ -751,11 +751,11 @@ export default function ExecutionsPage() {
             overflow: 'hidden',
           }}
         >
-          {/* Header row — mono uppercase columns */}
+          {/* Header row — mono  columns */}
           <div
             className="flex items-center gap-3 px-4 py-2"
             style={{
-              fontFamily: MONO, fontSize: 10, letterSpacing: '0.14em',
+              fontFamily: MONO, fontSize: 10, letterSpacing: 0,
               color: THEME.text.muted,
               borderBottom: `1px solid ${THEME.border}`,
               background: 'color-mix(in srgb, var(--t-bg) 40%, transparent)',
@@ -816,7 +816,7 @@ export default function ExecutionsPage() {
                   {/* Name + time — left column */}
                   <div className="flex-1 min-w-0">
                     <p
-                      style={{ fontSize: 13, fontWeight: 500, color: THEME.text.primary, letterSpacing: '-0.005em' }}
+                      style={{ fontSize: 13, fontWeight: 500, color: THEME.text.primary, letterSpacing: 0 }}
                       className="truncate"
                     >
                       {queueNameFromSchedulerId(execution.schedulerId) ||
@@ -836,7 +836,7 @@ export default function ExecutionsPage() {
                   {/* Trigger tag — sharp, mono */}
                   <span
                     className="flex items-center justify-end gap-1.5"
-                    style={{ width: 80, fontFamily: MONO, fontSize: 10, color: trigger.color, letterSpacing: '0.08em' }}
+                    style={{ width: 80, fontFamily: MONO, fontSize: 10, color: trigger.color, letterSpacing: 0 }}
                   >
                     <TriggerIcon style={{ width: 10, height: 10 }} />
                     {execution.triggerType}
@@ -845,7 +845,7 @@ export default function ExecutionsPage() {
                   {/* Status dot + label — same pattern as other list pages */}
                   <span
                     className="flex items-center justify-end gap-1.5"
-                    style={{ width: 70, fontFamily: MONO, fontSize: 10.5, color: st.color, letterSpacing: '0.04em' }}
+                    style={{ width: 70, fontFamily: MONO, fontSize: 10.5, color: st.color, letterSpacing: 0 }}
                   >
                     <span
                       style={{

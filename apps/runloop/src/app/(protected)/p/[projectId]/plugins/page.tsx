@@ -118,7 +118,7 @@ export default function PluginsPage() {
     notify('Uninstalled');
   }
 
-  const MONO = "'IBM Plex Mono', ui-monospace, monospace";
+  const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
   const enabledCount = plugins.filter((p) => p.enabled).length;
 
   return (
@@ -134,7 +134,7 @@ export default function PluginsPage() {
 
       <div className="flex items-end justify-between mb-6 gap-4">
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>Plugins</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: 0 }}>Plugins</h1>
           <p style={{ fontSize: 13, color: T.textMuted, marginTop: 6 }}>
             Install third-party node types. Plugins run as HTTP handlers — they can be written in any language.
           </p>
@@ -143,7 +143,7 @@ export default function PluginsPage() {
           onClick={() => { setInstallOpen(true); setError(null); }}
           style={{
             background: T.accent, color: '#fff',
-            fontSize: 12, fontWeight: 500, letterSpacing: '0.02em',
+            fontSize: 12, fontWeight: 500, letterSpacing: 0,
             padding: '7px 14px', borderRadius: 2,
           }}
           className="flex items-center gap-1.5 hover:opacity-90 transition"
@@ -267,11 +267,11 @@ export default function PluginsPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span style={{ fontSize: 14, fontWeight: 500, color: T.text, letterSpacing: '-0.005em' }}>
+                    <span style={{ fontSize: 14, fontWeight: 500, color: T.text, letterSpacing: 0 }}>
                       {p.manifest.displayName || p.name}
                     </span>
                     <span style={{
-                      fontFamily: MONO, fontSize: 10, fontWeight: 500, letterSpacing: '0.06em',
+                      fontFamily: MONO, fontSize: 10, fontWeight: 500, letterSpacing: 0,
                       color: T.textSec, background: 'transparent',
                       padding: '1px 5px', borderRadius: 2,
                       border: `1px solid ${T.border}`,
@@ -283,13 +283,13 @@ export default function PluginsPage() {
                         fontFamily: MONO, fontSize: 10, fontWeight: 500, color: T.red,
                         background: 'transparent', padding: '1px 5px', borderRadius: 2,
                         border: '1px solid color-mix(in srgb, #EF4444 40%, transparent)',
-                        letterSpacing: '0.08em',
+                        letterSpacing: 0,
                       }}>
                         DISABLED
                       </span>
                     )}
                   </div>
-                  <p style={{ fontFamily: MONO, fontSize: 10.5, color: T.textMuted, marginTop: 3, letterSpacing: '0.02em' }} className="truncate">
+                  <p style={{ fontFamily: MONO, fontSize: 10.5, color: T.textMuted, marginTop: 3, letterSpacing: 0 }} className="truncate">
                     {p.manifest.description || p.manifest.category || 'plugin'}
                     {p.manifest.handler?.url && <> · {p.manifest.handler.url}</>}
                   </p>

@@ -423,25 +423,25 @@ export default function MembersPage() {
               <thead style={{ background: THEME.bg }}>
                 <tr>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium  "
                     style={{ color: THEME.text.secondary }}
                   >
                     User
                   </th>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium  "
                     style={{ color: THEME.text.secondary }}
                   >
                     Role
                   </th>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium  "
                     style={{ color: THEME.text.secondary }}
                   >
                     Joined
                   </th>
                   <th
-                    className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-3 text-right text-xs font-medium  "
                     style={{ color: THEME.text.secondary }}
                   >
                     Actions
@@ -488,7 +488,7 @@ export default function MembersPage() {
                               {member.name || member.email.split('@')[0]}
                               {isSelf && (
                                 <span
-                                  className="px-1.5 py-0.5 text-[10px] rounded font-medium uppercase tracking-wider"
+                                  className="px-1.5 py-0.5 text-[10px] rounded font-medium  "
                                   style={{
                                     background: `${THEME.colors.blue}15`,
                                     color: THEME.colors.blue,

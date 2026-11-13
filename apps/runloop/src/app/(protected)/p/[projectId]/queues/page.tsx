@@ -156,7 +156,7 @@ export default function QueuesPage() {
     );
   }
 
-  const MONO = "'IBM Plex Mono', ui-monospace, monospace";
+  const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
   const totalPending = queues.reduce((n, q) => n + (statsMap[q.name]?.counts?.PENDING || 0), 0);
   const totalDlq = queues.reduce((n, q) => n + (statsMap[q.name]?.counts?.DLQ || 0), 0);
   // How many queues currently have at least one critical alert? Drives
@@ -244,12 +244,12 @@ export default function QueuesPage() {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span style={{ fontSize: 14, fontWeight: 500, color: THEME.text.primary, letterSpacing: '-0.005em' }}>{q.name}</span>
+                    <span style={{ fontSize: 14, fontWeight: 500, color: THEME.text.primary, letterSpacing: 0 }}>{q.name}</span>
                     <span
                       style={{
-                        fontFamily: MONO, fontSize: 9.5, fontWeight: 500, letterSpacing: '0.08em',
+                        fontFamily: MONO, fontSize: 9.5, fontWeight: 500, letterSpacing: 0,
                         color: meta.color, background: 'transparent',
-                        padding: '1px 5px', borderRadius: 2, textTransform: 'uppercase',
+                        padding: '1px 5px', borderRadius: 2,
                         border: `1px solid ${meta.color}40`,
                       }}
                     >
@@ -260,7 +260,7 @@ export default function QueuesPage() {
                         fontFamily: MONO, fontSize: 9.5, fontWeight: 500, color: '#EF4444',
                         background: 'transparent', padding: '1px 5px', borderRadius: 2,
                         border: '1px solid color-mix(in srgb, #EF4444 40%, transparent)',
-                        letterSpacing: '0.08em',
+                        letterSpacing: 0,
                       }}>
                         DISABLED
                       </span>
@@ -278,7 +278,7 @@ export default function QueuesPage() {
                               background: `color-mix(in srgb, ${c} 14%, transparent)`,
                               border: `1px solid color-mix(in srgb, ${c} 45%, transparent)`,
                               padding: '1px 6px', borderRadius: 2,
-                              letterSpacing: '0.08em', textTransform: 'uppercase',
+                              letterSpacing: 0,
                             }}
                           >
                             {a.label}
@@ -286,7 +286,7 @@ export default function QueuesPage() {
                         );
                       })}
                   </div>
-                  <div style={{ fontFamily: MONO, fontSize: 10.5, color: THEME.text.muted, marginTop: 2, letterSpacing: '0.02em' }}>
+                  <div style={{ fontFamily: MONO, fontSize: 10.5, color: THEME.text.muted, marginTop: 2, letterSpacing: 0 }}>
                     concurrency={q.concurrency} · max_attempts={q.maxAttempts}
                   </div>
                 </div>
@@ -314,7 +314,7 @@ function Stat({ label, value, color, bold }: { label: string; value: number; col
   return (
     <div className="flex flex-col items-end min-w-[52px]">
       <span style={{ fontSize: 15, fontWeight: bold ? 700 : 600, color }}>{value}</span>
-      <span style={{ fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+      <span style={{ fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: 0, }}>
         {label}
       </span>
     </div>

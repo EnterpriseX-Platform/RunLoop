@@ -14,7 +14,7 @@ import { Loader2, ArrowRight } from 'lucide-react';
 // colors go through --t-* so light and dark themes both hold up.
 
 const SANS = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
-const MONO = "'IBM Plex Mono', ui-monospace, monospace";
+const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -73,11 +73,11 @@ export default function LoginPage() {
       >
         <div className="flex items-center gap-2">
           <LogoMark />
-          <span style={{ color: 'var(--t-text)', fontWeight: 500, letterSpacing: '-0.01em' }}>
+          <span style={{ color: 'var(--t-text)', fontWeight: 500, letterSpacing: 0 }}>
             runloop
           </span>
           <span style={{ opacity: 0.4, margin: '0 6px' }}>/</span>
-          <span style={{ letterSpacing: '0.08em' }}>AUTH</span>
+          <span style={{ letterSpacing: 0 }}>AUTH</span>
         </div>
         <CronTicker />
       </header>
@@ -85,7 +85,7 @@ export default function LoginPage() {
       {/* Footer sys-line. Tiny, but it completes the "inside a system" frame. */}
       <footer
         className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-6 py-5 z-10"
-        style={{ fontFamily: MONO, fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: '0.1em' }}
+        style={{ fontFamily: MONO, fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: 0 }}
       >
         <span>{'//'} engine: fiber+gocron</span>
         <span className="flex items-center gap-2">
@@ -124,7 +124,7 @@ export default function LoginPage() {
                 style={{
                   fontFamily: MONO,
                   fontSize: 10,
-                  letterSpacing: '0.18em',
+                  letterSpacing: 0,
                   color: 'var(--t-text-muted)',
                   marginBottom: 14,
                 }}
@@ -140,7 +140,7 @@ export default function LoginPage() {
                   lineHeight: 1.15,
                   color: 'var(--t-text)',
                   marginBottom: 8,
-                  letterSpacing: '-0.015em',
+                  letterSpacing: 0,
                 }}
               >
                 Authenticate
@@ -246,7 +246,7 @@ export default function LoginPage() {
               fontSize: 11,
               fontFamily: MONO,
               color: 'var(--t-text-muted)',
-              letterSpacing: '0.05em',
+              letterSpacing: 0,
             }}
           >
             trouble?{' '}
@@ -309,7 +309,7 @@ function Field({
           style={{
             fontFamily: MONO,
             fontSize: 10,
-            letterSpacing: '0.14em',
+            letterSpacing: 0,
             color: focused ? 'var(--t-accent)' : 'var(--t-text-muted)',
             transition: 'color 0.15s',
           }}
@@ -320,7 +320,7 @@ function Field({
           style={{
             fontFamily: MONO,
             fontSize: 9,
-            letterSpacing: '0.08em',
+            letterSpacing: 0,
             color: 'var(--t-text-muted)',
             opacity: 0.55,
           }}
@@ -387,7 +387,7 @@ function ExecuteButton({ disabled, loading }: { disabled: boolean; loading: bool
       style={{
         fontFamily: MONO,
         fontSize: 12,
-        letterSpacing: '0.14em',
+        letterSpacing: 0,
         fontWeight: 500,
         padding: '12px 16px',
         borderRadius: 2,
@@ -567,7 +567,7 @@ function CronTicker() {
   }, []);
   return (
     <div className="flex items-center gap-3" style={{ fontFamily: MONO, fontSize: 10 }}>
-      <span style={{ color: 'var(--t-text-muted)', letterSpacing: '0.08em' }}>CRON</span>
+      <span style={{ color: 'var(--t-text-muted)', letterSpacing: 0 }}>CRON</span>
       <span style={{ color: 'var(--t-text-secondary)' }}>*/2 * * * * *</span>
       <span
         style={{
@@ -579,7 +579,7 @@ function CronTicker() {
           color: flash ? 'var(--t-accent)' : 'var(--t-text-secondary)',
           background: flash ? 'color-mix(in srgb, var(--t-accent) 10%, transparent)' : 'transparent',
           transition: 'color 0.2s, background 0.2s',
-          letterSpacing: '0.05em',
+          letterSpacing: 0,
         }}
       >
         t={String(tick).padStart(4, '0')}

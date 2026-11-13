@@ -24,7 +24,7 @@ import { SharpButton } from '@/components/ControlChrome';
 import type { DashboardStats, Execution } from '@/types';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
-const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
+const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
 
 const THEME = {
   bg: 'var(--t-bg)',
@@ -37,14 +37,21 @@ const THEME = {
   accentLight: 'var(--t-accent-light)',
   input: 'var(--t-input)',
   colors: {
-    blue: '#3B82F6',
-    emerald: '#10B981',
-    purple: '#8B5CF6',
-    amber: '#F59E0B',
-    red: '#EF4444',
-    cyan: '#06B6D4',
+    blue: '#0f62fe',
+    emerald: '#24a148',
+    purple: '#8a3ffc',
+    amber: '#b28600',
+    red: '#da1e28',
+    cyan: '#1192e8',
   }
 };
+
+function tagFor(status: string): React.CSSProperties {
+  if (status === 'SUCCESS') return { background: 'var(--tag-green-bg)', color: 'var(--tag-green-text)' };
+  if (status === 'FAILED' || status === 'TIMEOUT') return { background: 'var(--tag-red-bg)', color: 'var(--tag-red-text)' };
+  if (status === 'RUNNING') return { background: 'var(--tag-blue-bg)', color: 'var(--tag-blue-text)' };
+  return { background: 'var(--tag-orange-bg)', color: 'var(--tag-orange-text)' };
+}
 
 function relativeTime(date: string) {
   const diff = Date.now() - new Date(date).getTime();
@@ -151,10 +158,10 @@ export default function DashboardPage() {
     <div style={{ fontFamily: FONT, minHeight: '100%' }}>
       <div className="flex items-end justify-between mb-6 gap-4 flex-wrap">
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 600, color: THEME.text.primary, letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: 28, lineHeight: '36px', fontWeight: 400, color: THEME.text.primary }}>
             {selectedProject ? selectedProject.name : 'Dashboard'}
           </h1>
-          <p style={{ fontSize: 13, color: THEME.text.muted, marginTop: 6 }}>
+          <p style={{ fontSize: 14, color: THEME.text.secondary, marginTop: 4 }}>
             {selectedProject ? 'Project overview' : 'Overview of RunLoop system'}
           </p>
         </div>
@@ -177,93 +184,46 @@ export default function DashboardPage() {
                 background: THEME.panel,
                 border: `1px solid ${THEME.border}`,
                 borderRadius: 2,
-                padding: '14px 16px 12px',
-                transition: 'border-color 0.15s ease, transform 0.15s ease',
+                padding: 16,
+                transition: 'background 0.1s ease',
                 position: 'relative',
                 overflow: 'hidden',
               }}
-              className="hover:!border-[color:var(--t-accent)]"
+              className="hover:!bg-[var(--t-panel-hover)]"
             >
-              {/* Corner tick — schematic detail */}
-              <span
-                aria-hidden
-                style={{ position: 'absolute', top: 0, right: 0, width: 8, height: 1, background: stat.color, opacity: 0.65 }}
-              />
-              <span
-                aria-hidden
-                style={{ position: 'absolute', top: 0, right: 0, width: 1, height: 8, background: stat.color, opacity: 0.65 }}
-              />
-
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <stat.icon className="w-3.5 h-3.5" style={{ color: stat.color }} />
                   <span
                     style={{
-                      fontFamily: MONO,
-                      fontSize: 10,
-                      letterSpacing: '0.16em',
-                      color: THEME.text.muted,
+                      fontSize: 14,
+                      color: THEME.text.secondary,
                     }}
-                    className="uppercase"
                   >
                     {stat.label}
                   </span>
                 </div>
-                <span
-                  style={{
-                    fontFamily: MONO,
-                    fontSize: 9,
-                    letterSpacing: '0.08em',
-                    color: THEME.text.muted,
-                    opacity: 0.55,
-                  }}
-                >
-                  node.{String(idx + 1).padStart(2, '0')}
-                </span>
               </div>
 
               <p
                 style={{
-                  fontFamily: MONO,
-                  fontSize: 30,
-                  fontWeight: 500,
+                  fontSize: 32,
+                  fontWeight: 300,
+                  fontVariantNumeric: 'tabular-nums',
                   color: THEME.text.primary,
-                  lineHeight: 1,
+                  lineHeight: '40px',
                   marginBottom: 8,
-                  letterSpacing: '-0.02em',
+                  letterSpacing: 0,
                 }}
               >
-                {isLoading ? <span style={{ opacity: 0.4 }}>--</span> : stat.value}
+                {isLoading ? <span style={{ opacity: 0.4 }}>–</span> : stat.value}
               </p>
 
               <div className="flex items-center justify-between">
-                {/* Dot-trail: recent run history */}
-                <div className="flex items-center gap-[3px]">
-                  {recentRunDots.length === 0 ? (
-                    <span style={{ fontFamily: MONO, fontSize: 10, color: THEME.text.muted, opacity: 0.5 }}>
-                      no recent runs
-                    </span>
-                  ) : (
-                    recentRunDots.map((d, i) => (
-                      <span
-                        key={i}
-                        style={{
-                          width: 4,
-                          height: 10,
-                          background:
-                            d === 'ok' ? '#10B981' : d === 'err' ? '#EF4444' : THEME.text.muted,
-                          opacity: d === 'pend' ? 0.45 : 0.85,
-                        }}
-                      />
-                    ))
-                  )}
-                </div>
                 <p
                   style={{
-                    fontFamily: MONO,
-                    fontSize: 10,
+                    fontSize: 12,
                     color: THEME.text.secondary,
-                    letterSpacing: '0.04em',
                   }}
                 >
                   {stat.sub}
@@ -284,12 +244,12 @@ export default function DashboardPage() {
           <div style={{ background: THEME.panel, border: `1px solid ${THEME.border}`, borderRadius: 2, overflow: 'hidden' }}>
             <div
               className="flex items-center justify-between px-4 py-2.5"
-              style={{ borderBottom: `1px solid ${THEME.border}`, background: 'var(--t-input)' }}
+              style={{ borderBottom: `1px solid ${THEME.border}` }}
             >
               <span
                 style={{
-                  fontSize: 13,
-                  fontWeight: 600,
+                  fontSize: 16,
+                  fontWeight: 400,
                   color: THEME.text.primary,
                 }}
               >
@@ -299,11 +259,11 @@ export default function DashboardPage() {
                 href={`/p/${projectId}/executions`}
                 className="flex items-center gap-1"
                 style={{
-                  fontFamily: MONO, fontSize: 10, letterSpacing: '0.14em',
-                  color: THEME.accent, textTransform: 'uppercase',
+                  fontSize: 14,
+                  color: THEME.accent,
                 }}
               >
-                view all <ArrowUpRight className="w-3 h-3" />
+                View all <ArrowUpRight className="w-3 h-3" />
               </Link>
             </div>
             <div>
@@ -319,30 +279,25 @@ export default function DashboardPage() {
                     href={`/p/${projectId}/executions/${execution.id}`}
                     className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-[var(--t-panel-hover)] group"
                     style={{
-                      borderBottom: i < Math.min(recentExecutions.length, 5) - 1 ? `1px dashed ${THEME.borderLight}` : 'none',
+                      borderBottom: i < Math.min(recentExecutions.length, 5) - 1 ? `1px solid ${THEME.borderLight}` : 'none',
                       fontFamily: MONO,
                     }}
                   >
-                    {/* line-number gutter */}
-                    <span style={{ fontSize: 10, color: THEME.text.muted, opacity: 0.5, width: 22, textAlign: 'right' }}>
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
                     {/* status dot */}
                     <span
                       style={{
                         width: 7, height: 7, borderRadius: 999,
                         background: statusColor,
-                        boxShadow: `0 0 0 2px color-mix(in srgb, ${statusColor} 20%, transparent)`,
                         flexShrink: 0,
                       }}
                     />
                     {/* timestamp */}
-                    <span style={{ fontSize: 10.5, color: THEME.text.muted, minWidth: 56 }}>
+                    <span style={{ fontSize: 12, color: THEME.text.secondary, minWidth: 64 }}>
                       {relativeTime(execution.startedAt)}
                     </span>
                     {/* name */}
                     <span
-                      style={{ fontSize: 12, color: THEME.text.primary, fontWeight: 500 }}
+                      style={{ fontSize: 14, color: THEME.text.primary }}
                       className="flex-1 truncate"
                     >
                       {execution.runloop?.name
@@ -358,15 +313,14 @@ export default function DashboardPage() {
                     {/* status label */}
                     <span
                       style={{
-                        fontSize: 10,
-                        letterSpacing: '0.1em',
-                        color: statusColor,
-                        padding: '1px 6px',
-                        border: `1px solid color-mix(in srgb, ${statusColor} 35%, transparent)`,
+                        fontSize: 12,
+                        lineHeight: '16px',
+                        padding: '4px 8px',
+                        borderRadius: 24,
+                        ...tagFor(execution.status),
                       }}
-                      className="uppercase"
                     >
-                      {execution.status}
+                      {execution.status.charAt(0) + execution.status.slice(1).toLowerCase()}
                     </span>
                   </Link>
                 );
@@ -375,9 +329,9 @@ export default function DashboardPage() {
                   <p
                     style={{
                       fontFamily: MONO, fontSize: 11, color: THEME.text.muted,
-                      letterSpacing: '0.08em', marginBottom: 12,
+                      letterSpacing: 0, marginBottom: 12,
                     }}
-                    className="uppercase"
+                    className=""
                   >
                     No executions yet
                   </p>
@@ -386,11 +340,11 @@ export default function DashboardPage() {
                     className="inline-flex items-center gap-1.5"
                     style={{
                       fontFamily: MONO, fontSize: 11, color: THEME.accent,
-                      letterSpacing: '0.12em', textTransform: 'uppercase',
-                      borderBottom: `1px dashed ${THEME.accent}`,
+                      letterSpacing: 0,
+                      
                     }}
                   >
-                    $ create first scheduler →
+                    Create scheduler
                   </Link>
                 </div>
               )}
@@ -401,16 +355,10 @@ export default function DashboardPage() {
           <div style={{ background: THEME.panel, border: `1px solid ${THEME.border}`, borderRadius: 2, overflow: 'hidden' }}>
             <div
               className="flex items-center justify-between px-4 py-2.5"
-              style={{ borderBottom: `1px solid ${THEME.border}`, background: 'var(--t-input)' }}
+              style={{ borderBottom: `1px solid ${THEME.border}` }}
             >
               <span
-                style={{
-                  fontFamily: MONO,
-                  fontSize: 10,
-                  letterSpacing: '0.16em',
-                  color: THEME.text.muted,
-                }}
-                className="uppercase"
+                style={{ fontSize: 16, color: THEME.text.primary }}
               >
                 Recent flows
               </span>
@@ -418,11 +366,11 @@ export default function DashboardPage() {
                 href={`/p/${projectId}/flows`}
                 className="flex items-center gap-1"
                 style={{
-                  fontFamily: MONO, fontSize: 10, letterSpacing: '0.14em',
-                  color: THEME.accent, textTransform: 'uppercase',
+                  fontSize: 14,
+                  color: THEME.accent,
                 }}
               >
-                view all <ArrowUpRight className="w-3 h-3" />
+                View all <ArrowUpRight className="w-3 h-3" />
               </Link>
             </div>
             <div>
@@ -432,48 +380,36 @@ export default function DashboardPage() {
                   href={`/p/${projectId}/flows/${flow.id}`}
                   className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-[var(--t-panel-hover)]"
                   style={{
-                    borderBottom: i < Math.min(recentFlows.length, 5) - 1 ? `1px dashed ${THEME.borderLight}` : 'none',
+                    borderBottom: i < Math.min(recentFlows.length, 5) - 1 ? `1px solid ${THEME.borderLight}` : 'none',
                     fontFamily: MONO,
                   }}
                 >
-                  <span style={{ fontSize: 10, color: THEME.text.muted, opacity: 0.5, width: 22, textAlign: 'right' }}>
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
                   <Workflow className="w-3.5 h-3.5" style={{ color: THEME.colors.purple, flexShrink: 0 }} />
                   <span
-                    style={{ fontSize: 12, color: THEME.text.primary, fontWeight: 500 }}
+                    style={{ fontSize: 14, color: THEME.text.primary }}
                     className="flex-1 truncate"
                   >
                     {flow.name}
                   </span>
-                  <span
-                    style={{
-                      fontSize: 9, letterSpacing: '0.12em',
-                      color: THEME.text.muted,
-                      padding: '1px 5px', border: `1px solid ${THEME.border}`,
-                    }}
-                    className="uppercase"
-                  >
+                  <span style={{ fontSize: 12, color: THEME.text.secondary }}>
                     {flow.type || 'SIMPLE'}
                   </span>
                   <span
                     style={{
-                      fontSize: 10,
-                      letterSpacing: '0.1em',
-                      color: flow.status === 'ACTIVE' ? '#10B981' : '#F59E0B',
-                      padding: '1px 6px',
-                      border: `1px solid color-mix(in srgb, ${flow.status === 'ACTIVE' ? '#10B981' : '#F59E0B'} 35%, transparent)`,
+                      fontSize: 12, lineHeight: '16px', padding: '4px 8px', borderRadius: 24,
+                      ...(flow.status === 'ACTIVE' || !flow.status
+                        ? { background: 'var(--tag-green-bg)', color: 'var(--tag-green-text)' }
+                        : { background: 'var(--tag-gray-bg)', color: 'var(--tag-gray-text)' }),
                     }}
-                    className="uppercase"
                   >
-                    {flow.status || 'ACTIVE'}
+                    {(flow.status || 'ACTIVE').charAt(0) + (flow.status || 'ACTIVE').slice(1).toLowerCase()}
                   </span>
                 </Link>
               )) : (
                 <div className="px-4 py-10 text-center">
                   <p
-                    style={{ fontFamily: MONO, fontSize: 11, color: THEME.text.muted, letterSpacing: '0.08em', marginBottom: 12 }}
-                    className="uppercase"
+                    style={{ fontFamily: MONO, fontSize: 11, color: THEME.text.muted, letterSpacing: 0, marginBottom: 12 }}
+                    className=""
                   >
                     No flows yet
                   </p>
@@ -482,11 +418,11 @@ export default function DashboardPage() {
                     className="inline-flex items-center gap-1.5"
                     style={{
                       fontFamily: MONO, fontSize: 11, color: THEME.accent,
-                      letterSpacing: '0.12em', textTransform: 'uppercase',
-                      borderBottom: `1px dashed ${THEME.accent}`,
+                      letterSpacing: 0,
+                      
                     }}
                   >
-                    $ create first flow →
+                    Create flow
                   </Link>
                 </div>
               )}
@@ -497,66 +433,21 @@ export default function DashboardPage() {
         {/* Right column - 1/3 width */}
         <div className="space-y-4">
 
-          {/* Quick Actions — run-action tiles */}
-          <div style={{ background: THEME.panel, border: `1px solid ${THEME.border}`, borderRadius: 2, padding: 14 }}>
-            <div
-              style={{
-                fontFamily: MONO, fontSize: 10, letterSpacing: '0.18em',
-                color: THEME.text.muted, marginBottom: 10,
-              }}
-              className="uppercase"
-            >
-              Quick actions
-            </div>
-            <div className="space-y-1.5">
-              {quickActions.map((action) => (
-                <Link
-                  key={action.href}
-                  href={action.href}
-                  className="flex items-center gap-3 px-3 py-2.5 transition-all hover:bg-[var(--t-panel-hover)] group"
-                  style={{
-                    background: 'var(--t-input)',
-                    border: `1px solid ${THEME.border}`,
-                    borderRadius: 2,
-                  }}
-                >
-                  <action.icon className="w-4 h-4" style={{ color: action.color, flexShrink: 0 }} />
-                  <div className="flex-1 min-w-0">
-                    <p
-                      style={{
-                        fontFamily: MONO, fontSize: 11, fontWeight: 500,
-                        letterSpacing: '0.1em', color: THEME.text.primary,
-                      }}
-                      className="uppercase"
-                    >
-                      <span style={{ opacity: 0.5 }}>$ </span>{action.label}
-                    </p>
-                    <p style={{ fontSize: 11, color: THEME.text.muted, marginTop: 1 }}>{action.desc}</p>
-                  </div>
-                  <ArrowUpRight
-                    className="w-3.5 h-3.5 opacity-40 group-hover:opacity-100 transition-all group-hover:translate-x-0.5"
-                    style={{ color: action.color }}
-                  />
-                </Link>
-              ))}
-            </div>
-          </div>
-
           {/* System Status — echoes login footer */}
           <div style={{ background: THEME.panel, border: `1px solid ${THEME.border}`, borderRadius: 2, padding: 14 }}>
             <div className="flex items-center justify-between mb-3">
               <span
                 style={{
-                  fontFamily: MONO, fontSize: 10, letterSpacing: '0.18em',
+                  fontFamily: MONO, fontSize: 10, letterSpacing: 0,
                   color: THEME.text.muted,
                 }}
-                className="uppercase"
+                className=""
               >
                 System
               </span>
               <span
                 className="flex items-center gap-1.5"
-                style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.14em', color: '#10B981' }}
+                style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 0, color: '#10B981' }}
               >
                 <span
                   aria-hidden
@@ -566,16 +457,16 @@ export default function DashboardPage() {
                     boxShadow: '0 0 0 3px color-mix(in srgb, #10B981 20%, transparent)',
                   }}
                 />
-                ONLINE
+                Online
               </span>
             </div>
-            <div style={{ fontFamily: MONO, fontSize: 11 }}>
+            <div style={{ fontSize: 14 }}>
               {systemServices.map((svc, i) => (
                 <div
                   key={svc.name}
                   className="flex items-center justify-between py-1.5"
                   style={{
-                    borderBottom: i < systemServices.length - 1 ? `1px dashed ${THEME.borderLight}` : 'none',
+                    borderBottom: i < systemServices.length - 1 ? `1px solid ${THEME.borderLight}` : 'none',
                   }}
                 >
                   <div className="flex items-center gap-2">
@@ -589,7 +480,7 @@ export default function DashboardPage() {
                     />
                     <span style={{ color: THEME.text.secondary, fontSize: 11.5 }}>{svc.name}</span>
                   </div>
-                  <span style={{ color: THEME.text.muted, letterSpacing: '0.04em' }}>:{svc.port}</span>
+                  <span style={{ color: THEME.text.muted, letterSpacing: 0 }}>:{svc.port}</span>
                 </div>
               ))}
             </div>
@@ -600,57 +491,12 @@ export default function DashboardPage() {
                 borderTop: `1px solid ${THEME.borderLight}`,
                 fontFamily: MONO, fontSize: 10,
                 color: THEME.text.muted,
-                letterSpacing: '0.1em',
+                letterSpacing: 0,
               }}
             >
-              engine: fiber+gocron · base: /rl
             </div>
           </div>
 
-          {/* Shortcuts — mono link list */}
-          <div style={{ background: THEME.panel, border: `1px solid ${THEME.border}`, borderRadius: 2, padding: 14 }}>
-            <div
-              style={{
-                fontFamily: MONO, fontSize: 10, letterSpacing: '0.18em',
-                color: THEME.text.muted, marginBottom: 8,
-              }}
-              className="uppercase"
-            >
-              Shortcuts
-            </div>
-            <div>
-              {[
-                { href: `/p/${projectId}/executions`, icon: PlayCircle, label: 'Executions' },
-                { href: `/p/${projectId}/schedulers`, icon: Clock, label: 'Schedulers' },
-                { href: '/secrets', icon: Shield, label: 'Secrets' },
-                { href: '/settings', icon: Server, label: 'Settings' },
-              ].map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="flex items-center gap-2.5 px-2 py-1.5 transition-colors hover:bg-[var(--t-panel-hover)] group"
-                  style={{ fontFamily: MONO, borderRadius: 0 }}
-                >
-                  <item.icon className="w-3.5 h-3.5" style={{ color: THEME.text.muted }} />
-                  <span
-                    style={{ fontSize: 11, color: THEME.text.secondary, letterSpacing: '0.08em' }}
-                    className="flex-1 uppercase group-hover:text-[var(--t-text)] transition-colors"
-                  >
-                    {item.label}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 10, color: THEME.text.muted, opacity: 0.5,
-                      transition: 'all 0.15s',
-                    }}
-                    className="group-hover:opacity-100 group-hover:text-[var(--t-accent)]"
-                  >
-                    →
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>

@@ -354,7 +354,7 @@ export default function SettingsPage() {
     <div className="space-y-4" style={{ fontFamily: FONT, maxWidth: 820 }}>
       <div className="flex items-end justify-between mb-6 gap-4">
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 600, color: THEME.text.primary, letterSpacing: '-0.02em' }}>General</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 600, color: THEME.text.primary, letterSpacing: 0 }}>General</h1>
           <p style={{ fontSize: 13, color: THEME.text.muted, marginTop: 6 }}>
             Manage your RunLoop platform configuration.
           </p>

@@ -98,7 +98,7 @@ const CONDITION_COLORS: Record<string, string> = {
   ON_ALWAYS: '#6366F1',
 };
 
-const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
+const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
 
 function styleForCondition(condition?: string) {
   const cond = condition ?? 'ON_SUCCESS';
@@ -114,7 +114,7 @@ function styleForCondition(condition?: string) {
     type: 'smoothstep' as const,
     animated: cond === 'ON_ALWAYS',
     label: isDefault ? undefined : cond === 'ON_FAILURE' ? 'on fail' : 'always',
-    labelStyle: { fill: color, fontSize: 10, fontWeight: 600, fontFamily: MONO, letterSpacing: '0.06em' },
+    labelStyle: { fill: color, fontSize: 10, fontWeight: 600, fontFamily: MONO, letterSpacing: 0 },
     labelBgStyle: { fill: 'var(--t-panel)', stroke: color, strokeWidth: 1 },
     labelBgPadding: [6, 3] as [number, number],
     labelBgBorderRadius: 2,
@@ -390,9 +390,9 @@ function InnerFlow({
       >
         <div className="flex items-center gap-3 flex-1">
           <span
-            style={{ fontFamily: MONO, fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: '0.14em' }}
+            style={{ fontFamily: MONO, fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: 0 }}
           >
-            {'//'} FLOW
+            Flow
           </span>
           <input
             type="text"
@@ -408,7 +408,7 @@ function InnerFlow({
               fontFamily: MONO,
               fontSize: 14,
               fontWeight: 500,
-              letterSpacing: '-0.005em',
+              letterSpacing: 0,
               width: 260,
             }}
           />
@@ -426,7 +426,7 @@ function InnerFlow({
               fontSize: 12,
               fontFamily: MONO,
               flex: 1,
-              letterSpacing: '0.01em',
+              letterSpacing: 0,
             }}
           />
         </div>
@@ -436,7 +436,7 @@ function InnerFlow({
               fontFamily: MONO,
               fontSize: 10,
               color: 'var(--t-text-muted)',
-              letterSpacing: '0.08em',
+              letterSpacing: 0,
             }}
           >
             {nodes.length} nodes · {edges.length} edges
@@ -451,14 +451,13 @@ function InnerFlow({
               color: 'var(--t-text-secondary)',
               fontFamily: MONO,
               fontSize: 11,
-              letterSpacing: '0.08em',
+              letterSpacing: 0,
               borderRadius: 2,
-              textTransform: 'uppercase',
             }}
             title="Auto-layout"
           >
             <Wand2 className="w-3.5 h-3.5" />
-            auto-layout
+            Auto-layout
           </button>
           {showTestButton && onTest && !readOnly && (
             <button
@@ -472,9 +471,8 @@ function InnerFlow({
                 color: '#10B981',
                 fontFamily: MONO,
                 fontSize: 11,
-                letterSpacing: '0.08em',
+                letterSpacing: 0,
                 borderRadius: 2,
-                textTransform: 'uppercase',
               }}
             >
               <TestTube2 className="w-3.5 h-3.5" />
@@ -487,21 +485,16 @@ function InnerFlow({
               disabled={saving}
               className="flex items-center gap-1.5 disabled:opacity-50"
               style={{
-                padding: '6px 12px',
+                height: 32,
+                padding: '0 16px 0 12px',
                 background: 'var(--t-accent)',
                 color: '#fff',
-                fontFamily: MONO,
-                fontSize: 11,
-                letterSpacing: '0.1em',
-                borderRadius: 2,
-                textTransform: 'uppercase',
-                fontWeight: 600,
+                fontSize: 14,
+                borderRadius: 0,
               }}
             >
-              <span style={{ opacity: 0.6 }}>$</span>
-              <Save className="w-3.5 h-3.5" />
-              {saving ? 'saving…' : saveLabel}
-              <span style={{ opacity: 0.7 }}>→</span>
+              <Save className="w-4 h-4" />
+              {saving ? 'Saving…' : saveLabel}
             </button>
           )}
         </div>
@@ -543,11 +536,10 @@ function InnerFlow({
                     fontFamily: MONO,
                     fontSize: 10,
                     color: 'var(--t-text-muted)',
-                    letterSpacing: '0.16em',
-                    textTransform: 'uppercase',
+                    letterSpacing: 0,
                   }}
                 >
-                  <span style={{ opacity: 0.5 }}>{'//'}</span> nodes
+                  Nodes
                 </p>
                 <span
                   style={{
@@ -580,7 +572,7 @@ function InnerFlow({
                   type="text"
                   value={paletteQuery}
                   onChange={(e) => setPaletteQuery(e.target.value)}
-                  placeholder="search nodes…"
+                  placeholder="Search nodes"
                   className="w-full bg-transparent pl-8 pr-7 py-1.5 outline-none"
                   style={{ color: 'var(--t-text)', fontFamily: MONO, fontSize: 11.5 }}
                 />
@@ -629,11 +621,10 @@ function InnerFlow({
                           style={{
                             fontFamily: MONO,
                             fontSize: 9.5,
-                            letterSpacing: '0.16em',
-                            textTransform: 'uppercase',
+                            letterSpacing: 0,
                           }}
                         >
-                          <span style={{ opacity: 0.5 }}>{'//'}</span> {category.category}
+                          {category.category}
                         </span>
                       </div>
                       <span
@@ -704,7 +695,7 @@ function InnerFlow({
                                   color: 'var(--t-text)',
                                   fontFamily: MONO,
                                   fontSize: 11,
-                                  letterSpacing: '0.02em',
+                                  letterSpacing: 0,
                                 }}
                               >
                                 {item.label}
@@ -715,8 +706,7 @@ function InnerFlow({
                                   color: item.color,
                                   fontFamily: MONO,
                                   fontSize: 9,
-                                  letterSpacing: '0.14em',
-                                  textTransform: 'uppercase',
+                                  letterSpacing: 0,
                                 }}
                               >
                                 drag
@@ -739,10 +729,10 @@ function InnerFlow({
                 color: 'var(--t-text-muted)',
                 fontFamily: MONO,
                 fontSize: 9.5,
-                letterSpacing: '0.1em',
+                letterSpacing: 0,
               }}
             >
-              <span style={{ opacity: 0.5 }}>{'//'}</span> drag a node to canvas
+              Drag a node onto the canvas
             </div>
           </div>
         )}
@@ -801,7 +791,8 @@ function InnerFlow({
               style={{
                 background: 'var(--t-panel)',
                 border: '1px solid var(--t-border)',
-                borderRadius: 2,
+                borderRadius: 0,
+                marginBottom: 76,
               }}
               nodeColor={(n) => {
                 const type = n.data?.type as string;
@@ -846,7 +837,7 @@ function InnerFlow({
                       color: 'var(--t-text)',
                       fontFamily: MONO,
                       fontSize: 12,
-                      letterSpacing: '0.04em',
+                      letterSpacing: 0,
                     }}
                   >
                     drag nodes from the left to start building
@@ -929,7 +920,7 @@ function InnerFlow({
                     {(selectedNode || editingEdge) && (
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <span
-                          className="inline-block text-[9px] font-mono uppercase px-1.5 py-0.5 rounded"
+                          className="inline-block text-[9px] font-mono  px-1.5 py-0.5 rounded"
                           style={{
                             background: selectedPaletteMeta
                               ? selectedPaletteMeta.color + '18'
@@ -937,7 +928,7 @@ function InnerFlow({
                             color: selectedPaletteMeta
                               ? selectedPaletteMeta.color
                               : 'var(--t-text-muted)',
-                            letterSpacing: '0.08em',
+                            letterSpacing: 0,
                           }}
                         >
                           {editingEdge ? 'connection' : selectedNode?.data?.type || 'unknown'}
@@ -1004,8 +995,8 @@ function InnerFlow({
                 <div className="p-4 space-y-4">
                   <div>
                     <label
-                      className="text-[11px] font-semibold uppercase block mb-2.5"
-                      style={{ color: 'var(--t-text-secondary)', letterSpacing: '0.1em' }}
+                      className="text-[11px] font-semibold  block mb-2.5"
+                      style={{ color: 'var(--t-text-secondary)', letterSpacing: 0 }}
                     >
                       Edge condition
                     </label>
@@ -1042,7 +1033,7 @@ function InnerFlow({
                             </span>
                             {active && (
                               <span
-                                className="text-[9px] uppercase font-bold tracking-wider"
+                                className="text-[9px]  font-bold "
                                 style={{ color: c }}
                               >
                                 active

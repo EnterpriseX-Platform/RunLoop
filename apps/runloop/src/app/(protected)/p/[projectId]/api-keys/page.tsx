@@ -319,37 +319,37 @@ export default function ApiKeysPage() {
               <thead style={{ background: THEME.bg }}>
                 <tr>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium  "
                     style={{ color: THEME.text.secondary }}
                   >
                     Name
                   </th>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium  "
                     style={{ color: THEME.text.secondary }}
                   >
                     Prefix
                   </th>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium  "
                     style={{ color: THEME.text.secondary }}
                   >
                     Last Used
                   </th>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium  "
                     style={{ color: THEME.text.secondary }}
                   >
                     Created
                   </th>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium  "
                     style={{ color: THEME.text.secondary }}
                   >
                     Expires
                   </th>
                   <th
-                    className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-3 text-right text-xs font-medium  "
                     style={{ color: THEME.text.secondary }}
                   >
                     Actions

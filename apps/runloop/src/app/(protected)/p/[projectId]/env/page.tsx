@@ -8,7 +8,7 @@ import { useParams } from 'next/navigation';
 import { Plus, Trash2, Loader2, Edit2, Save, X } from 'lucide-react';
 import { SharpButton } from '@/components/ControlChrome';
 
-const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
+const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
 
 interface EnvVar {
   id: string;
@@ -115,7 +115,7 @@ export default function EnvVarsPage() {
           className="fixed bottom-6 right-6 z-50 px-4 py-2"
           style={{
             background: 'var(--t-accent)', color: '#fff',
-            fontFamily: MONO, fontSize: 12, borderRadius: 4, letterSpacing: '0.04em',
+            fontFamily: MONO, fontSize: 12, borderRadius: 4, letterSpacing: 0,
           }}
         >
           {toast}
@@ -124,7 +124,7 @@ export default function EnvVarsPage() {
 
       <div className="flex items-end justify-between mb-6 gap-4">
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 600, color: 'var(--t-text)', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: 24, fontWeight: 600, color: 'var(--t-text)', letterSpacing: 0 }}>
             Environment Variables
           </h1>
           <p style={{ fontSize: 13, color: 'var(--t-text-muted)', marginTop: 6, lineHeight: 1.6 }}>

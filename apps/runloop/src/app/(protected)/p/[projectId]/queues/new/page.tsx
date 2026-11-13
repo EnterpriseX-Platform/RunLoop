@@ -118,7 +118,7 @@ export default function NewQueuePage() {
       </Link>
 
       <div className="mb-6">
-        <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>New Queue</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: 0 }}>New Queue</h1>
         <p style={{ fontSize: 13, color: T.textMuted, marginTop: 6 }}>
           A queue binds a flow to a durable job inbox. Producers enqueue jobs; the engine processes them with retry + DLQ.
         </p>
@@ -134,7 +134,7 @@ export default function NewQueuePage() {
           }}
         >
           <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: T.red }} />
-          <span style={{ fontFamily: MONO, fontSize: 12, color: T.red, letterSpacing: '0.04em' }}>
+          <span style={{ fontFamily: MONO, fontSize: 12, color: T.red, letterSpacing: 0 }}>
             {error}
           </span>
         </div>
@@ -169,8 +169,7 @@ export default function NewQueuePage() {
                 onClick={() => { setBackend(b); setBcfg({}); }}
                 style={{
                   padding: '7px 14px', borderRadius: 2,
-                  fontFamily: MONO, fontSize: 11, fontWeight: 500, letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
+                  fontFamily: MONO, fontSize: 11, fontWeight: 500, letterSpacing: 0,
                   background: active ? T.accent : 'transparent',
                   color: active ? '#fff' : T.textSec,
                   border: `1px solid ${active ? T.accent : T.border}`,
@@ -187,7 +186,7 @@ export default function NewQueuePage() {
           <p
             style={{
               fontFamily: MONO, fontSize: 11, color: T.textMuted,
-              padding: '8px 0', letterSpacing: '0.06em',
+              padding: '8px 0', letterSpacing: 0,
             }}
           >
             // POSTGRES USES THE ENGINE'S OWN DATABASE — NO EXTRA CONFIG NEEDED
@@ -251,7 +250,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h3
         style={{
           fontSize: 12, fontWeight: 600, color: T.textSec,
-          marginBottom: 14, letterSpacing: '0.04em', textTransform: 'uppercase',
+          marginBottom: 14, letterSpacing: 0,
         }}
       >
         {title}
@@ -269,15 +268,14 @@ function Field({
       <label
         style={{
           fontFamily: MONO, fontSize: 10.5, fontWeight: 500, color: T.textSec,
-          display: 'block', marginBottom: 5, letterSpacing: '0.08em',
-          textTransform: 'uppercase',
+          display: 'block', marginBottom: 5, letterSpacing: 0,
         }}
       >
         {label} {required && <span style={{ color: T.accent }}>*</span>}
       </label>
       {children}
       {hint && (
-        <p style={{ fontFamily: MONO, fontSize: 10.5, color: T.textMuted, marginTop: 4, letterSpacing: '0.02em' }}>
+        <p style={{ fontFamily: MONO, fontSize: 10.5, color: T.textMuted, marginTop: 4, letterSpacing: 0 }}>
           {hint}
         </p>
       )}

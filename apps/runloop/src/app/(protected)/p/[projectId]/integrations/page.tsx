@@ -5,7 +5,7 @@ import { useProject } from '@/context/ProjectContext';
 import { SharpButton } from '@/components/ControlChrome';
 import { Sparkles, CheckCircle2, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
 
-const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
+const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
 
 interface Provider {
   id: 'claude' | 'kimi' | 'openai';
@@ -235,7 +235,7 @@ export default function IntegrationsPage() {
     <div className="p-6 max-w-[800px]">
       <div className="flex items-end justify-between mb-6 gap-4">
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 600, color: 'var(--t-text)', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: 24, fontWeight: 600, color: 'var(--t-text)', letterSpacing: 0 }}>
             Integrations
           </h1>
           <p style={{ fontSize: 13, color: 'var(--t-text-muted)', marginTop: 6 }}>
@@ -332,7 +332,7 @@ export default function IntegrationsPage() {
                 className="flex items-center gap-1.5"
                 style={{
                   fontFamily: MONO, fontSize: 10.5, padding: '3px 8px',
-                  borderRadius: 2, letterSpacing: '0.08em', textTransform: 'uppercase',
+                  borderRadius: 2, letterSpacing: 0,
                   color: c.hasKey ? 'var(--t-success)' : 'var(--t-text-muted)',
                   background: c.hasKey ? 'color-mix(in srgb, var(--t-success) 12%, transparent)' : 'var(--t-input)',
                   border: `1px solid ${c.hasKey ? 'var(--t-success)' : 'var(--t-border)'}`,

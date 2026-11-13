@@ -329,7 +329,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
       <div className="flex items-end justify-between mb-6 gap-4 flex-wrap">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h1 style={{ fontSize: 24, fontWeight: 600, color: THEME.text.primary, letterSpacing: '-0.02em' }}>
+            <h1 style={{ fontSize: 24, fontWeight: 600, color: THEME.text.primary, letterSpacing: 0 }}>
               {scheduler.name}
             </h1>
             <MonoTag tone={scheduler.status === 'ACTIVE' ? 'success' : 'warn'}>
@@ -380,8 +380,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
                 fontFamily: MONO,
                 fontSize: 11,
                 fontWeight: 500,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
+                letterSpacing: 0,
                 color: active ? THEME.accent : THEME.text.muted,
                 padding: '10px 14px',
                 background: 'transparent',
@@ -987,7 +986,7 @@ function StatCard({ label, value, icon, color }: { label: string; value: string 
           <p
             style={{
               fontFamily: MONO, fontSize: 10, color: THEME.text.muted,
-              letterSpacing: '0.12em', textTransform: 'uppercase',
+              letterSpacing: 0,
             }}
           >
             {label}
@@ -995,7 +994,7 @@ function StatCard({ label, value, icon, color }: { label: string; value: string 
           <p
             style={{
               fontFamily: MONO, fontSize: 22, fontWeight: 600,
-              color: THEME.text.primary, marginTop: 6, letterSpacing: '-0.02em',
+              color: THEME.text.primary, marginTop: 6, letterSpacing: 0,
               lineHeight: 1.2,
             }}
           >

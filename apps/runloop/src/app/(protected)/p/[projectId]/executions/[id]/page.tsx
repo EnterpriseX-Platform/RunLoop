@@ -147,7 +147,7 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
       <div className="flex items-end justify-between mb-6 gap-4 flex-wrap">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <h1 style={{ fontSize: 24, fontWeight: 600, color: THEME.text.primary, letterSpacing: '-0.02em' }}>
+            <h1 style={{ fontSize: 24, fontWeight: 600, color: THEME.text.primary, letterSpacing: 0 }}>
               Execution {execution.id.slice(0, 8)}
             </h1>
             <MonoTag
@@ -163,7 +163,7 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
             {isActive && liveConnected && (
               <span
                 className="flex items-center gap-1 text-xs"
-                style={{ color: THEME.colors.emerald, fontFamily: MONO, letterSpacing: '0.08em' }}
+                style={{ color: THEME.colors.emerald, fontFamily: MONO, letterSpacing: 0 }}
               >
                 <Radio className="w-3 h-3 animate-pulse" /> LIVE
               </span>
@@ -243,9 +243,8 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
               style={{
                 fontFamily: MONO,
                 fontSize: 10,
-                letterSpacing: '0.14em',
+                letterSpacing: 0,
                 color: THEME.text.muted,
-                textTransform: 'uppercase',
               }}
             >
               <span style={{ opacity: 0.5 }}>{'//'}</span> started
@@ -282,9 +281,8 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
               style={{
                 fontFamily: MONO,
                 fontSize: 10,
-                letterSpacing: '0.14em',
+                letterSpacing: 0,
                 color: THEME.text.muted,
-                textTransform: 'uppercase',
               }}
             >
               <span style={{ opacity: 0.5 }}>{'//'}</span> completed
@@ -315,7 +313,7 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
               className="flex items-center gap-1.5"
               style={{
                 fontFamily: MONO, fontSize: 11, fontWeight: 500,
-                letterSpacing: '0.1em', textTransform: 'uppercase',
+                letterSpacing: 0,
                 color: active ? THEME.accent : THEME.text.muted,
                 padding: '10px 14px',
                 background: 'transparent',

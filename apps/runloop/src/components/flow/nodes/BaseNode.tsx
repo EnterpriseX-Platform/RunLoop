@@ -70,7 +70,7 @@ const colorMap: Record<string, { hex: string; label: string }> = {
   ai:           { hex: '#8B5CF6', label: 'AI' },
 };
 
-const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
+const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
 
 interface BaseNodeProps extends NodeProps<BaseNodeData> {
   children?: React.ReactNode;
@@ -87,8 +87,18 @@ interface BaseNodeProps extends NodeProps<BaseNodeData> {
  * are tiny squares, not pale circles — visually closer to pin-out
  * diagrams than to a generic node-editor.
  */
-export function BaseNode({ data, selected, inputs = 1, outputs = 1 }: BaseNodeProps) {
-  const type = data.type.toLowerCase();
+// React Flow node type ('setVarNode') -> palette key ('set_variable').
+const NODE_TYPE_KEY: Record<string, string> = {
+  setvar: 'set_variable', webhook: 'webhook_out', waitwebhook: 'wait_webhook',
+};
+function resolveKind(dataType: string | undefined, nodeType: string | undefined): string {
+  if (dataType) return dataType.toLowerCase();
+  const raw = (nodeType || '').replace(/Node$/, '').toLowerCase();
+  return NODE_TYPE_KEY[raw] || raw;
+}
+
+export function BaseNode({ data, type: nodeType, selected, inputs = 1, outputs = 1 }: BaseNodeProps) {
+  const type = resolveKind(data.type, nodeType);
   const c = colorMap[type] || colorMap.http;
   const Icon = iconMap[type] || Globe;
   const accent = c.hex;
@@ -208,7 +218,7 @@ export function BaseNode({ data, selected, inputs = 1, outputs = 1 }: BaseNodePr
           fontFamily: MONO,
           fontSize: 11,
           fontWeight: 500,
-          letterSpacing: '0.02em',
+          letterSpacing: 0,
           color: 'var(--t-text)',
           lineHeight: 1.3,
           pointerEvents: 'none',
@@ -224,7 +234,7 @@ export function BaseNode({ data, selected, inputs = 1, outputs = 1 }: BaseNodePr
               fontWeight: 400,
               color: 'var(--t-text-muted)',
               marginTop: 2,
-              letterSpacing: '0.04em',
+              letterSpacing: 0,
             }}
           >
             {data.description}
@@ -258,7 +268,7 @@ export function NodeStatusBadge({ status, retries }: { status: string; retries?:
   return (
     <div
       className="flex items-center gap-2"
-      style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.1em' }}
+      style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 0 }}
     >
       <span style={{ color }}>{label}</span>
       {retries && retries > 0 && (

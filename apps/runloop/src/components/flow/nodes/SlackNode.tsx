@@ -10,7 +10,7 @@ export function SlackNode(props: NodeProps<BaseNodeData>) {
     <BaseNode {...props} inputs={1} outputs={1}>
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-[#a855f7] uppercase">{action}</span>
+          <span className="text-xs font-medium text-[#a855f7] ">{action}</span>
         </div>
         {channel && (
           <div className="flex items-center gap-2">

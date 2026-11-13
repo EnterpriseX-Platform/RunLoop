@@ -253,7 +253,7 @@ export default function ProjectsPage() {
               <span
                 style={{
                   width: 40, fontFamily: MONO, fontSize: 10.5,
-                  color: THEME.text.muted, letterSpacing: '0.06em',
+                  color: THEME.text.muted, letterSpacing: 0,
                 }}
               >
                 {String(i + 1).padStart(2, '0')}
@@ -286,7 +286,7 @@ export default function ProjectsPage() {
                 className="text-right flex items-center justify-end gap-1.5"
                 style={{
                   width: 100, fontFamily: MONO, fontSize: 11,
-                  color: THEME.text.muted, letterSpacing: '0.04em',
+                  color: THEME.text.muted, letterSpacing: 0,
                 }}
               >
                 <Clock className="w-3 h-3" /> {project._count?.runloops || 0}
@@ -295,7 +295,7 @@ export default function ProjectsPage() {
                 className="text-right flex items-center justify-end gap-1.5"
                 style={{
                   width: 100, fontFamily: MONO, fontSize: 11,
-                  color: THEME.text.muted, letterSpacing: '0.04em',
+                  color: THEME.text.muted, letterSpacing: 0,
                 }}
               >
                 <Users className="w-3 h-3" /> {project._count?.members || 0}
