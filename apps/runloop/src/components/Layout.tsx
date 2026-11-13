@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { LogoMark } from './Logo';
+import { RLDashboard, RLFlows, RLScheduler, RLExecutions, RLQueue, RLChannel, RLDocs, RLSettings } from './icons/RunLoopIcons';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
@@ -58,26 +59,26 @@ const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
 interface NavItemType {
   name: string;
   href: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   countKey: string | null;
   projectScoped?: boolean;
 }
 
 const mainNavigation: NavItemType[] = [
-  { name: 'Dashboard',  href: '/dashboard',  icon: LayoutDashboard, countKey: null },
-  { name: 'Flows',      href: '/flows',      icon: Workflow,        countKey: 'flows' },
-  { name: 'Schedulers', href: '/schedulers', icon: Clock,           countKey: 'schedulers' },
-  { name: 'Executions', href: '/executions', icon: Activity,        countKey: null },
-  { name: 'Queues',     href: '/queues',     icon: Inbox,           countKey: null },
-  { name: 'Channels',   href: '/channels',   icon: BellRing,        countKey: null },
+  { name: 'Dashboard',  href: '/dashboard',  icon: RLDashboard, countKey: null },
+  { name: 'Flows',      href: '/flows',      icon: RLFlows,         countKey: 'flows' },
+  { name: 'Schedulers', href: '/schedulers', icon: RLScheduler,     countKey: 'schedulers' },
+  { name: 'Executions', href: '/executions', icon: RLExecutions,    countKey: null },
+  { name: 'Queues',     href: '/queues',     icon: RLQueue,         countKey: null },
+  { name: 'Channels',   href: '/channels',   icon: RLChannel,       countKey: null },
 ];
 
 // projectScoped:true → href is rewritten to /p/<currentProjectId>/<href>
 // at render time. Same pattern as the main nav so every link follows the
 // /p/<id>/* convention; non-scoped paths (eg /projects) don't need it.
 const systemNavigation: NavItemType[] = [
-  { name: 'API Docs', href: '/docs',     icon: BookOpen, countKey: null, projectScoped: true },
-  { name: 'Settings', href: '/settings', icon: Settings, countKey: null, projectScoped: true },
+  { name: 'API Docs', href: '/docs',     icon: RLDocs, countKey: null, projectScoped: true },
+  { name: 'Settings', href: '/settings', icon: RLSettings, countKey: null, projectScoped: true },
 ];
 
 /* ==================== Breadcrumb ==================== */

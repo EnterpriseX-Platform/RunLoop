@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
+import { RL_NODE_ICONS } from '../../icons/RunLoopIcons';
 import {
   Play, Square, Globe, Database, Terminal, Code2, Hash,
   Slack, Mail, GitBranch, Clock, RotateCcw, Variable, Container,
@@ -102,7 +103,7 @@ export function resolveKind(dataType: string | undefined, nodeType: string | und
 export function BaseNode({ data, type: nodeType, selected, inputs = 1, outputs = 1, outputLabels }: BaseNodeProps) {
   const type = resolveKind(data.type, nodeType);
   const c = colorMap[type] || colorMap.http;
-  const Icon = iconMap[type] || Globe;
+  const Icon = (RL_NODE_ICONS[type] || iconMap[type] || Globe) as React.ElementType;
   const accent = c.hex;
 
   const isRunning = data.status === 'running';

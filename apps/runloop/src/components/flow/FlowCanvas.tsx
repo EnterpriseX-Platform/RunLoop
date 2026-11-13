@@ -29,44 +29,45 @@ import {
   Save, TestTube2, Wand2, Plus, Minus, Maximize, Settings, Trash2, X, AlertCircle, Search, ChevronDown,
 } from 'lucide-react';
 import { nodeTypes as importedNodeTypes } from './nodes';
+import { RL_NODE_ICONS } from '../icons/RunLoopIcons';
 import { propertiesComponents } from './properties';
 import { validateFlow, autoLayout, FlowValidationError } from '@/lib/flow-validator';
 
 // ---------- Node palette ----------
 const PALETTE = [
   { category: 'Flow Control', items: [
-    { type: 'startNode', label: 'Start', nodeType: 'start', icon: Play, color: '#10B981' },
-    { type: 'endNode', label: 'End', nodeType: 'end', icon: Square, color: '#EF4444' },
-    { type: 'conditionNode', label: 'Condition', nodeType: 'condition', icon: GitBranch, color: '#EC4899' },
-    { type: 'loopNode', label: 'Loop', nodeType: 'loop', icon: RotateCcw, color: '#6366F1' },
-    { type: 'delayNode', label: 'Delay', nodeType: 'delay', icon: Clock, color: '#6B7280' },
-    { type: 'transformNode', label: 'Transform', nodeType: 'transform', icon: Variable, color: '#14B8A6' },
-    { type: 'switchNode', label: 'Switch', nodeType: 'switch', icon: Split, color: '#D946EF' },
-    { type: 'mergeNode', label: 'Merge', nodeType: 'merge', icon: GitMerge, color: '#0891B2' },
+    { type: 'startNode', label: 'Start', nodeType: 'start', icon: RL_NODE_ICONS['start'] as any, color: '#10B981' },
+    { type: 'endNode', label: 'End', nodeType: 'end', icon: RL_NODE_ICONS['end'] as any, color: '#EF4444' },
+    { type: 'conditionNode', label: 'Condition', nodeType: 'condition', icon: RL_NODE_ICONS['condition'] as any, color: '#EC4899' },
+    { type: 'loopNode', label: 'Loop', nodeType: 'loop', icon: RL_NODE_ICONS['loop'] as any, color: '#6366F1' },
+    { type: 'delayNode', label: 'Delay', nodeType: 'delay', icon: RL_NODE_ICONS['delay'] as any, color: '#6B7280' },
+    { type: 'transformNode', label: 'Transform', nodeType: 'transform', icon: RL_NODE_ICONS['transform'] as any, color: '#14B8A6' },
+    { type: 'switchNode', label: 'Switch', nodeType: 'switch', icon: RL_NODE_ICONS['switch'] as any, color: '#D946EF' },
+    { type: 'mergeNode', label: 'Merge', nodeType: 'merge', icon: RL_NODE_ICONS['merge'] as any, color: '#0891B2' },
   ]},
   { category: 'Executors', items: [
-    { type: 'httpNode', label: 'HTTP', nodeType: 'http', icon: Globe, color: '#3B82F6' },
-    { type: 'databaseNode', label: 'Database', nodeType: 'database', icon: Database, color: '#06B6D4' },
-    { type: 'shellNode', label: 'Shell', nodeType: 'shell', icon: Terminal, color: '#F59E0B' },
-    { type: 'pythonNode', label: 'Python', nodeType: 'python', icon: Code2, color: '#EAB308' },
-    { type: 'nodejsNode', label: 'Node.js', nodeType: 'nodejs', icon: Hash, color: '#22C55E' },
-    { type: 'dockerNode', label: 'Docker', nodeType: 'docker', icon: Docker, color: '#0EA5E9' },
+    { type: 'httpNode', label: 'HTTP', nodeType: 'http', icon: RL_NODE_ICONS['http'] as any, color: '#3B82F6' },
+    { type: 'databaseNode', label: 'Database', nodeType: 'database', icon: RL_NODE_ICONS['database'] as any, color: '#06B6D4' },
+    { type: 'shellNode', label: 'Shell', nodeType: 'shell', icon: RL_NODE_ICONS['shell'] as any, color: '#F59E0B' },
+    { type: 'pythonNode', label: 'Python', nodeType: 'python', icon: RL_NODE_ICONS['python'] as any, color: '#EAB308' },
+    { type: 'nodejsNode', label: 'Node.js', nodeType: 'nodejs', icon: RL_NODE_ICONS['nodejs'] as any, color: '#22C55E' },
+    { type: 'dockerNode', label: 'Docker', nodeType: 'docker', icon: RL_NODE_ICONS['docker'] as any, color: '#0EA5E9' },
   ]},
   { category: 'AI', items: [
-    { type: 'aiNode', label: 'AI', nodeType: 'ai', icon: Sparkles, color: '#8B5CF6' },
+    { type: 'aiNode', label: 'AI', nodeType: 'ai', icon: RL_NODE_ICONS['ai'] as any, color: '#8B5CF6' },
   ]},
   { category: 'Notifications', items: [
-    { type: 'slackNode', label: 'Slack', nodeType: 'slack', icon: Slack, color: '#A855F7' },
-    { type: 'emailNode', label: 'Email', nodeType: 'email', icon: Mail, color: '#F97316' },
-    { type: 'webhookNode', label: 'Webhook', nodeType: 'webhook_out', icon: Webhook, color: '#F43F5E' },
+    { type: 'slackNode', label: 'Slack', nodeType: 'slack', icon: RL_NODE_ICONS['slack'] as any, color: '#A855F7' },
+    { type: 'emailNode', label: 'Email', nodeType: 'email', icon: RL_NODE_ICONS['email'] as any, color: '#F97316' },
+    { type: 'webhookNode', label: 'Webhook', nodeType: 'webhook_out', icon: RL_NODE_ICONS['webhook_out'] as any, color: '#F43F5E' },
   ]},
   { category: 'Utilities', items: [
-    { type: 'logNode', label: 'Log', nodeType: 'log', icon: FileText, color: '#78716C' },
-    { type: 'setVarNode', label: 'Set Variable', nodeType: 'set_variable', icon: PenLine, color: '#0D9488' },
-    { type: 'subflowNode', label: 'Sub-flow', nodeType: 'subflow', icon: Workflow, color: '#7C3AED' },
-    { type: 'waitWebhookNode', label: 'Wait Webhook', nodeType: 'wait_webhook', icon: Hourglass, color: '#FB923C' },
-    { type: 'enqueueNode', label: 'Enqueue', nodeType: 'enqueue', icon: Inbox, color: '#0EA5E9' },
-    { type: 'notifyNode', label: 'Notify (push)', nodeType: 'notify', icon: BellRing, color: '#F59E0B' },
+    { type: 'logNode', label: 'Log', nodeType: 'log', icon: RL_NODE_ICONS['log'] as any, color: '#78716C' },
+    { type: 'setVarNode', label: 'Set Variable', nodeType: 'set_variable', icon: RL_NODE_ICONS['set_variable'] as any, color: '#0D9488' },
+    { type: 'subflowNode', label: 'Sub-flow', nodeType: 'subflow', icon: RL_NODE_ICONS['subflow'] as any, color: '#7C3AED' },
+    { type: 'waitWebhookNode', label: 'Wait Webhook', nodeType: 'wait_webhook', icon: RL_NODE_ICONS['wait_webhook'] as any, color: '#FB923C' },
+    { type: 'enqueueNode', label: 'Enqueue', nodeType: 'enqueue', icon: RL_NODE_ICONS['enqueue'] as any, color: '#0EA5E9' },
+    { type: 'notifyNode', label: 'Notify (push)', nodeType: 'notify', icon: RL_NODE_ICONS['notify'] as any, color: '#F59E0B' },
   ]},
 ];
 
