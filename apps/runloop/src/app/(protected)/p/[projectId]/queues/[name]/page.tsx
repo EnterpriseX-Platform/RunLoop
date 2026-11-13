@@ -307,7 +307,7 @@ export default function QueueDetailPage() {
 
             <div className="px-5 py-4">
 
-          <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
             <div className="col-span-2">
               <label style={{ fontSize: 11, color: T.textMuted, display: 'block', marginBottom: 4 }}>
                 Flow (which flow each job triggers)
@@ -563,7 +563,7 @@ export default function QueueDetailPage() {
       </div>
 
       {/* Stats strip — five sharp cells reading like instrument dials */}
-      <div className="grid grid-cols-5 gap-2 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mb-4">
         {(['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'DLQ'] as const).map((s) => {
           const meta = STATUS_META[s];
           const v = stats[s] || 0;

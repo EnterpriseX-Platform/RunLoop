@@ -206,7 +206,7 @@ export default function NewQueuePage() {
       </Section>
 
       <Section title="Delivery">
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <Field label="Concurrency" hint="Max parallel jobs per worker">
             <input
               type="number" min={1} max={64} value={concurrency}

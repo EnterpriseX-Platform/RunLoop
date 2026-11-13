@@ -354,7 +354,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
         <StatCard label="Total runs" value={scheduler.successCount + scheduler.failureCount} icon={<Activity className="w-5 h-5" />} color={THEME.colors.blue} />
         <StatCard label="Success" value={scheduler.successCount} icon={<CheckCircle2 className="w-5 h-5" />} color={THEME.colors.emerald} />
         <StatCard label="Failed" value={scheduler.failureCount} icon={<XCircle className="w-5 h-5" />} color={THEME.colors.red} />
@@ -396,7 +396,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
 
       {/* Tab Content */}
       {activeTab === 'overview' && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div style={{ background: THEME.panel, border: `1px solid ${THEME.border}`, borderRadius: 2, padding: 20 }}>
             <h3 style={{ fontSize: 15, fontWeight: 600, color: THEME.text.primary, marginBottom: 16 }}>Configuration</h3>
             <div className="space-y-3">

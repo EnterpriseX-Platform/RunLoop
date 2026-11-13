@@ -230,7 +230,7 @@ export default function NewSchedulerPage() {
       )}
 
       <form onSubmit={handleSubmit}>
-        <div className="flex gap-4" style={{ alignItems: 'flex-start' }}>
+        <div className="flex flex-col lg:flex-row gap-4" style={{ alignItems: 'stretch' }}>
           {/* Left — form */}
           <div className="flex-1" style={{ minWidth: 0 }}>
             <Section title="Basic information">
@@ -257,7 +257,7 @@ export default function NewSchedulerPage() {
             </Section>
 
             <Section title="Trigger settings">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Field label="Trigger Type">
                   <select
                     value={formData.triggerType}
@@ -403,7 +403,7 @@ Body: { "input": {...} }`}
             </Section>
 
             <Section title="Execution settings">
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <Field label="Timeout (s)">
                   <input type="number" value={formData.timeout}
                     onChange={(e) => setFormData({ ...formData, timeout: parseInt(e.target.value) || 300 })}
@@ -427,26 +427,16 @@ Body: { "input": {...} }`}
               </div>
             </Section>
 
-            <div className="flex items-center gap-2 pt-2">
-              <SharpButton type="submit" disabled={isSubmitting || !formData.name}>
-                {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-                {isSubmitting ? 'Creating…' : 'Create Scheduler'}
-              </SharpButton>
-              <SharpButton variant="ghost" href={`/p/${projectId}/schedulers`}>
-                Cancel
-              </SharpButton>
-            </div>
           </div>
 
           {/* Right — flows picker */}
-          <div style={{ width: 380, flexShrink: 0 }}>
+          <div className="w-full lg:w-[380px] lg:flex-shrink-0">
             <SchematicPanel>
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <h3
                     style={{
-                      fontFamily: MONO, fontSize: 10, fontWeight: 600, color: T.textSec,
-                      letterSpacing: 0,
+                      fontSize: 16, fontWeight: 600, color: T.text,
                     }}
                   >
                     Flows to run
@@ -459,7 +449,7 @@ Body: { "input": {...} }`}
                   href={`/p/${projectId}/flows/new`}
                   style={{ fontFamily: MONO, fontSize: 10.5, color: T.accent, letterSpacing: 0 }}
                 >
-                  + NEW FLOW
+                  New flow
                 </Link>
               </div>
 
@@ -553,13 +543,22 @@ Body: { "input": {...} }`}
                       href={`/p/${projectId}/flows/new`}
                       style={{ color: T.accent, fontFamily: MONO, fontSize: 11, display: 'inline-block', marginTop: 6, letterSpacing: 0 }}
                     >
-                      + CREATE YOUR FIRST FLOW
+                      Create your first flow
                     </Link>
                   </div>
                 ) : null}
               </div>
             </SchematicPanel>
           </div>
+        </div>
+        <div className="flex items-center gap-2 pt-4">
+          <SharpButton type="submit" disabled={isSubmitting || !formData.name}>
+            {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+            {isSubmitting ? 'Creating…' : 'Create Scheduler'}
+          </SharpButton>
+          <SharpButton variant="ghost" href={`/p/${projectId}/schedulers`}>
+            Cancel
+          </SharpButton>
         </div>
       </form>
     </div>
@@ -594,17 +593,14 @@ function Field({
     <div>
       <label
         style={{
-          fontFamily: MONO, fontSize: 10.5, fontWeight: 500, color: T.textSec,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          marginBottom: 5, letterSpacing: 0,
+          fontSize: 12, lineHeight: '16px', color: T.textSec,
+          display: 'block', marginBottom: 8,
         }}
       >
-        <span>
-          {label} {required && <span style={{ color: T.accent }}>*</span>}
-        </span>
-        {hint && <span style={{ textTransform: 'none', letterSpacing: 0 }}>{hint}</span>}
+        {label} {required && <span style={{ color: 'var(--t-error)' }}>*</span>}
       </label>
       {children}
+      {hint && <p style={{ fontSize: 12, lineHeight: '16px', color: T.textSec, marginTop: 4 }}>{hint}</p>}
     </div>
   );
 }

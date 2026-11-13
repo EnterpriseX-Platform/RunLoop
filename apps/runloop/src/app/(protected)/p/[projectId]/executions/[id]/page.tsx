@@ -447,7 +447,7 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
       </div>
 
       {/* Footer Info */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
           { label: 'Trigger Type', value: execution.triggerType },
           { label: 'Worker ID', value: execution.workerId || '-', mono: true },

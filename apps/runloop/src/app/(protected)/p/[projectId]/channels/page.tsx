@@ -146,7 +146,7 @@ export default function ChannelsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-2 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-6">
         <div className="p-3" style={{ background: 'var(--t-panel)', border: '1px solid var(--t-border)', borderRadius: 2 }}>
           <div style={{ fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: 0, }}>
             Active channels
