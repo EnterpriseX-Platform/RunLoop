@@ -710,6 +710,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [counts, setCounts] = useState<Record<string, number>>({});
 
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -860,7 +861,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-1 ml-auto pr-2 h-full">
+          <div className="flex items-center ml-auto h-full">
             {/* Telemetry strip — sits right where eyes land after the breadcrumb */}
             <div
               className="hidden xl:flex items-center gap-3 mr-2"
@@ -870,62 +871,52 @@ export function Layout({ children }: { children?: React.ReactNode }) {
 
             </div>
 
-            {/* Search */}
-            <div className="hidden sm:block w-44 md:w-56">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: 'var(--t-text-muted)' }} />
+            {/* Search: Carbon header search, an action that opens into a field */}
+            {searchOpen ? (
+              <div className="flex items-center h-12" style={{ width: 280, background: '#262626' }}>
+                <Search className="w-5 h-5 mx-3.5 flex-shrink-0" style={{ color: '#c6c6c6' }} />
                 <input
+                  autoFocus
                   type="text"
                   placeholder="Search"
-                  style={{
-                    backgroundColor: 'var(--t-input)',
-                    borderColor: 'var(--t-border)',
-                    color: 'var(--t-text)',
-                    fontSize: 14,
-                    borderRadius: 0,
-                    border: 'none',
-                    borderBottom: '1px solid var(--t-border-strong)',
-                  }}
-                  className="w-full h-8 pl-8 pr-2 placeholder:text-[var(--t-text-muted)] focus:outline-none focus:border-[var(--t-accent)] transition-all"
+                  onKeyDown={(e) => { if (e.key === 'Escape') setSearchOpen(false); }}
+                  onBlur={() => setSearchOpen(false)}
+                  className="rl-bare flex-1 h-12 bg-transparent outline-none placeholder:text-[#a8a8a8]"
+                  style={{ fontSize: 14, color: '#f4f4f4', border: 'none', outline: 'none', boxShadow: 'none' }}
                 />
-                <span
-                  className="absolute right-2 top-1/2 -translate-y-1/2 hidden md:inline-block"
-                  style={{
-                    fontFamily: MONO, fontSize: 9, letterSpacing: 0,
-                    color: 'var(--t-text-muted)', opacity: 0.6,
-                    border: '1px solid var(--t-border)', padding: '1px 4px',
-                  }}
-                  aria-hidden
-                >
-                  ⌘K
-                </span>
               </div>
-            </div>
-
+            ) : (
+              <button onClick={() => setSearchOpen(true)} className="h-12 w-12 flex items-center justify-center transition-colors hover:bg-[#333333]" style={{ color: '#f4f4f4' }} title="Search" aria-label="Search">
+                <Search className="w-5 h-5" />
+              </button>
+            )}
 
             <button
               onClick={toggleTheme}
-              style={{ color: 'var(--t-text-muted)', borderRadius: 2 }}
-              className="h-8 w-8 flex items-center justify-center hover:text-[var(--t-accent)] transition-colors"
-              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              style={{ color: '#f4f4f4' }}
+              className="h-12 w-12 flex items-center justify-center transition-colors hover:bg-[#333333]"
+              title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+              aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
             >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
 
             <div className="relative" ref={notificationsRef}>
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                style={{ color: 'var(--t-text-muted)', borderRadius: 2 }}
-                className="relative h-8 w-8 flex items-center justify-center hover:text-[var(--t-accent)] transition-colors"
+                style={{ color: '#f4f4f4', background: showNotifications ? '#333333' : undefined }}
+                className="relative h-12 w-12 flex items-center justify-center transition-colors hover:bg-[#333333]"
+                title="Notifications"
+                aria-label="Notifications"
               >
-                <Bell className="w-4 h-4" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-[var(--t-header)]" />
+                <Bell className="w-5 h-5" />
+                <span aria-hidden className="absolute" style={{ top: 13, right: 13, width: 8, height: 8, borderRadius: 999, background: '#fa4d56', boxShadow: '0 0 0 2px #161616' }} />
               </button>
 
               {showNotifications && (
                 <div
                   style={{ backgroundColor: 'var(--t-panel)', borderColor: 'var(--t-border)', borderRadius: 2 }}
-                  className="absolute right-0 top-full mt-2 w-72 border py-2"
+                  className="absolute right-0 top-full w-72 border py-2"
                 >
                   <div
                     className="px-3 py-2 border-b flex items-center justify-between"
@@ -1001,27 +992,23 @@ export function Layout({ children }: { children?: React.ReactNode }) {
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                style={{ color: 'var(--t-text-muted)', borderRadius: 2 }}
-                className="flex items-center gap-2 h-8 px-2 hover:text-[var(--t-accent)] transition-colors"
+                style={{ color: '#f4f4f4', background: showUserMenu ? '#333333' : undefined }}
+                className="h-12 w-12 flex items-center justify-center transition-colors hover:bg-[#333333]"
+                title={user?.name || user?.email || 'Account'}
+                aria-label="Account"
               >
-                <div
-                  style={{
-                    backgroundColor: 'var(--t-panel)',
-                    borderColor: 'var(--t-border)',
-                    fontFamily: MONO,
-                    borderRadius: 2,
-                  }}
-                  className="w-7 h-7 border flex items-center justify-center text-[var(--t-accent)] text-xs font-medium "
+                <span
+                  className="flex items-center justify-center"
+                  style={{ width: 24, height: 24, borderRadius: 999, background: '#0f62fe', color: '#fff', fontSize: 12, fontWeight: 600 }}
                 >
-                  {user?.name?.charAt(0) || user?.email?.charAt(0) || 'A'}
-                </div>
-                <ChevronDown className={`w-4 h-4 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
+                  {(user?.name?.charAt(0) || user?.email?.charAt(0) || 'A').toUpperCase()}
+                </span>
               </button>
 
               {showUserMenu && (
                 <div
                   style={{ backgroundColor: 'var(--t-panel)', borderColor: 'var(--t-border)', borderRadius: 2 }}
-                  className="absolute right-0 top-full mt-2 w-56 border py-2"
+                  className="absolute right-0 top-full w-56 border py-2"
                 >
                   <div className="px-3 py-2.5 border-b" style={{ borderColor: 'var(--t-border)' }}>
                     <p
