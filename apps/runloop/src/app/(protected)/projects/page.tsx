@@ -108,8 +108,8 @@ export default function ProjectsPage() {
         title="Projects"
         subtitle="Tenant workspaces — each project gets its own flows, schedulers, queues, and secret vault."
         metrics={<>
-          <MetricChip label="total" value={String(projects.length).padStart(2, '0')} />
-          <MetricChip label="shown" value={String(filtered.length).padStart(2, '0')} accent={searchQuery ? '#F59E0B' : undefined} />
+          <MetricChip label="total" value={String(projects.length)} />
+          <MetricChip label="shown" value={String(filtered.length)} />
         </>}
         right={
           <SharpButton onClick={() => setIsCreating(true)}>
@@ -250,14 +250,6 @@ export default function ProjectsPage() {
               className="flex items-center gap-3 px-4 py-2.5 transition hover:bg-[var(--t-panel-hover)] group"
               style={{ borderTop: i === 0 ? 'none' : `1px solid ${THEME.borderLight}` }}
             >
-              <span
-                style={{
-                  width: 40, fontFamily: MONO, fontSize: 10.5,
-                  color: THEME.text.muted, letterSpacing: 0,
-                }}
-              >
-                {String(i + 1).padStart(2, '0')}
-              </span>
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <div
                   style={{

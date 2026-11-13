@@ -19,7 +19,7 @@ import {
   Check,
   X,
 } from 'lucide-react';
-import { HeroHeader, MetricChip, SharpButton } from '@/components/ControlChrome';
+import { HeroHeader, MetricChip, SharpButton, ContentSwitcher, SearchField } from '@/components/ControlChrome';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const THEME = {
@@ -147,17 +147,16 @@ function humanizeCron(expr: string): string {
 
 function RunTrail({ statuses }: { statuses: string[] }) {
   if (statuses.length === 0) {
-    return <span style={{ fontSize: 11, color: 'var(--t-text-muted)', fontStyle: 'italic' }}>no runs</span>;
+    return <span style={{ fontSize: 12, color: 'var(--t-text-secondary)' }}>No runs yet</span>;
   }
   const color = (s: string) => {
     switch (s) {
-      case 'SUCCESS': return '#10B981';
+      case 'SUCCESS': return 'var(--t-success)';
       case 'FAILED':
-      case 'TIMEOUT': return '#EF4444';
+      case 'TIMEOUT': return 'var(--t-error)';
       case 'RUNNING':
-      case 'PENDING': return '#3B82F6';
-      case 'CANCELLED': return '#6B7280';
-      default: return '#9CA3AF';
+      case 'PENDING': return 'var(--t-accent)';
+      default: return 'var(--t-border-strong)';
     }
   };
   return (
@@ -168,8 +167,6 @@ function RunTrail({ statuses }: { statuses: string[] }) {
           style={{
             width: 6, height: 16,
             background: color(s),
-            borderRadius: 2,
-            opacity: 1 - i * 0.08,
           }}
         />
       ))}
@@ -329,9 +326,9 @@ export default function SchedulersPage() {
         title="Schedulers"
         subtitle="Cron, webhook, and manual triggers — decide when and how each flow fires."
         metrics={<>
-          <MetricChip label="active" value={String(runningCount).padStart(2, '0')} accent="#10B981" />
-          <MetricChip label="paused" value={String(pausedCount).padStart(2, '0')} accent="#F59E0B" />
-          <MetricChip label="total"  value={String(runningCount + pausedCount).padStart(2, '0')} />
+          <MetricChip label="active" value={String(runningCount)} />
+          <MetricChip label="paused" value={String(pausedCount)} />
+          <MetricChip label="total"  value={String(runningCount + pausedCount)} />
         </>}
         right={
           <SharpButton href={`/p/${projectId}/schedulers/new`}>
@@ -340,54 +337,9 @@ export default function SchedulersPage() {
         }
       />
 
-      {/* Filter tabs — mono pills */}
-      <div className="flex items-center gap-1.5 mb-3">
-        {tabs.map((tab) => {
-          const active = filterStatus === tab;
-          return (
-            <button
-              key={tab}
-              onClick={() => setFilterStatus(tab)}
-              style={{
-                background: active ? 'color-mix(in srgb, var(--t-accent) 12%, transparent)' : 'transparent',
-                color: active ? 'var(--t-accent)' : THEME.text.secondary,
-                border: `1px solid ${active ? 'color-mix(in srgb, var(--t-accent) 40%, transparent)' : THEME.border}`,
-                borderRadius: 2,
-                padding: '5px 12px',
-                fontFamily: MONO,
-                fontSize: 11,
-                fontWeight: 500,
-                letterSpacing: 0,
-              }}
-            >
-              {tab.toUpperCase()}
-            </button>
-          );
-        })}
-        <div
-          className="ml-auto flex items-center gap-3"
-          style={{ fontFamily: MONO, fontSize: 10.5, color: THEME.text.muted, letterSpacing: 0 }}
-        >
-          <span>
-            <span style={{ color: '#10B981' }}>●</span> {runningCount} ACTIVE
-          </span>
-          <span>
-            <span style={{ color: '#F59E0B' }}>●</span> {pausedCount} PAUSED
-          </span>
-        </div>
-      </div>
-
-      {/* Search */}
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: THEME.text.muted }} />
-        <input
-          type="text"
-          placeholder="search schedulers..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ background: THEME.panel, border: `1px solid ${THEME.border}`, color: THEME.text.primary, borderRadius: 2, height: 36, fontFamily: MONO, fontSize: 12 }}
-          className="w-full pl-9 pr-4 outline-none"
-        />
+      <div className="flex flex-col gap-4 mb-4">
+        <ContentSwitcher options={tabs} value={filterStatus} onChange={setFilterStatus} />
+        <SearchField value={searchQuery} onChange={setSearchQuery} placeholder="Search schedulers" />
       </div>
 
       {/* List */}
@@ -403,98 +355,86 @@ export default function SchedulersPage() {
           </Link>
         </div>
       ) : (
-        <div style={{ background: THEME.panel, border: `1px solid ${THEME.border}`, borderRadius: 2, overflow: 'hidden' }}>
-          {/* Table header */}
-          <div
-            className="flex items-center gap-3 px-4 py-2"
-            style={{
-              fontFamily: MONO, fontSize: 10, letterSpacing: 0,
-              color: THEME.text.muted,
-              borderBottom: `1px solid ${THEME.border}`,
-              background: 'color-mix(in srgb, var(--t-bg) 40%, transparent)',
-            }}
-          >
-            <span style={{ width: 22 }} aria-hidden />
-            <span style={{ width: 26 }} aria-hidden />
-            <span className="flex-1">SCHEDULER</span>
-            <span style={{ width: 90, textAlign: 'right' }}>HISTORY</span>
-            <span style={{ width: 70, textAlign: 'right' }}>SUCCESS</span>
-            <span style={{ width: 70, textAlign: 'right' }}>STATUS</span>
-            <span style={{ width: 100 }} aria-hidden />
+        <div style={{ background: THEME.panel, overflow: 'hidden' }}>
+          {/* Table header: name takes the room; History and Success drop out on narrow screens */}
+          <div className="sched-row" style={{ minHeight: 48, background: 'var(--t-selected)', fontSize: 14, fontWeight: 600, color: THEME.text.primary }}>
+            <span>Scheduler</span>
+            <span className="sched-opt">Recent runs</span>
+            <span className="sched-opt" style={{ textAlign: 'right' }}>Success</span>
+            <span>Status</span>
+            <span aria-hidden />
           </div>
           {filtered.map((scheduler, i) => {
             const st = statusStyle[scheduler.status] || statusStyle.PAUSED;
-            const idx = String(i + 1).padStart(2, '0');
+            const tag = scheduler.status === 'ACTIVE'
+              ? { background: 'var(--tag-green-bg)', color: 'var(--tag-green-text)' }
+              : scheduler.status === 'ERROR'
+                ? { background: 'var(--tag-red-bg)', color: 'var(--tag-red-text)' }
+                : { background: 'var(--tag-gray-bg)', color: 'var(--tag-gray-text)' };
             return (
               <div
                 key={scheduler.id}
-                className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-[var(--t-panel-hover)] group"
-                style={{ borderBottom: i < filtered.length - 1 ? `1px solid ${THEME.borderLight}` : 'none' }}
+                className="sched-row group transition-colors hover:bg-[var(--t-panel-hover)]"
+                style={{ minHeight: 64, borderTop: i === 0 ? 'none' : `1px solid ${THEME.border}` }}
               >
-                {/* Row index */}
-                <span style={{ fontFamily: MONO, fontSize: 10, color: THEME.text.muted, width: 22, textAlign: 'right' }}>{idx}</span>
-                {/* Icon */}
-                <div style={{ width: 26, height: 26, background: `${st.color}18`, border: `1px solid ${st.color}40`, borderRadius: 2 }} className="flex items-center justify-center flex-shrink-0">
-                  <Clock className="w-3 h-3" style={{ color: st.color }} />
-                </div>
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <p style={{ fontSize: 13, fontWeight: 500, color: THEME.text.primary, letterSpacing: 0 }} className="truncate">
+                <div className="min-w-0">
+                  <Link href={`/p/${projectId}/schedulers/${scheduler.id}`} className="block truncate hover:underline" style={{ fontSize: 14, fontWeight: 600, color: THEME.text.primary }} title={scheduler.name}>
                     {scheduler.name}
-                  </p>
-                  <p style={{ fontFamily: MONO, fontSize: 10.5, color: THEME.text.muted }} className="truncate">
+                  </Link>
+                  <p style={{ fontSize: 12, lineHeight: '16px', color: THEME.text.secondary, marginTop: 2 }} className="truncate">
                     <span title={scheduler.schedule}>{humanizeCron(scheduler.schedule)}</span>
                     {scheduler.lastRun && <> · last {scheduler.lastRun}</>}
                     {scheduler.nextRun && <> · next {scheduler.nextRun}</>}
                   </p>
                 </div>
-                <span style={{ width: 90 }} className="flex justify-end">
+                <span className="sched-opt">
                   <RunTrail statuses={recentRuns[scheduler.id] || []} />
                 </span>
-                <span style={{ width: 70, textAlign: 'right', fontFamily: MONO, fontSize: 11, color: THEME.text.secondary }}>
-                  {scheduler.successRate}% / {scheduler.totalRuns}
+                <span className="sched-opt" style={{ textAlign: 'right', fontSize: 14, fontVariantNumeric: 'tabular-nums', color: THEME.text.primary }}>
+                  {scheduler.successRate}%
+                  <span style={{ color: THEME.text.secondary, fontSize: 12 }}> of {scheduler.totalRuns}</span>
                 </span>
-                <span
-                  className="flex items-center justify-end gap-1.5"
-                  style={{ width: 70, fontFamily: MONO, fontSize: 10.5, color: st.color, letterSpacing: 0 }}
-                >
-                  <span
-                    style={{
-                      width: 6, height: 6, borderRadius: 999,
-                      background: st.color,
-                      boxShadow: `0 0 0 3px color-mix(in srgb, ${st.color} 15%, transparent)`,
-                    }}
-                  />
-                  {st.label.toUpperCase()}
+                <span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 12, lineHeight: '16px', padding: '4px 8px', borderRadius: 24, ...tag }}>
+                    {st.label}
+                  </span>
                 </span>
-                {/* Actions — sharp buttons, revealed on hover for density */}
-                <div className="flex items-center gap-1" style={{ width: 100, justifyContent: 'flex-end' }}>
-                  <button
-                    onClick={(e) => { e.preventDefault(); handleToggleStatus(scheduler.id, scheduler.status); }}
-                    style={{ width: 24, height: 24, borderRadius: 2, background: 'transparent', border: `1px solid ${THEME.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    title={scheduler.status === 'ACTIVE' ? 'Pause' : 'Resume'}
-                    className="opacity-60 group-hover:opacity-100 transition-opacity"
-                  >
-                    {scheduler.status === 'ACTIVE' ? (
-                      <Pause className="w-3 h-3" style={{ color: THEME.text.secondary }} />
-                    ) : (
-                      <Play className="w-3 h-3" style={{ color: THEME.text.secondary }} />
-                    )}
-                  </button>
+                <div className="flex items-center justify-end">
                   <button
                     onClick={(e) => { e.preventDefault(); handleTrigger(scheduler.id); }}
-                    style={{ width: 24, height: 24, borderRadius: 2, background: `${THEME.colors.blue}15`, border: `1px solid ${THEME.colors.blue}40`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    className="hover:bg-[var(--t-selected)]"
+                    style={{ width: 32, height: 32, display: 'grid', placeItems: 'center', background: 'transparent', border: 'none', color: THEME.text.primary }}
                     title="Run now"
+                    aria-label="Run now"
                   >
-                    <Play className="w-3 h-3" style={{ color: THEME.colors.blue, fill: THEME.colors.blue }} />
+                    <Play className="w-4 h-4" />
                   </button>
-                  <Link href={`/p/${projectId}/schedulers/${scheduler.id}`} className="opacity-40 group-hover:opacity-100 transition-opacity">
-                    <ChevronRight className="w-4 h-4" style={{ color: THEME.text.muted }} />
-                  </Link>
+                  <button
+                    onClick={(e) => { e.preventDefault(); handleToggleStatus(scheduler.id, scheduler.status); }}
+                    className="hover:bg-[var(--t-selected)]"
+                    style={{ height: 32, padding: '0 12px', fontSize: 14, background: 'transparent', border: 'none', color: 'var(--t-accent)' }}
+                    title={scheduler.status === 'ACTIVE' ? 'Pause' : 'Resume'}
+                    aria-label={scheduler.status === 'ACTIVE' ? 'Pause' : 'Resume'}
+                  >
+                    {scheduler.status === 'ACTIVE' ? 'Pause' : 'Resume'}
+                  </button>
                 </div>
               </div>
             );
           })}
+          <style jsx>{`
+            .sched-row {
+              display: grid;
+              grid-template-columns: minmax(0, 1fr) 132px 112px 96px 112px;
+              align-items: center;
+              column-gap: 16px;
+              padding: 0 16px;
+            }
+            @media (max-width: 1023px) {
+              .sched-row { grid-template-columns: minmax(0, 1fr) 80px 112px; }
+              .sched-opt { display: none; }
+            }
+          `}</style>
         </div>
       )}
     </div>

@@ -183,7 +183,7 @@ export function HeroHeader({
   right?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-end justify-between mb-6 gap-4">
+    <div className="flex items-start justify-between mb-6 gap-4">
       <div className="min-w-0 flex-1">
         <h1
           style={{
@@ -534,4 +534,105 @@ export function TableHeaderRow({
       ))}
     </div>
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Carbon list-page pieces shared by Flows / Schedulers / Queues / Projects.
+// ─────────────────────────────────────────────────────────────────────────
+export function ContentSwitcher<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: readonly T[];
+  value: T;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div className="flex items-center" role="tablist" style={{ width: 'fit-content', boxShadow: 'inset 0 0 0 1px var(--t-border)' }}>
+      {options.map((o) => {
+        const on = value === o;
+        return (
+          <button
+            key={o}
+            role="tab"
+            aria-selected={on}
+            onClick={() => onChange(o)}
+            className={on ? '' : 'hover:bg-[var(--t-panel-hover)]'}
+            style={{
+              height: 32,
+              padding: '0 16px',
+              fontSize: 14,
+              border: 'none',
+              background: on ? 'var(--t-text)' : 'transparent',
+              color: on ? 'var(--t-bg)' : 'var(--t-text-secondary)',
+            }}
+          >
+            {o.charAt(0).toUpperCase() + o.slice(1)}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function SearchField({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <div className="relative">
+      <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+        className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--t-text-secondary)' }}>
+        <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+      </svg>
+      <input
+        type="text"
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full outline-none focus:shadow-[inset_0_0_0_2px_var(--t-accent)] placeholder:text-[var(--t-text-muted)]"
+        style={{
+          height: 40,
+          padding: '0 16px 0 44px',
+          fontSize: 14,
+          background: 'var(--t-panel)',
+          color: 'var(--t-text)',
+          border: 'none',
+          borderBottom: '1px solid var(--t-border-strong)',
+        }}
+      />
+    </div>
+  );
+}
+
+export type TagTone = 'green' | 'red' | 'blue' | 'orange' | 'gray';
+export function Tag({ tone = 'gray', children }: { tone?: TagTone; children: React.ReactNode }) {
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        fontSize: 12,
+        lineHeight: '16px',
+        padding: '4px 8px',
+        borderRadius: 24,
+        whiteSpace: 'nowrap',
+        background: `var(--tag-${tone}-bg)`,
+        color: `var(--tag-${tone}-text)`,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+export function sentence(s: string) {
+  const t = (s || '').toLowerCase();
+  return t.charAt(0).toUpperCase() + t.slice(1);
 }

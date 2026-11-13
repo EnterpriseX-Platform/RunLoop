@@ -25,7 +25,7 @@ import {
   MousePointerClick,
 } from 'lucide-react';
 import type { Execution } from '@/types';
-import { HeroHeader, MetricChip } from '@/components/ControlChrome';
+import { HeroHeader, MetricChip, ContentSwitcher, SearchField, Tag } from '@/components/ControlChrome';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const THEME = {
@@ -387,71 +387,19 @@ export default function ExecutionsPage() {
         title="Executions"
         subtitle="Every run, every node, every millisecond — the raw log of what the engine actually did."
         metrics={<>
-          <MetricChip label="total"    value={String(totalCount).padStart(3, '0')} />
-          <MetricChip label="success"  value={`${successRate}%`} accent="#10B981" />
-          <MetricChip label="failed"   value={String(failedCount).padStart(2, '0')} accent={failedCount > 0 ? '#EF4444' : undefined} />
+          <MetricChip label="total"    value={String(totalCount)} />
+          <MetricChip label="success"  value={`${successRate}%`} />
+          <MetricChip label="failed"   value={String(failedCount)} />
           <MetricChip label="avg"      value={formatDuration(avgDuration)} />
         </>}
       />
 
 
       {/* Filter Bar */}
-      <div className="flex items-center gap-3 mb-4">
-        {/* Status tabs */}
-        <div
-          className="flex items-center gap-0.5"
-          style={{
-            background: THEME.panel,
-            border: `1px solid ${THEME.border}`,
-            borderRadius: 9,
-            padding: 3,
-          }}
-        >
-          {STATUS_TABS.map((tab) => {
-            const isActive = filterStatus === tab;
-            return (
-              <button
-                key={tab}
-                onClick={() => setFilterStatus(tab)}
-                style={{
-                  background: isActive ? THEME.accent : 'transparent',
-                  color: isActive ? '#fff' : THEME.text.secondary,
-                  border: `1px solid ${isActive ? THEME.accent : THEME.border}`,
-                  borderRadius: 2,
-                  padding: '5px 12px',
-                  fontSize: 12,
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                {tab}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Search */}
-        <div className="relative flex-1">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2"
-            style={{ width: 14, height: 14, color: THEME.text.muted }}
-          />
-          <input
-            type="text"
-            placeholder="Search by name or ID..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              background: THEME.panel,
-              border: `1px solid ${THEME.border}`,
-              color: THEME.text.primary,
-              borderRadius: 9,
-              height: 36,
-              fontSize: 12,
-            }}
-            className="w-full pl-9 pr-4 outline-none"
-          />
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
+        <ContentSwitcher options={STATUS_TABS} value={filterStatus} onChange={setFilterStatus} />
+        <div className="flex-1 min-w-[200px]">
+          <SearchField value={searchQuery} onChange={setSearchQuery} placeholder="Search by name or ID" />
         </div>
 
         {/* Select all */}
@@ -464,12 +412,12 @@ export default function ExecutionsPage() {
             background: selectedIds.size > 0 ? `${THEME.colors.blue}14` : THEME.panel,
             border: `1px solid ${selectedIds.size > 0 ? `${THEME.colors.blue}40` : THEME.border}`,
             color: selectedIds.size > 0 ? THEME.colors.blue : THEME.text.muted,
-            borderRadius: 9,
-            padding: '5px 12px',
+            borderRadius: 0,
+            padding: '0 16px',
             fontSize: 12,
             fontWeight: 500,
             cursor: 'pointer',
-            height: 36,
+            height: 40,
           }}
         >
           {selectedIds.size === filtered.length && filtered.length > 0 ? 'Deselect all' : 'Select all'}
@@ -485,18 +433,18 @@ export default function ExecutionsPage() {
             background: autoRefresh ? `${THEME.colors.emerald}14` : THEME.panel,
             border: `1px solid ${autoRefresh ? `${THEME.colors.emerald}40` : THEME.border}`,
             color: autoRefresh ? THEME.colors.emerald : THEME.text.muted,
-            borderRadius: 9,
-            padding: '5px 12px',
+            borderRadius: 0,
+            padding: '0 16px',
             fontSize: 12,
             fontWeight: 500,
             cursor: 'pointer',
-            height: 36,
+            height: 40,
             transition: 'all 0.15s ease',
           }}
         >
           <RefreshCw
             className={autoRefresh ? 'animate-spin' : ''}
-            style={{ width: 13, height: 13, animationDuration: '2s' }}
+            style={{ width: 16, height: 16, animationDuration: '2s' }}
           />
           Auto
         </button>
@@ -751,30 +699,19 @@ export default function ExecutionsPage() {
             overflow: 'hidden',
           }}
         >
-          {/* Header row — mono  columns */}
-          <div
-            className="flex items-center gap-3 px-4 py-2"
-            style={{
-              fontFamily: MONO, fontSize: 10, letterSpacing: 0,
-              color: THEME.text.muted,
-              borderBottom: `1px solid ${THEME.border}`,
-              background: 'color-mix(in srgb, var(--t-bg) 40%, transparent)',
-            }}
-          >
-            <span style={{ width: 14 }} aria-hidden />
-            <span style={{ width: 14 }} aria-hidden />
-            <span style={{ width: 24 }} aria-hidden />
-            <span className="flex-1">TARGET</span>
-            <span style={{ width: 80, textAlign: 'right' }}>TRIGGER</span>
-            <span style={{ width: 70, textAlign: 'right' }}>STATUS</span>
-            <span style={{ width: 16 }} aria-hidden />
+          <div className="rl-row rl-th" style={{ ['--cols' as any]: '16px 16px minmax(0, 1fr) 112px 104px auto', ['--cols-sm' as any]: '16px 16px minmax(0, 1fr) 104px auto' }}>
+            <span aria-hidden />
+            <span aria-hidden />
+            <span>Run</span>
+            <span className="rl-opt">Trigger</span>
+            <span>Status</span>
+            <span aria-hidden />
           </div>
           {filtered.map((execution, i) => {
             const st = statusConfig[execution.status] || statusConfig.PENDING;
             const trigger = triggerConfig[execution.triggerType] || triggerConfig.MANUAL;
             const TriggerIcon = trigger.icon;
             const isExpanded = expandedId === execution.id;
-            const idx = String(i + 1).padStart(3, '0');
 
             return (
               <div
@@ -785,7 +722,8 @@ export default function ExecutionsPage() {
               >
                 {/* Row */}
                 <div
-                  className="flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors hover:bg-[var(--t-panel-hover)] group"
+                  className="rl-row cursor-pointer transition-colors hover:bg-[var(--t-panel-hover)] group"
+                  style={{ ['--cols' as any]: '16px 16px minmax(0, 1fr) 112px 104px auto', ['--cols-sm' as any]: '16px 16px minmax(0, 1fr) 104px auto', minHeight: 56 }}
                   onClick={() => setExpandedId(isExpanded ? null : execution.id)}
                 >
                   {/* Checkbox */}
@@ -808,15 +746,10 @@ export default function ExecutionsPage() {
                     <ChevronRight style={{ width: 12, height: 12, color: THEME.text.muted }} />
                   </div>
 
-                  {/* Row index as log-line id */}
-                  <span style={{ fontFamily: MONO, fontSize: 10, color: THEME.text.muted, width: 24, textAlign: 'right' }}>
-                    {idx}
-                  </span>
-
                   {/* Name + time — left column */}
                   <div className="flex-1 min-w-0">
                     <p
-                      style={{ fontSize: 13, fontWeight: 500, color: THEME.text.primary, letterSpacing: 0 }}
+                      style={{ fontSize: 14, fontWeight: 600, color: THEME.text.primary }}
                       className="truncate"
                     >
                       {queueNameFromSchedulerId(execution.schedulerId) ||
@@ -825,7 +758,7 @@ export default function ExecutionsPage() {
                         syntheticLabel(execution) ||
                         'Untitled run'}
                     </p>
-                    <p style={{ fontFamily: MONO, fontSize: 10.5, color: THEME.text.muted, marginTop: 2 }}>
+                    <p style={{ fontSize: 12, lineHeight: '16px', color: THEME.text.secondary, marginTop: 2 }}>
                       {relativeTime(execution.startedAt)}
                       {execution.durationMs !== undefined && execution.durationMs !== null
                         ? ` · ${formatDuration(execution.durationMs)}`
@@ -835,28 +768,21 @@ export default function ExecutionsPage() {
 
                   {/* Trigger tag — sharp, mono */}
                   <span
-                    className="flex items-center justify-end gap-1.5"
-                    style={{ width: 80, fontFamily: MONO, fontSize: 10, color: trigger.color, letterSpacing: 0 }}
+                    className="rl-opt flex items-center gap-2"
+                    style={{ fontSize: 14, color: THEME.text.secondary }}
                   >
-                    <TriggerIcon style={{ width: 10, height: 10 }} />
-                    {execution.triggerType}
+                    <TriggerIcon style={{ width: 16, height: 16 }} />
+                    {execution.triggerType.charAt(0) + execution.triggerType.slice(1).toLowerCase()}
                   </span>
 
                   {/* Status dot + label — same pattern as other list pages */}
-                  <span
-                    className="flex items-center justify-end gap-1.5"
-                    style={{ width: 70, fontFamily: MONO, fontSize: 10.5, color: st.color, letterSpacing: 0 }}
-                  >
-                    <span
-                      style={{
-                        width: 6, height: 6, borderRadius: 999,
-                        background: st.color,
-                        boxShadow: `0 0 0 3px color-mix(in srgb, ${st.color} 15%, transparent)`,
-                      }}
-                    />
-                    {st.label.toUpperCase()}
+                  <span>
+                    <Tag tone={execution.status === 'SUCCESS' ? 'green' : execution.status === 'FAILED' || execution.status === 'TIMEOUT' ? 'red' : execution.status === 'RUNNING' ? 'blue' : execution.status === 'CANCELLED' ? 'gray' : 'orange'}>
+                      {st.label}
+                    </Tag>
                   </span>
 
+                  <div className="flex items-center justify-end gap-1">
                   {/* Review-mode inline actions: replay and discard */}
                   {isReviewMode && (
                     <>
@@ -926,6 +852,7 @@ export default function ExecutionsPage() {
                   >
                     <Zap style={{ width: 12, height: 12 }} />
                   </Link>
+                  </div>
                 </div>
 
                 {/* Expanded detail */}

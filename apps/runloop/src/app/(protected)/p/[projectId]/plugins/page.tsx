@@ -251,14 +251,12 @@ export default function PluginsPage() {
         <div className="space-y-1.5">
           {plugins.map((p, i) => {
             const color = p.manifest.color || '#6B7280';
-            const idx = String(i + 1).padStart(2, '0');
             return (
               <div
                 key={p.name}
                 className="flex items-center gap-3 px-4 py-3 group"
                 style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 2 }}
               >
-                <span style={{ fontFamily: MONO, fontSize: 10, color: T.textMuted, width: 22, textAlign: 'right' }}>{idx}</span>
                 <div
                   className="flex items-center justify-center flex-shrink-0"
                   style={{ width: 34, height: 34, borderRadius: 2, background: `${color}18`, border: `1px solid ${color}40`, color }}

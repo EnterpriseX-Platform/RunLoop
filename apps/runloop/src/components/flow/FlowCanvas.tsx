@@ -88,8 +88,8 @@ export interface FlowCanvasProps {
 // rather than soft, coloured by edge condition so the eye catches
 // failure branches immediately.
 const DEFAULT_EDGE_STYLE = {
-  style: { stroke: '#8d8d8d', strokeWidth: 1.5 },
-  markerEnd: { type: MarkerType.ArrowClosed, color: '#8d8d8d', width: 14, height: 14 },
+  style: { stroke: 'var(--t-text-secondary)', strokeOpacity: 0.55, strokeWidth: 1.8 },
+  markerEnd: { type: MarkerType.ArrowClosed, color: '#8d8d8d', width: 16, height: 16 },
   type: 'default' as const,
 };
 
@@ -110,15 +110,16 @@ function styleForCondition(condition?: string) {
   return {
     style: {
       stroke: color,
-      strokeWidth: 1.5,
+      strokeWidth: 1.8,
+      strokeOpacity: cond === 'ON_SUCCESS' ? 0.55 : 1,
       strokeDasharray: cond === 'ON_FAILURE' ? '5 3' : undefined,
     },
-    markerEnd: { type: MarkerType.ArrowClosed, color, width: 14, height: 14 },
+    markerEnd: { type: MarkerType.ArrowClosed, color, width: 16, height: 16 },
     type: 'default' as const,
     animated: cond === 'ON_ALWAYS',
     label: isDefault ? undefined : cond === 'ON_FAILURE' ? 'on fail' : 'always',
-    labelStyle: { fill: color, fontSize: 11, fontWeight: 600, fontFamily: MONO },
-    labelBgStyle: { fill: 'var(--flow-canvas-bg)' },
+    labelStyle: { fill: color, fontSize: 11.5, fontWeight: 600, fontFamily: MONO, paintOrder: 'stroke', stroke: 'var(--flow-canvas-bg)', strokeWidth: 5, strokeLinejoin: 'round' } as React.CSSProperties,
+    labelShowBg: false,
     labelBgPadding: [4, 2] as [number, number],
     labelBgBorderRadius: 0,
   };

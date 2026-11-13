@@ -511,3 +511,27 @@ body {
 
 /* Carbon: button labels never wrap; narrow layouts drop the label instead. */
 button, [role="button"] { white-space: nowrap; }
+
+/* Carbon data table row: proportional columns via --cols; columns marked
+   .rl-opt drop out below 1024px and the row switches to --cols-sm. */
+.rl-row {
+  display: grid;
+  grid-template-columns: var(--cols);
+  align-items: center;
+  column-gap: 16px;
+  padding: 0 16px;
+  min-height: 64px;
+}
+.rl-row + .rl-row { border-top: 1px solid var(--t-border); }
+.rl-th { min-height: 48px; background: var(--t-selected); font-size: 14px; font-weight: 600; color: var(--t-text); }
+.rl-th + .rl-row { border-top: none; }
+@media (max-width: 1023px) {
+  .rl-row { grid-template-columns: var(--cols-sm, var(--cols)); }
+  .rl-opt { display: none !important; }
+}
+
+/* Flow canvas: hover/selected edges darken like the reference editor. */
+.react-flow__edge:hover .react-flow__edge-path,
+.react-flow__edge.selected .react-flow__edge-path { stroke: var(--t-text) !important; stroke-opacity: 1 !important; stroke-width: 2.6 !important; }
+.react-flow__handle:hover, .react-flow__handle.connectingfrom, .react-flow__handle.connectingto { background: var(--t-text) !important; }
+.react-flow { background: var(--flow-canvas-bg); }

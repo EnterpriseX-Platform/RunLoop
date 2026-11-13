@@ -7,7 +7,7 @@ import {
   Plus, Inbox, AlertCircle, Loader2, ChevronRight,
   Database as DatabaseIcon, Radio, Rabbit, Waves,
 } from 'lucide-react';
-import { HeroHeader, MetricChip, SharpButton } from '@/components/ControlChrome';
+import { HeroHeader, MetricChip, SharpButton, Tag } from '@/components/ControlChrome';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const THEME = {
@@ -173,11 +173,11 @@ export default function QueuesPage() {
         title="Queues"
         subtitle="Producers push jobs, workers pull and run the bound flow."
         metrics={<>
-          <MetricChip label="queues"  value={String(queues.length).padStart(2, '0')} />
-          <MetricChip label="pending" value={String(totalPending).padStart(3, '0')} accent={totalPending > 0 ? '#F59E0B' : undefined} />
-          {totalDlq > 0 && <MetricChip label="dlq" value={String(totalDlq).padStart(2, '0')} accent="#EF4444" />}
+          <MetricChip label="queues"  value={String(queues.length)} />
+          <MetricChip label="pending" value={String(totalPending)} />
+          {totalDlq > 0 && <MetricChip label="dlq" value={String(totalDlq)} />}
           {criticalQueueCount > 0 && (
-            <MetricChip label="alerts" value={String(criticalQueueCount).padStart(2, '0')} accent="#EF4444" />
+            <MetricChip label="alerts" value={String(criticalQueueCount)} />
           )}
         </>}
         right={
@@ -204,103 +204,52 @@ export default function QueuesPage() {
           </SharpButton>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div style={{ background: THEME.panel, overflow: 'hidden' }}>
+          <div className="rl-row rl-th" style={{ ['--cols' as any]: 'minmax(0, 1fr) 72px 72px 72px 72px', ['--cols-sm' as any]: 'minmax(0, 1fr) 72px 72px' }}>
+            <span>Queue</span>
+            <span style={{ textAlign: 'right' }}>Pending</span>
+            <span className="rl-opt" style={{ textAlign: 'right' }}>Running</span>
+            <span className="rl-opt" style={{ textAlign: 'right' }}>Done</span>
+            <span style={{ textAlign: 'right' }}>DLQ</span>
+          </div>
           {queues.map((q) => {
             const meta = BACKEND_META[q.backend] || BACKEND_META.postgres;
-            const Icon = meta.icon;
             const s = statsMap[q.name] || { counts: {}, oldestPendingSec: 0 };
             const pending = s.counts?.PENDING || 0;
             const processing = s.counts?.PROCESSING || 0;
             const completed = s.counts?.COMPLETED || 0;
             const dlq = s.counts?.DLQ || 0;
             const queueAlerts = alertsFor(q, s);
-            const hasCritical = queueAlerts.some((a) => a.level === 'critical');
-
+            const num = (v: number, strong?: boolean, color?: string): React.CSSProperties => ({
+              textAlign: 'right', fontSize: 14, fontVariantNumeric: 'tabular-nums',
+              fontWeight: strong ? 600 : 400,
+              color: color || (v > 0 ? THEME.text.primary : THEME.text.secondary),
+            });
             return (
               <Link
                 key={q.name}
                 href={`/p/${projectId}/queues/${encodeURIComponent(q.name)}`}
-                style={{
-                  background: THEME.panel,
-                  border: `1px solid ${hasCritical ? 'color-mix(in srgb, #EF4444 45%, transparent)' : THEME.border}`,
-                  borderRadius: 2,
-                  // Critical queues get a thin red rail on the left so
-                  // they're impossible to miss in a list of 30.
-                  boxShadow: hasCritical ? 'inset 3px 0 0 #EF4444' : 'none',
-                }}
-                className="flex items-center gap-4 px-4 py-3 hover:bg-[var(--t-panel-hover)] transition group"
+                className="rl-row transition-colors hover:bg-[var(--t-panel-hover)]"
+                style={{ ['--cols' as any]: 'minmax(0, 1fr) 72px 72px 72px 72px', ['--cols-sm' as any]: 'minmax(0, 1fr) 72px 72px' }}
               >
-                <div
-                  style={{
-                    width: 32, height: 32, borderRadius: 2,
-                    background: `${meta.color}18`,
-                    border: `1px solid ${meta.color}40`,
-                    color: meta.color,
-                  }}
-                  className="flex items-center justify-center flex-shrink-0"
-                >
-                  <Icon className="w-4 h-4" style={{ width: 16, height: 16 }} />
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span style={{ fontSize: 14, fontWeight: 500, color: THEME.text.primary, letterSpacing: 0 }}>{q.name}</span>
-                    <span
-                      style={{
-                        fontFamily: MONO, fontSize: 9.5, fontWeight: 500, letterSpacing: 0,
-                        color: meta.color, background: 'transparent',
-                        padding: '1px 5px', borderRadius: 2,
-                        border: `1px solid ${meta.color}40`,
-                      }}
-                    >
-                      {meta.label}
-                    </span>
-                    {!q.enabled && (
-                      <span style={{
-                        fontFamily: MONO, fontSize: 9.5, fontWeight: 500, color: '#EF4444',
-                        background: 'transparent', padding: '1px 5px', borderRadius: 2,
-                        border: '1px solid color-mix(in srgb, #EF4444 40%, transparent)',
-                        letterSpacing: 0,
-                      }}>
-                        DISABLED
-                      </span>
-                    )}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="truncate" style={{ fontSize: 14, fontWeight: 600, color: THEME.text.primary }} title={q.name}>{q.name}</span>
+                    {!q.enabled && <Tag tone="gray">Disabled</Tag>}
                     {queueAlerts
-                      .filter((a) => !(a.label === 'disabled')) // already shown above
-                      .map((a) => {
-                        const c = a.level === 'critical' ? '#EF4444' : '#F59E0B';
-                        return (
-                          <span
-                            key={a.label}
-                            style={{
-                              fontFamily: MONO, fontSize: 9.5, fontWeight: 600,
-                              color: c,
-                              background: `color-mix(in srgb, ${c} 14%, transparent)`,
-                              border: `1px solid color-mix(in srgb, ${c} 45%, transparent)`,
-                              padding: '1px 6px', borderRadius: 2,
-                              letterSpacing: 0,
-                            }}
-                          >
-                            {a.label}
-                          </span>
-                        );
-                      })}
+                      .filter((a) => a.label !== 'disabled')
+                      .map((a) => (
+                        <Tag key={a.label} tone={a.level === 'critical' ? 'red' : 'orange'}>{a.label}</Tag>
+                      ))}
                   </div>
-                  <div style={{ fontFamily: MONO, fontSize: 10.5, color: THEME.text.muted, marginTop: 2, letterSpacing: 0 }}>
-                    concurrency={q.concurrency} · max_attempts={q.maxAttempts}
-                  </div>
+                  <p className="truncate" style={{ fontSize: 12, lineHeight: '16px', color: THEME.text.secondary, marginTop: 2 }}>
+                    {meta.label} · concurrency {q.concurrency} · up to {q.maxAttempts} attempts
+                  </p>
                 </div>
-
-                {/* Counts strip. Kept compact + dense — the operator's first
-                    glance should tell them if anything's on fire. */}
-                <div className="flex items-center gap-4" style={{ fontSize: 12 }}>
-                  <Stat label="Pending" value={pending} color={pending > 0 ? THEME.colors.amber : THEME.text.muted} />
-                  <Stat label="Running" value={processing} color={processing > 0 ? THEME.colors.blue : THEME.text.muted} />
-                  <Stat label="Done" value={completed} color={THEME.text.muted} />
-                  <Stat label="DLQ" value={dlq} color={dlq > 0 ? THEME.colors.red : THEME.text.muted} bold={dlq > 0} />
-                </div>
-
-                <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: THEME.text.muted }} />
+                <span style={num(pending)}>{pending}</span>
+                <span className="rl-opt" style={num(processing)}>{processing}</span>
+                <span className="rl-opt" style={num(completed)}>{completed}</span>
+                <span style={num(dlq, dlq > 0, dlq > 0 ? 'var(--t-error)' : undefined)}>{dlq}</span>
               </Link>
             );
           })}

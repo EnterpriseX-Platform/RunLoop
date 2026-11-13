@@ -119,7 +119,7 @@ export function BaseNode({ data, type: nodeType, selected, inputs = 1, outputs =
     ? 'inset 0 0 0 2px var(--t-error)'
     : selected
       ? 'inset 0 0 0 2px var(--t-text)'
-      : 'inset 0 0 0 1px var(--t-border-strong)';
+      : 'inset 0 0 0 1px var(--t-border)';
 
   const tileStyle: React.CSSProperties = isStart
     ? { background: 'var(--t-text)', color: 'var(--t-bg)' }
@@ -132,12 +132,12 @@ export function BaseNode({ data, type: nodeType, selected, inputs = 1, outputs =
       className="relative group"
       style={{
         width: CARD_W,
-        minHeight: 64,
+        minHeight: 70,
         display: 'grid',
         gridTemplateColumns: '36px minmax(0, 1fr)',
         alignItems: 'center',
         gap: 10,
-        padding: '12px 14px 12px 12px',
+        padding: '10px 12px 10px 10px',
         background: isEnd ? 'var(--t-input)' : 'var(--flow-node-bg)',
         boxShadow: ring,
         transition: 'box-shadow 0.12s',
@@ -151,14 +151,14 @@ export function BaseNode({ data, type: nodeType, selected, inputs = 1, outputs =
       </div>
 
       <div className="min-w-0" style={{ display: 'grid', gap: 1 }}>
-        <small style={{ fontSize: 11, lineHeight: '15px', fontWeight: 600, color: 'var(--t-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+        <small style={{ fontSize: 11.5, lineHeight: '15px', fontWeight: 600, color: 'var(--t-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
           {c.label}
         </small>
-        <b className="truncate" style={{ fontSize: 14, lineHeight: '19px', fontWeight: 600, color: 'var(--t-text)' }}>
+        <b className="truncate" style={{ fontSize: 14.5, lineHeight: '19px', fontWeight: 600, color: 'var(--t-text)' }}>
           {data.label}
         </b>
         {summary && (
-          <span className="truncate" style={{ fontSize: 12, lineHeight: '16px', color: 'var(--t-text-secondary)' }}>
+          <span className="truncate" style={{ fontSize: 12.5, lineHeight: '16px', color: 'var(--t-text-secondary)' }}>
             {summary}
           </span>
         )}
@@ -213,7 +213,7 @@ export function BaseNode({ data, type: nodeType, selected, inputs = 1, outputs =
                 {label && (
                   <span
                     className="absolute pointer-events-none whitespace-nowrap"
-                    style={{ left: '100%', top, transform: 'translate(10px, -100%)', fontSize: 11, lineHeight: '14px', color: 'var(--t-text-secondary)' }}
+                    style={{ left: 'calc(100% + 10px)', top, marginTop: -18, fontSize: 12.5, lineHeight: '16px', fontWeight: 600, color: 'var(--t-text-secondary)' }}
                   >
                     {label}
                   </span>
