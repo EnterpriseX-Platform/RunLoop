@@ -210,7 +210,7 @@ function Endpoint({ ep, baseUrl }: { ep: EndpointDef; baseUrl: string }) {
         {ep.body && (
           <details className="mt-3" open>
             <summary style={{ fontSize: 11, color: 'var(--t-text-muted)', letterSpacing: 0, cursor: 'pointer', marginBottom: 6 }}>
-              REQUEST BODY
+              Request body
             </summary>
             <CodeBlock code={ep.body} lang="json" />
           </details>
@@ -218,14 +218,14 @@ function Endpoint({ ep, baseUrl }: { ep: EndpointDef; baseUrl: string }) {
         {ep.response && (
           <details className="mt-3">
             <summary style={{ fontSize: 11, color: 'var(--t-text-muted)', letterSpacing: 0, cursor: 'pointer', marginBottom: 6 }}>
-              RESPONSE
+              Response
             </summary>
             <CodeBlock code={ep.response} lang="json" />
           </details>
         )}
         <details className="mt-3">
           <summary style={{ fontSize: 11, color: 'var(--t-text-muted)', letterSpacing: 0, cursor: 'pointer', marginBottom: 6 }}>
-            CURL
+            curl
           </summary>
           <CodeBlock
             lang="bash"

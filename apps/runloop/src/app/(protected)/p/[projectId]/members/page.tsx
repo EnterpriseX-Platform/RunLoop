@@ -251,13 +251,12 @@ export default function MembersPage() {
     >
       {/* Header */}
       <header
-        className="sticky top-0 z-40 backdrop-blur-xl"
+        className=""
         style={{
           background: `${THEME.bg}cc`,
-          borderBottom: `1px solid ${THEME.border}`,
         }}
       >
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="pb-6">
           <div className="flex items-center justify-between">
             <div>
               <h1
@@ -313,7 +312,7 @@ export default function MembersPage() {
       </header>
 
       {/* Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="">
         {!canManage && callerRole && (
           <div
             className="mb-6 px-4 py-3 rounded-lg flex items-start gap-3"

@@ -104,11 +104,12 @@ export function SettingsTabs() {
 
   return (
     <div
-      className="sticky top-0 z-10 flex items-center gap-0 overflow-x-auto"
+      className="sticky top-0 z-10 flex items-center gap-0 overflow-x-auto rl-noscrollbar"
       style={{
         background: 'var(--t-bg)',
         borderBottom: '1px solid var(--t-border)',
-        padding: '0 16px',
+        padding: 0,
+        marginBottom: 24,
         fontFamily: "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif",
       }}
     >

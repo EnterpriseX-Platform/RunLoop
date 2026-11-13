@@ -8,8 +8,7 @@ import {
   CheckCircle2, Clock, XCircle, PlayCircle, Inbox, Settings,
 } from 'lucide-react';
 import {
-  ControlBreadcrumb, PageHeader, MonoTag, SharpButton, SchematicPanel, TableHeaderRow, StatusDot, MONO,
-} from '@/components/ControlChrome';
+  ControlBreadcrumb, PageHeader, MonoTag, SharpButton, SchematicPanel, TableHeaderRow, StatusDot, MONO, ContentSwitcher } from '@/components/ControlChrome';
 import { Combobox } from '@/components/Combobox';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
@@ -568,36 +567,26 @@ export default function QueueDetailPage() {
         {(['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'DLQ'] as const).map((s) => {
           const meta = STATUS_META[s];
           const v = stats[s] || 0;
-          const Icon = meta.icon;
           return (
             <div
               key={s}
-              className="p-3"
-              style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 2 }}
+              className="p-4"
+              style={{ background: T.panel }}
             >
-              <div className="flex items-center gap-2 mb-2">
-                <Icon className="w-3.5 h-3.5" style={{ color: meta.color }} />
-                <span
-                  style={{
-                    fontFamily: MONO, fontSize: 10, fontWeight: 500,
-                    color: T.textMuted, letterSpacing: 0,
-                  }}
-                >
-                  {meta.label}
-                </span>
+              <div style={{ fontSize: 14, color: T.textSec, marginBottom: 8 }}>
+                {meta.label}
               </div>
               <div
                 style={{
-                  fontFamily: MONO, fontSize: 26, fontWeight: 600,
-                  color: v > 0 ? meta.color : T.textMuted, lineHeight: 1,
-                  letterSpacing: 0,
+                  fontSize: 32, fontWeight: 300, lineHeight: '40px', fontVariantNumeric: 'tabular-nums',
+                  color: v > 0 && (s === 'FAILED' || s === 'DLQ') ? 'var(--t-error)' : T.text,
                 }}
               >
                 {v}
               </div>
               {s === 'PENDING' && oldestSec > 0 && (
                 <div
-                  style={{ fontFamily: MONO, fontSize: 10, color: T.textMuted, marginTop: 6, letterSpacing: 0 }}
+                  style={{ fontSize: 12, color: T.textSec, marginTop: 4 }}
                 >
                   oldest {formatAge(oldestSec)}
                 </div>
@@ -607,49 +596,32 @@ export default function QueueDetailPage() {
         })}
       </div>
 
-      {/* Filter chips */}
-      <div className="flex items-center gap-1.5 mb-3">
-        {chipStatuses.map((s) => {
-          const active = filterStatus === s;
-          return (
-            <button
-              key={s}
-              onClick={() => setFilterStatus(s)}
-              style={{
-                padding: '4px 10px', borderRadius: 2,
-                fontFamily: MONO, fontSize: 10.5, fontWeight: 500, letterSpacing: 0,
-                background: active ? T.accent : 'transparent',
-                color: active ? '#fff' : T.textSec,
-                border: `1px solid ${active ? T.accent : T.border}`,
-              }}
-            >
-              {s === 'ALL' ? 'ALL' : STATUS_META[s]?.label || s}
-            </button>
-          );
-        })}
+      <div className="flex items-center gap-2 mb-4">
+        <ContentSwitcher
+          options={chipStatuses}
+          value={filterStatus}
+          onChange={setFilterStatus}
+          labels={Object.fromEntries(chipStatuses.map((c) => [c, c === 'ALL' ? 'All' : STATUS_META[c]?.label || c])) as any}
+        />
         <button
           onClick={fetchAll}
-          style={{
-            marginLeft: 'auto', fontFamily: MONO, fontSize: 10.5,
-            color: T.textMuted, letterSpacing: 0,
-          }}
-          className="flex items-center gap-1.5 hover:opacity-80"
+          className="ml-auto flex items-center gap-2 hover:bg-[var(--t-panel-hover)]"
+          style={{ height: 32, padding: '0 12px', fontSize: 14, color: 'var(--t-accent)', background: 'transparent', border: 'none' }}
         >
-          <RefreshCw className="w-3 h-3" /> REFRESH
+          <RefreshCw className="w-4 h-4" /> Refresh
         </button>
       </div>
 
       {/* Jobs table */}
-      <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 2, overflow: 'hidden' }}>
+      <div style={{ background: T.panel, overflow: 'hidden' }}>
         <TableHeaderRow
           cols={[
-            { label: '#',        width: 40 },
-            { label: 'JOB',      width: 220 },
-            { label: 'STATUS',   width: 90 },
-            { label: 'ATTEMPTS', width: 80, align: 'right' },
-            { label: 'LAST ERROR' },
-            { label: 'CREATED',  width: 170 },
-            { label: 'ACTIONS',  width: 80, align: 'right' },
+            { label: 'Job',        width: 220 },
+            { label: 'Status',     width: 90 },
+            { label: 'Attempts',   width: 80, align: 'right' },
+            { label: 'Last error' },
+            { label: 'Created',    width: 170 },
+            { label: '',           width: 80, align: 'right' },
           ]}
         />
         {jobs.length === 0 ? (
@@ -674,14 +646,6 @@ export default function QueueDetailPage() {
                     color: T.text,
                   }}
                 >
-                  <span
-                    style={{
-                      width: 40, fontFamily: MONO, fontSize: 10.5,
-                      color: T.textMuted, letterSpacing: 0,
-                    }}
-                  >
-                    {String(i + 1).padStart(3, '0')}
-                  </span>
                   <div style={{ width: 220 }}>
                     <div style={{ fontFamily: MONO, fontSize: 12, color: T.text }}>
                       {j.id.slice(0, 16)}…

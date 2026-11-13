@@ -7,8 +7,7 @@ import { ArrowLeft, Loader2, CheckCircle2, XCircle, Clock, PlayCircle, Terminal,
 import type { Execution } from '@/types';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import {
-  ControlBreadcrumb, PageHeader, MonoTag, SharpButton, StatusDot, MONO,
-} from '@/components/ControlChrome';
+  ControlBreadcrumb, PageHeader, MonoTag, SharpButton, StatusDot, MONO, sentence } from '@/components/ControlChrome';
 import { AskAIButton } from '@/components/AskAIButton';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
@@ -158,7 +157,7 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
                 : 'warn'
               }
             >
-              {execution.status}
+              {sentence(execution.status)}
             </MonoTag>
             {isActive && liveConnected && (
               <span
@@ -227,34 +226,19 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
         }}
         className="mb-5"
       >
-        {/* Corner ticks for schematic feel */}
-        <span style={{ position: 'absolute', top: -1, left: -1, width: 8, height: 1, background: THEME.accent }} />
-        <span style={{ position: 'absolute', top: -1, left: -1, width: 1, height: 8, background: THEME.accent }} />
-        <span style={{ position: 'absolute', top: -1, right: -1, width: 8, height: 1, background: THEME.accent }} />
-        <span style={{ position: 'absolute', top: -1, right: -1, width: 1, height: 8, background: THEME.accent }} />
-        <span style={{ position: 'absolute', bottom: -1, left: -1, width: 8, height: 1, background: THEME.accent }} />
-        <span style={{ position: 'absolute', bottom: -1, left: -1, width: 1, height: 8, background: THEME.accent }} />
-        <span style={{ position: 'absolute', bottom: -1, right: -1, width: 8, height: 1, background: THEME.accent }} />
-        <span style={{ position: 'absolute', bottom: -1, right: -1, width: 1, height: 8, background: THEME.accent }} />
 
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <p
-              style={{
-                fontFamily: MONO,
-                fontSize: 10,
-                letterSpacing: 0,
-                color: THEME.text.muted,
-              }}
+              style={{ fontSize: 12, color: THEME.text.secondary }}
             >
-              <span style={{ opacity: 0.5 }}></span> started
+              Started
             </p>
             <p
               style={{
-                fontFamily: MONO,
-                fontSize: 12.5,
+                fontSize: 14,
                 color: THEME.text.primary,
-                marginTop: 2,
+                marginTop: 4,
                 fontVariantNumeric: 'tabular-nums',
               }}
             >
@@ -278,21 +262,15 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
           </div>
           <div className="flex-1 text-right">
             <p
-              style={{
-                fontFamily: MONO,
-                fontSize: 10,
-                letterSpacing: 0,
-                color: THEME.text.muted,
-              }}
+              style={{ fontSize: 12, color: THEME.text.secondary }}
             >
-              <span style={{ opacity: 0.5 }}></span> completed
+              Completed
             </p>
             <p
               style={{
-                fontFamily: MONO,
-                fontSize: 12.5,
+                fontSize: 14,
                 color: THEME.text.primary,
-                marginTop: 2,
+                marginTop: 4,
                 fontVariantNumeric: 'tabular-nums',
               }}
             >
@@ -310,12 +288,11 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className="flex items-center gap-1.5"
+              className="flex items-center hover:text-[var(--t-text)]"
               style={{
-                fontFamily: MONO, fontSize: 11, fontWeight: 500,
-                letterSpacing: 0,
-                color: active ? THEME.accent : THEME.text.muted,
-                padding: '10px 14px',
+                fontSize: 14, fontWeight: active ? 600 : 400,
+                color: active ? THEME.text.primary : THEME.text.secondary,
+                height: 48, padding: '0 16px',
                 background: 'transparent',
                 border: 'none',
                 borderBottom: `2px solid ${active ? THEME.accent : 'transparent'}`,
@@ -323,7 +300,6 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
                 cursor: 'pointer',
               }}
             >
-              <tab.icon className="w-3.5 h-3.5" />
               {tab.label}
             </button>
           );
@@ -366,7 +342,7 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
                           minWidth: 70, textAlign: 'center',
                         }}
                       >
-                        {row.status}
+                        {sentence(row.status)}
                       </span>
                       <span style={{ fontFamily: 'monospace', fontSize: 13, color: THEME.text.primary, flex: 1 }}>
                         {row.nodeId}

@@ -580,7 +580,7 @@ function EngineDot() {
           background: 'var(--t-success)',
         }}
       />
-      <span className="hidden xl:inline">Engine online</span>
+      Engine online
     </span>
   );
 }
@@ -891,8 +891,8 @@ export function Layout({ children }: { children?: React.ReactNode }) {
           <div className="flex items-center gap-2 ml-auto">
             {/* Telemetry strip — sits right where eyes land after the breadcrumb */}
             <div
-              className="hidden md:flex items-center gap-3 pr-3 mr-1"
-              style={{ borderRight: '1px solid var(--t-border-light)', height: 24 }}
+              className="hidden xl:flex items-center gap-3 mr-2"
+              style={{ height: 24 }}
             >
               <EngineDot />
 
@@ -1130,7 +1130,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
         </header>
 
         {/* Page content — sits above the backdrop via z-index */}
-        <div className="flex-1 overflow-auto p-4 relative" style={{ zIndex: 1 }}>
+        <div className="flex-1 overflow-auto px-8 pt-6 pb-8 relative" style={{ zIndex: 1 }}>
           {children}
         </div>
       </main>

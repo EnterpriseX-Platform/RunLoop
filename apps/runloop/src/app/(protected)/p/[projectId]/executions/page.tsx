@@ -25,7 +25,7 @@ import {
   MousePointerClick,
 } from 'lucide-react';
 import type { Execution } from '@/types';
-import { HeroHeader, MetricChip, ContentSwitcher, SearchField, Tag } from '@/components/ControlChrome';
+import { HeroHeader, MetricChip, ContentSwitcher, SearchField, Tag, sentence } from '@/components/ControlChrome';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const THEME = {
@@ -564,71 +564,50 @@ export default function ExecutionsPage() {
               return (
                 <div
                   key={entry.id}
-                  className="px-4 py-3 flex items-start gap-3"
+                  className="px-4 py-4 flex items-start gap-4"
                   style={{
                     borderBottom: i < dlqEntries.length - 1 ? `1px solid ${THEME.borderLight}` : 'none',
                   }}
                 >
-                  <div
-                    style={{
-                      width: 32, height: 32,
-                      background: `${THEME.colors.red}18`,
-                      border: `1px solid ${THEME.colors.red}30`,
-                      borderRadius: 0,
-                      flexShrink: 0,
-                    }}
-                    className="flex items-center justify-center"
-                  >
-                    <AlertCircle className="w-4 h-4" style={{ color: THEME.colors.red }} />
-                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span
                         style={{
-                          fontFamily: MONO, fontSize: 10.5,
-                          padding: '2px 6px',
-                          background: `${THEME.colors.red}14`,
-                          color: THEME.colors.red,
-                          border: `1px solid ${THEME.colors.red}30`,
-                          letterSpacing: 0,
+                          fontSize: 12, lineHeight: '16px', padding: '2px 8px', borderRadius: 24,
+                          background: 'var(--tag-red-bg)', color: 'var(--tag-red-text)',
                         }}
                       >
-                        {entry.reason}
+                        {sentence(String(entry.reason || '').replace(/_/g, ' '))}
                       </span>
-                      <span style={{ fontSize: 13, fontWeight: 500, color: THEME.text.primary }}>
-                        {entry.node_id ? `node: ${entry.node_id}` : 'flow run'}
+                      <span style={{ fontSize: 14, fontWeight: 600, color: THEME.text.primary }}>
+                        {entry.node_id ? `Step ${entry.node_id}` : 'Flow run'}
                       </span>
                       {entry.node_type && (
                         <span
                           style={{
-                            fontFamily: MONO, fontSize: 10,
-                            color: THEME.text.muted,
-                            padding: '1px 5px',
-                            border: `1px solid ${THEME.border}`,
+                            fontSize: 12, lineHeight: '16px', padding: '2px 8px', borderRadius: 24,
+                            background: 'var(--tag-gray-bg)', color: 'var(--tag-gray-text)',
                           }}
                         >
                           {entry.node_type}
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: 12, color: THEME.text.secondary, marginBottom: 4 }}>
+                    <div style={{ fontSize: 14, color: THEME.text.primary, marginBottom: 4 }}>
                       {entry.error_message || '—'}
                     </div>
                     <div
-                      style={{
-                        fontFamily: MONO, fontSize: 10.5,
-                        color: THEME.text.muted, letterSpacing: 0,
-                      }}
+                      style={{ fontSize: 12, color: THEME.text.secondary }}
                       className="flex items-center gap-3 flex-wrap"
                     >
                       <span>{sourceLabel}</span>
-                      <span>retries: {entry.retry_count}</span>
+                      <span>{entry.retry_count} retries</span>
                       <span>{relativeTime(entry.created_at)}</span>
                       <Link
                         href={`/p/${projectId}/executions/${entry.execution_id}`}
                         style={{ color: THEME.accent }}
                       >
-                        view execution →
+                        View run
                       </Link>
                     </div>
                   </div>
@@ -637,12 +616,12 @@ export default function ExecutionsPage() {
                       onClick={() => replayDLQ(entry.id)}
                       disabled={acting}
                       style={{
-                        background: THEME.accent, color: '#fff',
-                        fontSize: 12, fontWeight: 500,
-                        borderRadius: 2, padding: '6px 12px',
+                        background: 'transparent', color: 'var(--t-accent)',
+                        border: '1px solid var(--t-accent)',
+                        fontSize: 14, height: 32, padding: '0 12px',
                         opacity: acting ? 0.6 : 1,
                       }}
-                      className="flex items-center gap-1.5"
+                      className="flex items-center gap-2 hover:bg-[var(--t-panel-hover)]"
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
                       Replay
@@ -652,12 +631,12 @@ export default function ExecutionsPage() {
                       disabled={acting}
                       style={{
                         background: 'transparent',
-                        color: THEME.text.muted,
-                        fontSize: 12,
-                        border: `1px solid ${THEME.border}`,
-                        borderRadius: 2, padding: '6px 12px',
+                        color: 'var(--t-text)',
+                        fontSize: 14, height: 32, padding: '0 12px',
+                        border: 'none',
                         opacity: acting ? 0.6 : 1,
                       }}
+                      className="hover:bg-[var(--t-panel-hover)]"
                     >
                       Discard
                     </button>

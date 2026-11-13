@@ -140,7 +140,7 @@ export default function NewQueuePage() {
         </div>
       )}
 
-      <Section title="BASICS">
+      <Section title="Basics">
         <Field label="Name" required hint="Used as the queue identifier and in the producer URL">
           <input
             value={name}
@@ -159,7 +159,7 @@ export default function NewQueuePage() {
         </Field>
       </Section>
 
-      <Section title="BACKEND">
+      <Section title="Backend">
         <div className="flex gap-1.5 mb-3">
           {(['postgres', 'redis', 'rabbitmq', 'kafka'] as Backend[]).map((b) => {
             const active = backend === b;
@@ -189,7 +189,7 @@ export default function NewQueuePage() {
               padding: '8px 0', letterSpacing: 0,
             }}
           >
-            // POSTGRES USES THE ENGINE'S OWN DATABASE — NO EXTRA CONFIG NEEDED
+            Postgres uses the engine's own database, so there is nothing else to set up.
           </p>
         ) : (
           BACKEND_FIELDS[backend].map((f) => (
@@ -205,7 +205,7 @@ export default function NewQueuePage() {
         )}
       </Section>
 
-      <Section title="DELIVERY">
+      <Section title="Delivery">
         <div className="grid grid-cols-3 gap-3">
           <Field label="Concurrency" hint="Max parallel jobs per worker">
             <input
@@ -249,8 +249,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     <SchematicPanel className="mb-3">
       <h3
         style={{
-          fontSize: 12, fontWeight: 600, color: T.textSec,
-          marginBottom: 14, letterSpacing: 0,
+          fontSize: 16, lineHeight: '22px', fontWeight: 600, color: T.text,
+          marginBottom: 16,
         }}
       >
         {title}

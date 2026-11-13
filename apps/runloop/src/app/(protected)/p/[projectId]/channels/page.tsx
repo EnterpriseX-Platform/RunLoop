@@ -118,7 +118,7 @@ export default function ChannelsPage() {
   };
 
   return (
-    <div className="p-6">
+    <div className="">
       {toast && (
         <div
           className="fixed bottom-6 right-6 z-50 px-4 py-2 rounded-sm"
@@ -140,7 +140,7 @@ export default function ChannelsPage() {
             Flow nodes publish, apps subscribe over WebSocket.
           </p>
         </div>
-        <SharpButton onClick={refresh}>
+        <SharpButton variant="ghost" onClick={refresh}>
           <RefreshCcw className="w-3.5 h-3.5" /> Refresh
         </SharpButton>
       </div>

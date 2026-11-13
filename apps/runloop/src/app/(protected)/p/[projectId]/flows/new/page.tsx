@@ -121,7 +121,7 @@ export default function NewFlowPage() {
   };
 
   return (
-    <div style={{ height: 'calc(100vh - 64px)' }}>
+    <div style={{ height: 'calc(100vh - 48px - 56px)' }}>
       <FlowCanvas
         initialNodes={initialNodes}
         initialEdges={[]}

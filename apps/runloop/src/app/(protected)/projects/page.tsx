@@ -123,7 +123,7 @@ export default function ProjectsPage() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: THEME.text.muted }} />
         <input
           type="text"
-          placeholder="search projects…"
+          placeholder="Search projects"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           style={{
@@ -232,10 +232,9 @@ export default function ProjectsPage() {
         <div style={{ background: THEME.panel, border: `1px solid ${THEME.border}`, borderRadius: 2, overflow: 'hidden' }}>
           <TableHeaderRow
             cols={[
-              { label: '#',           width: 40 },
-              { label: 'PROJECT' },
-              { label: 'RUNLOOPS',    width: 100, align: 'right' },
-              { label: 'MEMBERS',     width: 100, align: 'right' },
+              { label: 'Project' },
+              { label: 'Schedulers',  width: 100, align: 'right' },
+              { label: 'Members',     width: 100, align: 'right' },
               { label: '',            width: 24 },
             ]}
           />

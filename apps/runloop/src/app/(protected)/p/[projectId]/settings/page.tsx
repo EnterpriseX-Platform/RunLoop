@@ -341,7 +341,7 @@ export default function SettingsPage() {
   const appVersion = '0.1.0';
 
   return (
-    <div className="space-y-4 px-6 pt-4" style={{ fontFamily: FONT, maxWidth: 868 }}>
+    <div className="space-y-4" style={{ fontFamily: FONT, maxWidth: 868 }}>
       <div className="flex items-end justify-between mb-6 gap-4">
         <div>
           <h1 style={{ fontSize: 28, lineHeight: '36px', fontWeight: 400, color: THEME.text.primary }}>General</h1>

@@ -109,7 +109,7 @@ export default function EnvVarsPage() {
   };
 
   return (
-    <div className="p-6 max-w-[820px]">
+    <div className="">
       {toast && (
         <div
           className="fixed bottom-6 right-6 z-50 px-4 py-2"

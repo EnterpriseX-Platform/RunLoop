@@ -535,3 +535,38 @@ button, [role="button"] { white-space: nowrap; }
 .react-flow__edge.selected .react-flow__edge-path { stroke: var(--t-text) !important; stroke-opacity: 1 !important; stroke-width: 2.6 !important; }
 .react-flow__handle:hover, .react-flow__handle.connectingfrom, .react-flow__handle.connectingto { background: var(--t-text) !important; }
 .react-flow { background: var(--flow-canvas-bg); }
+
+/* Horizontal tab strips scroll without showing a scrollbar. */
+.rl-noscrollbar { scrollbar-width: none; }
+.rl-noscrollbar::-webkit-scrollbar { display: none; }
+
+/* ===== Carbon consistency layer (applies to every page in <main>) ===== */
+
+/* One page-title style everywhere: heading-04, no leading icon. */
+main h1 { font-size: 28px !important; line-height: 36px !important; font-weight: 400 !important; letter-spacing: 0 !important; }
+main h1 > svg { display: none !important; }
+
+/* Tiles sit on --t-bg with their own fill; Carbon does not outline them. */
+[style*="background: var(--t-panel)"][style*="border: 1px solid var(--t-border)"],
+[style*="background-color: var(--t-panel)"][style*="border: 1px solid var(--t-border)"] {
+  border-color: transparent !important;
+}
+
+/* Form fields: filled, square, a single bottom rule, 2px inset focus ring. */
+main :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]), select, textarea):not(.rl-bare) {
+  background-color: var(--t-input) !important;
+  border: none !important;
+  border-bottom: 1px solid var(--t-border-strong) !important;
+  border-radius: 0 !important;
+  box-shadow: none;
+  color: var(--t-text);
+}
+main :is(input, select):not([type="checkbox"]):not([type="radio"]):not(.rl-bare) { min-height: 40px; }
+main :is(input, select, textarea):not(.rl-bare):focus { outline: none !important; box-shadow: inset 0 0 0 2px var(--t-accent) !important; }
+main input[type="checkbox"], main input[type="radio"] { accent-color: var(--t-text); width: 16px; height: 16px; }
+
+/* Data tables: Carbon header (48px, layer-selected, 14px semibold), rows separated by one rule. */
+main table thead, main table thead tr { background: var(--t-selected) !important; }
+main table th { height: 48px; font-size: 14px !important; font-weight: 600 !important; color: var(--t-text) !important; text-transform: none !important; letter-spacing: 0 !important; }
+main table tbody tr + tr td { border-top: 1px solid var(--t-border); }
+main table td { font-size: 14px; }

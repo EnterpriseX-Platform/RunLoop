@@ -6,8 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Loader2, AlertCircle, Plus, X, Workflow, Webhook } from 'lucide-react';
 import type { TriggerType, Flow } from '@/types';
 import {
-  ControlBreadcrumb, PageHeader, SchematicPanel, SharpButton, MonoTag, MONO,
-} from '@/components/ControlChrome';
+  ControlBreadcrumb, PageHeader, SchematicPanel, SharpButton, MonoTag, MONO, sentence } from '@/components/ControlChrome';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const T = {
@@ -234,7 +233,7 @@ export default function NewSchedulerPage() {
         <div className="flex gap-4" style={{ alignItems: 'flex-start' }}>
           {/* Left — form */}
           <div className="flex-1" style={{ minWidth: 0 }}>
-            <Section title="BASIC INFORMATION">
+            <Section title="Basic information">
               <Field label="Name" required>
                 <input
                   type="text"
@@ -257,7 +256,7 @@ export default function NewSchedulerPage() {
               </Field>
             </Section>
 
-            <Section title="TRIGGER SETTINGS">
+            <Section title="Trigger settings">
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Trigger Type">
                   <select
@@ -288,7 +287,7 @@ export default function NewSchedulerPage() {
               </div>
 
               {formData.triggerType === 'WEBHOOK' && (
-                <Callout color={T.purple} icon={Webhook} label="WEBHOOK ENDPOINT">
+                <Callout color={T.purple} icon={Webhook} label="Webhook endpoint">
                   <p style={{ fontSize: 12, color: T.textSec, lineHeight: 1.5 }}>
                     A public webhook URL + HMAC secret will be generated after saving. Anyone with the URL and
                     secret can trigger this scheduler by POSTing JSON.
@@ -301,7 +300,7 @@ Header: X-Webhook-Signature: <HMAC-SHA256 of body using secret>`}
               )}
 
               {formData.triggerType === 'API' && (
-                <Callout color={T.blue} icon={Workflow} label="API TRIGGER">
+                <Callout color={T.blue} icon={Workflow} label="Api trigger">
                   <p style={{ fontSize: 12, color: T.textSec, lineHeight: 1.5 }}>
                     Trigger this scheduler by calling the authenticated trigger endpoint:
                   </p>
@@ -362,7 +361,7 @@ Body: { "input": {...} }`}
               )}
             </Section>
 
-            <Section title="PARAMETERS">
+            <Section title="Parameters">
               <Field
                 label="Input (JSON)"
                 hint={
@@ -403,7 +402,7 @@ Body: { "input": {...} }`}
               </Field>
             </Section>
 
-            <Section title="EXECUTION SETTINGS">
+            <Section title="Execution settings">
               <div className="grid grid-cols-4 gap-3">
                 <Field label="Timeout (s)">
                   <input type="number" value={formData.timeout}
@@ -450,7 +449,7 @@ Body: { "input": {...} }`}
                       letterSpacing: 0,
                     }}
                   >
-                    // FLOWS TO RUN
+                    Flows to run
                   </h3>
                   <p style={{ fontSize: 11, color: T.textMuted, marginTop: 4 }}>
                     Select flows — they execute in order.
@@ -541,7 +540,7 @@ Body: { "input": {...} }`}
                           {flow.type === 'DAG' ? 'DAG' : flow.jobType || 'SIMPLE'}
                         </MonoTag>
                         <MonoTag tone={flow.status === 'ACTIVE' ? 'success' : 'muted'}>
-                          {flow.status}
+                          {sentence(flow.status)}
                         </MonoTag>
                       </button>
                     ))}
@@ -572,11 +571,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     <SchematicPanel className="mb-3">
       <h3
         style={{
-          fontFamily: MONO, fontSize: 10, fontWeight: 600, color: T.textSec,
-          marginBottom: 14, letterSpacing: 0,
+          fontSize: 16, lineHeight: '22px', fontWeight: 600, color: T.text,
+          marginBottom: 16,
         }}
       >
-        // {title}
+        {title}
       </h3>
       <div className="space-y-3">{children}</div>
     </SchematicPanel>

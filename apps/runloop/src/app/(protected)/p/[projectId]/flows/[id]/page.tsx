@@ -1,4 +1,5 @@
 'use client';
+import { sentence } from '@/components/ControlChrome';
 
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -311,7 +312,7 @@ export default function FlowDetailPage() {
   }
 
   return (
-    <div style={{ height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', fontFamily: FONT }}>
+    <div style={{ height: 'calc(100vh - 48px - 56px)', display: 'flex', flexDirection: 'column', fontFamily: FONT }}>
       {/* Sticky top strip with back + delete */}
       <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: `1px solid ${THEME.border}`, background: THEME.panel }}>
         <div className="flex items-center gap-3 min-w-0">
@@ -319,7 +320,7 @@ export default function FlowDetailPage() {
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <span className="text-xs font-medium whitespace-nowrap" style={{ color: THEME.text.secondary }}>
-            Flow {flow.status === 'ACTIVE' ? '·' : `(${flow.status})`} {flow.type}
+            Flow {flow.status === 'ACTIVE' ? '·' : `(${sentence(flow.status)})`} {flow.type}
           </span>
           <AskAIButton
             prompt="Explain what this flow does at a high level, then point out any obvious issue or improvement."

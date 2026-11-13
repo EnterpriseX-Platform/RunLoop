@@ -6,8 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Play, Pause, Trash2, Loader2, Clock, CheckCircle2, XCircle, Activity, History, Settings, RefreshCw, GitBranch, Plus, X, Webhook, Copy, Eye, EyeOff, Mail, Bell, Slack, CalendarClock } from 'lucide-react';
 import type { RunLoop, Execution, DependencyCondition } from '@/types';
 import {
-  ControlBreadcrumb, PageHeader, MonoTag, SharpButton, StatusDot, MONO,
-} from '@/components/ControlChrome';
+  ControlBreadcrumb, PageHeader, MonoTag, SharpButton, StatusDot, MONO, sentence } from '@/components/ControlChrome';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const THEME = {
@@ -301,7 +300,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Activity },
-    { id: 'history', label: 'Execution History', icon: History },
+    { id: 'history', label: 'Execution history', icon: History },
     { id: 'dependencies', label: 'Dependencies', icon: GitBranch },
     { id: 'notifications', label: 'Notifications', icon: Mail },
     { id: 'settings', label: 'Settings', icon: Settings },
@@ -333,7 +332,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
               {scheduler.name}
             </h1>
             <MonoTag tone={scheduler.status === 'ACTIVE' ? 'success' : 'warn'}>
-              {scheduler.status}
+              {sentence(scheduler.status)}
             </MonoTag>
           </div>
           <p style={{ fontSize: 13, color: THEME.text.muted }}>
@@ -356,10 +355,10 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4 mb-5">
-        <StatCard label="Total Runs" value={scheduler.successCount + scheduler.failureCount} icon={<Activity className="w-5 h-5" />} color={THEME.colors.blue} />
+        <StatCard label="Total runs" value={scheduler.successCount + scheduler.failureCount} icon={<Activity className="w-5 h-5" />} color={THEME.colors.blue} />
         <StatCard label="Success" value={scheduler.successCount} icon={<CheckCircle2 className="w-5 h-5" />} color={THEME.colors.emerald} />
         <StatCard label="Failed" value={scheduler.failureCount} icon={<XCircle className="w-5 h-5" />} color={THEME.colors.red} />
-        <StatCard label="Next Run" value={scheduler.nextRunAt ? new Date(scheduler.nextRunAt).toLocaleString() : 'Not scheduled'} icon={<Clock className="w-5 h-5" />} color={THEME.colors.amber} />
+        <StatCard label="Next run" value={scheduler.nextRunAt ? new Date(scheduler.nextRunAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Not scheduled'} icon={<Clock className="w-5 h-5" />} color={THEME.colors.amber} />
       </div>
 
       {/* Tabs */}
@@ -375,14 +374,13 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
                   fetchAllSchedulers();
                 }
               }}
-              className="flex items-center gap-1.5"
+              className="flex items-center hover:text-[var(--t-text)]"
               style={{
-                fontFamily: MONO,
-                fontSize: 11,
-                fontWeight: 500,
-                letterSpacing: 0,
-                color: active ? THEME.accent : THEME.text.muted,
-                padding: '10px 14px',
+                fontSize: 14,
+                fontWeight: active ? 600 : 400,
+                color: active ? THEME.text.primary : THEME.text.secondary,
+                height: 48,
+                padding: '0 16px',
                 background: 'transparent',
                 border: 'none',
                 borderBottom: `2px solid ${active ? THEME.accent : 'transparent'}`,
@@ -390,7 +388,6 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
                 cursor: 'pointer',
               }}
             >
-              <tab.icon className="w-3.5 h-3.5" />
               {tab.label}
             </button>
           );
@@ -499,7 +496,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
                         <div className="flex items-center justify-between mb-2">
                           <span style={{ fontSize: 13, fontWeight: 500, color: THEME.text.primary }}>{wh.name}</span>
                           <span style={{ fontSize: 11, padding: '1px 8px', borderRadius: 4, background: wh.status === 'ACTIVE' ? `${THEME.colors.emerald}20` : THEME.panelHover, color: wh.status === 'ACTIVE' ? THEME.colors.emerald : THEME.text.secondary }}>
-                            {wh.status}
+                            {sentence(wh.status)}
                           </span>
                         </div>
                         <div className="space-y-2">
@@ -590,10 +587,10 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
                   <td style={{ padding: '10px 16px' }}>
                     <div className="flex items-center gap-2">
                       {getStatusIcon(execution.status)}
-                      <span style={{ fontSize: 13, color: THEME.text.primary }}>{execution.status}</span>
+                      <span style={{ fontSize: 13, color: THEME.text.primary }}>{sentence(execution.status)}</span>
                     </div>
                   </td>
-                  <td style={{ padding: '10px 16px', fontSize: 13, color: THEME.text.secondary }}>{execution.triggerType}</td>
+                  <td style={{ padding: '10px 16px', fontSize: 13, color: THEME.text.secondary }}>{sentence(execution.triggerType)}</td>
                   <td style={{ padding: '10px 16px', fontSize: 13, color: THEME.text.secondary }}>
                     {new Date(execution.startedAt).toLocaleString()}
                   </td>
@@ -761,7 +758,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
                             <TypeIcon className="w-4 h-4" style={{ color: typeColor }} />
                             <span style={{ fontSize: 13, fontWeight: 600, color: THEME.text.primary }}>{n.type}</span>
                             <span style={{ fontSize: 11, padding: '1px 6px', borderRadius: 4, background: n.status === 'ACTIVE' ? `${THEME.colors.emerald}20` : THEME.panelHover, color: n.status === 'ACTIVE' ? THEME.colors.emerald : THEME.text.muted }}>
-                              {n.status}
+                              {sentence(n.status)}
                             </span>
                           </div>
                           <div style={{ fontSize: 12, color: THEME.text.secondary, fontFamily: 'monospace', marginBottom: 6 }}>
@@ -978,41 +975,17 @@ function NotificationModal({ schedulerId, onClose, onSave }: { schedulerId: stri
   );
 }
 
-function StatCard({ label, value, icon, color }: { label: string; value: string | number; icon: React.ReactNode; color: string }) {
+function StatCard({ label, value }: { label: string; value: string | number; icon?: React.ReactNode; color?: string }) {
   return (
-    <div style={{ background: THEME.panel, border: `1px solid ${THEME.border}`, borderRadius: 2, padding: 14 }}>
-      <div className="flex items-start justify-between">
-        <div>
-          <p
-            style={{
-              fontFamily: MONO, fontSize: 10, color: THEME.text.muted,
-              letterSpacing: 0,
-            }}
-          >
-            {label}
-          </p>
-          <p
-            style={{
-              fontFamily: MONO, fontSize: 22, fontWeight: 600,
-              color: THEME.text.primary, marginTop: 6, letterSpacing: 0,
-              lineHeight: 1.2,
-            }}
-          >
-            {value}
-          </p>
-        </div>
-        <div
-          className="flex items-center justify-center"
-          style={{
-            width: 32, height: 32, borderRadius: 2,
-            background: `color-mix(in srgb, ${color} 12%, transparent)`,
-            border: `1px solid color-mix(in srgb, ${color} 30%, transparent)`,
-            color,
-          }}
-        >
-          {icon}
-        </div>
-      </div>
+    <div style={{ background: THEME.panel, padding: 16 }}>
+      <p style={{ fontSize: 14, color: THEME.text.secondary }}>{label}</p>
+      <p
+        className="truncate"
+        title={String(value)}
+        style={{ fontSize: typeof value === 'number' ? 32 : 20, lineHeight: typeof value === 'number' ? '40px' : '28px', fontWeight: 300, color: THEME.text.primary, marginTop: 8, fontVariantNumeric: 'tabular-nums' }}
+      >
+        {value}
+      </p>
     </div>
   );
 }

@@ -283,7 +283,7 @@ export default function PluginsPage() {
                         border: '1px solid color-mix(in srgb, #da1e28 40%, transparent)',
                         letterSpacing: 0,
                       }}>
-                        DISABLED
+                        Disabled
                       </span>
                     )}
                   </div>

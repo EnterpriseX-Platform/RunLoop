@@ -207,7 +207,7 @@ export default function SecretsPage() {
     <div className="min-h-screen" style={{ background: THEME.bg, fontFamily: FONT }}>
       {/* Header */}
       <header>
-        <div className="max-w-7xl mx-auto px-6 pt-4 pb-3">
+        <div className="pb-6">
           <div className="flex items-start justify-between mb-6 gap-4">
             <div>
               <h1 style={{ fontSize: 28, lineHeight: '36px', fontWeight: 400, color: THEME.text.primary }}>Secrets</h1>
@@ -233,7 +233,7 @@ export default function SecretsPage() {
       </header>
 
       {/* Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin" style={{ color: THEME.accent }} />

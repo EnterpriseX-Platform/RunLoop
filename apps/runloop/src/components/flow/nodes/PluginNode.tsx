@@ -46,7 +46,7 @@ export function PluginNode({ data, selected }: NodeProps<PluginNodeData>) {
       >
         <div className="truncate">{data.label}</div>
         <div style={{ fontSize: 9, fontWeight: 700, color, letterSpacing: 0, marginTop: 2 }}>
-          PLUGIN
+          Plugin
         </div>
       </div>
     </div>

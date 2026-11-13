@@ -232,7 +232,7 @@ export default function IntegrationsPage() {
   };
 
   return (
-    <div className="p-6 max-w-[800px]">
+    <div className="max-w-[800px]">
       <div className="flex items-end justify-between mb-6 gap-4">
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 600, color: 'var(--t-text)', letterSpacing: 0 }}>
@@ -271,7 +271,7 @@ export default function IntegrationsPage() {
             <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: 'var(--t-text-muted)' }} />
           )}
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex flex-wrap" style={{ width: 'fit-content', boxShadow: 'inset 0 0 0 1px var(--t-border)' }}>
           {(['auto', 'claude', 'openai', 'kimi'] as const).map((id) => {
             const active = activeProvider === id;
             const labelMap = {
@@ -287,17 +287,13 @@ export default function IntegrationsPage() {
                 onClick={() => saveActiveProvider(id)}
                 disabled={savingActive}
                 style={{
-                  padding: '7px 14px',
-                  borderRadius: 999,
-                  fontSize: 12.5,
-                  fontWeight: active ? 600 : 500,
+                  height: 32,
+                  padding: '0 16px',
+                  fontSize: 14,
                   cursor: savingActive ? 'not-allowed' : 'pointer',
-                  background: active
-                    ? 'color-mix(in srgb, var(--t-accent) 18%, transparent)'
-                    : 'var(--t-input)',
-                  color: active ? 'var(--t-accent)' : 'var(--t-text-secondary)',
-                  border: `1px solid ${active ? 'var(--t-accent)' : 'var(--t-border)'}`,
-                  transition: 'background 0.12s, color 0.12s, border-color 0.12s',
+                  background: active ? 'var(--t-text)' : 'transparent',
+                  color: active ? 'var(--t-bg)' : 'var(--t-text-secondary)',
+                  border: 'none',
                 }}
               >
                 {labelMap[id]}
@@ -331,14 +327,11 @@ export default function IntegrationsPage() {
               <span
                 className="flex items-center gap-1.5"
                 style={{
-                  fontFamily: MONO, fontSize: 10.5, padding: '3px 8px',
-                  borderRadius: 2, letterSpacing: 0,
-                  color: c.hasKey ? 'var(--t-success)' : 'var(--t-text-muted)',
-                  background: c.hasKey ? 'color-mix(in srgb, var(--t-success) 12%, transparent)' : 'var(--t-input)',
-                  border: `1px solid ${c.hasKey ? 'var(--t-success)' : 'var(--t-border)'}`,
+                  fontSize: 12, lineHeight: '16px', padding: '4px 8px', borderRadius: 24,
+                  color: c.hasKey ? 'var(--tag-green-text)' : 'var(--tag-gray-text)',
+                  background: c.hasKey ? 'var(--tag-green-bg)' : 'var(--tag-gray-bg)',
                 }}
               >
-                {c.hasKey ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
                 {c.hasKey ? 'Configured' : 'Not configured'}
               </span>
             </div>

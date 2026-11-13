@@ -283,14 +283,6 @@ export default function DashboardPage() {
                       fontFamily: MONO,
                     }}
                   >
-                    {/* status dot */}
-                    <span
-                      style={{
-                        width: 7, height: 7, borderRadius: 999,
-                        background: statusColor,
-                        flexShrink: 0,
-                      }}
-                    />
                     {/* timestamp */}
                     <span style={{ fontSize: 12, color: THEME.text.secondary, minWidth: 64 }}>
                       {relativeTime(execution.startedAt)}

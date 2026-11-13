@@ -401,7 +401,8 @@ function InnerFlow({
           </span>
           <input
             type="text"
-            placeholder="flow name…"
+            className="rl-bare"
+            placeholder="Flow name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={readOnly}
@@ -424,7 +425,7 @@ function InnerFlow({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={readOnly}
-            className="hidden xl:block"
+            className="hidden xl:block rl-bare"
             title={description}
             style={{
               minWidth: 0,
