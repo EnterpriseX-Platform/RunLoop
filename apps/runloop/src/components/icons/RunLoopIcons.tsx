@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Dashboard, Flow, Time, Activity, Queued, Network_3, Document, Settings, Folder,
+  Dashboard, Flow, Time, Activity, ListBoxes, Network_3, Document, Settings, Folder,
   PlayFilledAlt, StopFilledAlt, Branch, Repeat, Hourglass, DataRefinery, DirectionFork, DirectionMerge,
   Http, DataBase, Terminal, LogoPython, Code, ContainerSoftware, AiGenerate,
   Chat, Email, Webhook, Catalog, Function, FlowConnection, Pending, Download, Notification,
@@ -66,7 +66,7 @@ export const RLDashboard = carbon('Dashboard', Dashboard);
 export const RLFlows = carbon('Flows', Flow);
 export const RLScheduler = carbon('Scheduler', Time);
 export const RLExecutions = carbon('Executions', Activity);
-export const RLQueue = carbon('Queue', Queued);
+export const RLQueue = carbon('Queue', ListBoxes);
 export const RLChannel = carbon('Channel', Network_3);
 export const RLDocs = carbon('Docs', Document);
 export const RLSettings = carbon('Settings', Settings);

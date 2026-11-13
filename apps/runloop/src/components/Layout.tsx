@@ -162,7 +162,7 @@ function NavItem({ item, collapsed, isActive, count }: {
       href={item.href}
       style={{
         fontSize: 14,
-        height: 32,
+        height: collapsed ? 40 : 32,
         color: isActive ? 'var(--t-text)' : 'var(--t-text-secondary)',
         background: isActive ? 'var(--t-selected)' : 'transparent',
         borderRadius: 0,
@@ -170,7 +170,7 @@ function NavItem({ item, collapsed, isActive, count }: {
       }}
       className={[
         'group flex items-center gap-3 transition-colors duration-100',
-        collapsed ? 'justify-center px-2' : 'px-4',
+        collapsed ? 'justify-center px-0' : 'px-4',
         !isActive && 'hover:text-[var(--t-text)] hover:bg-[var(--t-panel-hover)]',
       ].filter(Boolean).join(' ')}
       title={collapsed ? item.name : undefined}
@@ -765,7 +765,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
       <aside
         style={{ fontFamily: SANS, backgroundColor: 'var(--t-sidebar)', borderColor: 'var(--t-border-light)' }}
         className={`fixed top-12 bottom-0 left-0 z-40 border-r flex flex-col transition-all duration-200 ${
-          sidebarCollapsed ? 'w-16' : 'w-56'
+          sidebarCollapsed ? 'w-12' : 'w-56'
         }`}
       >
         {/* Navigation */}
@@ -793,7 +793,8 @@ export function Layout({ children }: { children?: React.ReactNode }) {
             })}
           </div>
 
-          <div className="mt-3 space-y-0.5">
+          {sidebarCollapsed && <div aria-hidden style={{ height: 1, background: 'var(--t-border)', margin: '8px 12px' }} />}
+          <div className={sidebarCollapsed ? 'space-y-0.5' : 'mt-3 space-y-0.5'}>
             {!sidebarCollapsed && (
               <p className="px-4 pt-3 pb-2" style={{ color: 'var(--t-text-secondary)', fontSize: 12, lineHeight: '16px' }}>
                 System
@@ -819,7 +820,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
       </aside>
 
       {/* Sidebar spacer */}
-      <div className={`flex-shrink-0 transition-all duration-200 ${sidebarCollapsed ? 'w-16' : 'w-56'}`} />
+      <div className={`flex-shrink-0 transition-all duration-200 ${sidebarCollapsed ? 'w-12' : 'w-56'}`} />
 
       {/* ===== Main ===== */}
       <main className="flex-1 flex flex-col overflow-hidden relative" style={{ backgroundColor: 'var(--t-bg)' }}>
