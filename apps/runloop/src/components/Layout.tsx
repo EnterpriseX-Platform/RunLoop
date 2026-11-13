@@ -869,9 +869,6 @@ export function Layout({ children }: { children?: React.ReactNode }) {
             >
               <LogoMark size={20} />
               <span>Run<span style={{ fontWeight: 600 }}>Loop</span></span>
-              <span style={{ fontSize: 12, lineHeight: '16px', padding: '0 8px', borderRadius: 24, background: '#393939', color: '#c6c6c6' }}>
-                Beta
-              </span>
             </Link>
             <span aria-hidden className="hidden md:block" style={{ width: 1, height: 24, background: '#393939', marginRight: 16 }} />
             <div className="hidden md:flex min-w-0">
