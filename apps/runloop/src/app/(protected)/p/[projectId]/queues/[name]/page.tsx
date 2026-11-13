@@ -250,7 +250,7 @@ export default function QueueDetailPage() {
         <ArrowLeft className="w-3.5 h-3.5" /> Back to Queues
       </Link>
 
-      <div className="flex items-end justify-between mb-6 gap-4 flex-wrap">
+      <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: 0 }}>
@@ -563,7 +563,7 @@ export default function QueueDetailPage() {
       </div>
 
       {/* Stats strip — five sharp cells reading like instrument dials */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
         {(['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'DLQ'] as const).map((s) => {
           const meta = STATUS_META[s];
           const v = stats[s] || 0;

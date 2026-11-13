@@ -131,7 +131,7 @@ export default function ChannelsPage() {
         </div>
       )}
 
-      <div className="flex items-end justify-between mb-6 gap-4 flex-wrap">
+      <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 600, color: 'var(--t-text)', letterSpacing: 0 }}>
             Channels
@@ -146,28 +146,28 @@ export default function ChannelsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-6">
-        <div className="p-3" style={{ background: 'var(--t-panel)', border: '1px solid var(--t-border)', borderRadius: 2 }}>
-          <div style={{ fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: 0, }}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div className="p-4" style={{ background: 'var(--t-panel)' }}>
+          <div style={{ fontSize: 14, color: 'var(--t-text-secondary)'}}>
             Active channels
           </div>
-          <div style={{ fontFamily: MONO, fontSize: 26, fontWeight: 600, color: 'var(--t-text)', marginTop: 4 }}>
+          <div style={{ fontSize: 32, fontWeight: 300, lineHeight: '40px', fontVariantNumeric: 'tabular-nums', color: 'var(--t-text)', marginTop: 8 }}>
             {channels.length}
           </div>
         </div>
-        <div className="p-3" style={{ background: 'var(--t-panel)', border: '1px solid var(--t-border)', borderRadius: 2 }}>
-          <div style={{ fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: 0, }}>
+        <div className="p-4" style={{ background: 'var(--t-panel)' }}>
+          <div style={{ fontSize: 14, color: 'var(--t-text-secondary)'}}>
             Live subscribers
           </div>
-          <div style={{ fontFamily: MONO, fontSize: 26, fontWeight: 600, color: 'var(--t-text)', marginTop: 4 }}>
+          <div style={{ fontSize: 32, fontWeight: 300, lineHeight: '40px', fontVariantNumeric: 'tabular-nums', color: 'var(--t-text)', marginTop: 8 }}>
             {channels.reduce((a, c) => a + c.subscribers, 0)}
           </div>
         </div>
-        <div className="p-3" style={{ background: 'var(--t-panel)', border: '1px solid var(--t-border)', borderRadius: 2 }}>
-          <div style={{ fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: 0, }}>
+        <div className="p-4" style={{ background: 'var(--t-panel)' }}>
+          <div style={{ fontSize: 14, color: 'var(--t-text-secondary)'}}>
             Lifetime publishes
           </div>
-          <div style={{ fontFamily: MONO, fontSize: 26, fontWeight: 600, color: 'var(--t-text)', marginTop: 4 }}>
+          <div style={{ fontSize: 32, fontWeight: 300, lineHeight: '40px', fontVariantNumeric: 'tabular-nums', color: 'var(--t-text)', marginTop: 8 }}>
             {totalPub}
           </div>
         </div>
@@ -177,7 +177,7 @@ export default function ChannelsPage() {
         {/* Active channels list */}
         <div style={{ background: 'var(--t-panel)', border: '1px solid var(--t-border)', borderRadius: 2 }}>
           <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--t-border)' }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--t-text)' }}>Active channels</span>
+            <span style={{ fontSize: 16, fontWeight: 400, color: 'var(--t-text)' }}>Active channels</span>
           </div>
           <div>
             {loading ? (
@@ -186,11 +186,7 @@ export default function ChannelsPage() {
               </div>
             ) : channels.length === 0 ? (
               <div className="text-center py-10 px-4" style={{ color: 'var(--t-text-muted)' }}>
-                <BellRing className="w-7 h-7 mx-auto mb-2 opacity-50" />
-                <p style={{ fontSize: 12 }}>No channels with live subscribers right now.</p>
-                <p style={{ fontSize: 11, marginTop: 4 }}>
-                  Channels appear here once a flow publishes or a client subscribes.
-                </p>
+                <p style={{ fontSize: 14, color: 'var(--t-text-secondary)' }}>No active channels</p>
               </div>
             ) : (
               channels.map((c) => (
@@ -220,11 +216,11 @@ export default function ChannelsPage() {
         <div className="space-y-4">
           <div style={{ background: 'var(--t-panel)', border: '1px solid var(--t-border)', borderRadius: 2 }}>
             <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--t-border)' }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--t-text)' }}>Test publish</span>
+              <span style={{ fontSize: 16, fontWeight: 400, color: 'var(--t-text)' }}>Test publish</span>
             </div>
             <div className="p-4 space-y-3">
               <input
-                placeholder="channel name"
+                placeholder="Channel name"
                 value={testChannel}
                 onChange={(e) => setTestChannel(e.target.value)}
                 style={{
@@ -254,10 +250,10 @@ export default function ChannelsPage() {
 
           <div style={{ background: 'var(--t-panel)', border: '1px solid var(--t-border)', borderRadius: 2 }}>
             <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid var(--t-border)' }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--t-text)' }}>Tap subscriber (live)</span>
+              <span style={{ fontSize: 16, fontWeight: 400, color: 'var(--t-text)' }}>Tap subscriber (live)</span>
               <span
                 style={{
-                  fontFamily: MONO, fontSize: 10, letterSpacing: 0,
+                  fontSize: 12,
                   color:
                     tapStatus === 'open' ? 'var(--t-success)' :
                     tapStatus === 'connecting' ? 'var(--t-text)' :
@@ -265,13 +261,13 @@ export default function ChannelsPage() {
                     'var(--t-text-muted)',
                 }}
               >
-                {tapStatus.toUpperCase()}
+                {tapStatus.charAt(0).toUpperCase() + tapStatus.slice(1)}
               </span>
             </div>
             <div className="p-4 space-y-3">
               <div className="flex gap-2">
                 <input
-                  placeholder="channel name to subscribe to"
+                  placeholder="Channel name"
                   value={tapName}
                   onChange={(e) => setTapName(e.target.value)}
                   style={{

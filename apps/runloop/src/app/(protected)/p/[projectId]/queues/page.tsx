@@ -263,7 +263,7 @@ function Stat({ label, value, color, bold }: { label: string; value: number; col
   return (
     <div className="flex flex-col items-end min-w-[52px]">
       <span style={{ fontSize: 15, fontWeight: bold ? 700 : 600, color }}>{value}</span>
-      <span style={{ fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: 0, }}>
+      <span style={{ fontSize: 14, color: 'var(--t-text-secondary)'}}>
         {label}
       </span>
     </div>

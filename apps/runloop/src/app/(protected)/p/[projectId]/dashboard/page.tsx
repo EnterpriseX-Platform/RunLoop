@@ -156,7 +156,7 @@ export default function DashboardPage() {
 
   return (
     <div style={{ fontFamily: FONT, minHeight: '100%' }}>
-      <div className="flex items-end justify-between mb-6 gap-4 flex-wrap">
+      <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div>
           <h1 style={{ fontSize: 28, lineHeight: '36px', fontWeight: 400, color: THEME.text.primary }}>
             {selectedProject ? selectedProject.name : 'Dashboard'}
@@ -176,7 +176,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Instrument-panel tiles */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-5">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
         {stats.map((stat, idx) => (
           <Link key={stat.label} href={stat.href} className="group block">
             <div
@@ -428,27 +428,10 @@ export default function DashboardPage() {
           {/* System Status — echoes login footer */}
           <div style={{ background: THEME.panel, border: `1px solid ${THEME.border}`, borderRadius: 2, padding: 14 }}>
             <div className="flex items-center justify-between mb-3">
-              <span
-                style={{
-                  fontFamily: MONO, fontSize: 10, letterSpacing: 0,
-                  color: THEME.text.muted,
-                }}
-                className=""
-              >
+              <span style={{ fontSize: 16, color: THEME.text.primary }}>
                 System
               </span>
-              <span
-                className="flex items-center gap-1.5"
-                style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 0, color: '#24a148' }}
-              >
-                <span
-                  aria-hidden
-                  style={{
-                    width: 6, height: 6, borderRadius: 999,
-                    background: '#24a148',
-                    boxShadow: '0 0 0 3px color-mix(in srgb, #24a148 20%, transparent)',
-                  }}
-                />
+              <span style={{ fontSize: 12, lineHeight: '16px', padding: '4px 8px', borderRadius: 24, background: 'var(--tag-green-bg)', color: 'var(--tag-green-text)' }}>
                 Online
               </span>
             </div>

@@ -122,7 +122,7 @@ export default function EnvVarsPage() {
         </div>
       )}
 
-      <div className="flex items-end justify-between mb-6 gap-4">
+      <div className="flex items-start justify-between mb-6 gap-4">
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 600, color: 'var(--t-text)', letterSpacing: 0 }}>
             Environment Variables

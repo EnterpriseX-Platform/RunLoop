@@ -325,7 +325,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
         <ArrowLeft className="w-3.5 h-3.5" /> Back to Schedulers
       </Link>
 
-      <div className="flex items-end justify-between mb-6 gap-4 flex-wrap">
+      <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h1 style={{ fontSize: 24, fontWeight: 600, color: THEME.text.primary, letterSpacing: 0 }}>
@@ -354,7 +354,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <StatCard label="Total runs" value={scheduler.successCount + scheduler.failureCount} icon={<Activity className="w-5 h-5" />} color={THEME.colors.blue} />
         <StatCard label="Success" value={scheduler.successCount} icon={<CheckCircle2 className="w-5 h-5" />} color={THEME.colors.emerald} />
         <StatCard label="Failed" value={scheduler.failureCount} icon={<XCircle className="w-5 h-5" />} color={THEME.colors.red} />

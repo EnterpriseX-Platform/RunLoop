@@ -545,7 +545,7 @@ curl "$RUNLOOP_BASE/api/queues" \\
               { title: 'Secrets & env',     code: `\${{secrets.<NAME>}}\n# AES-256-GCM, never logged\n\n\${{env.<NAME>}}\n# plaintext per-project config` },
             ].map((b) => (
               <div key={b.title} className="p-3" style={{ background: 'var(--t-panel)', border: '1px solid var(--t-border)', borderRadius: 4 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--t-text)', marginBottom: 6 }}>{b.title}</div>
+                <div style={{ fontSize: 16, fontWeight: 400, color: 'var(--t-text)', marginBottom: 6 }}>{b.title}</div>
                 <CodeBlock lang="text" code={b.code} />
               </div>
             ))}

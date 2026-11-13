@@ -143,7 +143,7 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
         <ArrowLeft className="w-3.5 h-3.5" /> Back to Executions
       </Link>
 
-      <div className="flex items-end justify-between mb-6 gap-4 flex-wrap">
+      <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <h1 style={{ fontSize: 24, fontWeight: 600, color: THEME.text.primary, letterSpacing: 0 }}>
