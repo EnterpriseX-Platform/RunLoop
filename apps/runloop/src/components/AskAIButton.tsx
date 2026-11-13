@@ -29,8 +29,8 @@ export function AskAIButton({ prompt, label, size = 'sm', className = '' }: Prop
       style={{
         background: 'color-mix(in srgb, var(--t-accent) 12%, transparent)',
         color: 'var(--t-accent)',
-        border: '1px solid color-mix(in srgb, var(--t-accent) 30%, transparent)',
-        borderRadius: 999,
+        border: 'none',
+        borderRadius: 0,
         padding,
         fontSize,
         fontWeight: 500,

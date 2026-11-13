@@ -313,11 +313,11 @@ export default function FlowDetailPage() {
     <div style={{ height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', fontFamily: FONT }}>
       {/* Sticky top strip with back + delete */}
       <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: `1px solid ${THEME.border}`, background: THEME.panel }}>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <Link href={`/p/${projectId}/flows`} style={{ color: THEME.text.muted }}>
             <ArrowLeft className="w-4 h-4" />
           </Link>
-          <span className="text-xs font-medium" style={{ color: THEME.text.secondary }}>
+          <span className="text-xs font-medium whitespace-nowrap" style={{ color: THEME.text.secondary }}>
             Flow {flow.status === 'ACTIVE' ? '·' : `(${flow.status})`} {flow.type}
           </span>
           <AskAIButton
@@ -338,11 +338,12 @@ export default function FlowDetailPage() {
           </button>
           <button
             onClick={() => { setShowVersions(true); fetchVersions(); }}
+            title="Version history"
             className="h-8 text-sm flex items-center gap-2 disabled:opacity-50 px-3 hover:bg-[var(--t-panel-hover)]"
             style={{ background: 'transparent', color: 'var(--t-accent)' }}
           >
-            <History className="w-3.5 h-3.5" />
-            Version history
+            <History className="w-4 h-4" />
+            <span className="hidden lg:inline">Version history</span>
           </button>
           <button
             onClick={handleDelete}

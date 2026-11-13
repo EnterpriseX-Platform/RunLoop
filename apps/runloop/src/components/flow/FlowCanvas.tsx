@@ -388,9 +388,10 @@ function InnerFlow({
         className="flex items-center justify-between px-4 py-2.5 border-b"
         style={{ borderColor: 'var(--t-border)', background: 'var(--t-panel)' }}
       >
-        <div className="flex items-center gap-3 flex-1">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
           <span
-            style={{ fontFamily: MONO, fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: 0 }}
+            className="flex-shrink-0"
+            style={{ fontSize: 12, color: 'var(--t-text-secondary)' }}
           >
             Flow
           </span>
@@ -407,9 +408,10 @@ function InnerFlow({
               outline: 'none',
               fontFamily: MONO,
               fontSize: 14,
-              fontWeight: 500,
-              letterSpacing: 0,
+              fontWeight: 600,
               width: 260,
+              minWidth: 120,
+              flexShrink: 1,
             }}
           />
           <input
@@ -418,7 +420,11 @@ function InnerFlow({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={readOnly}
+            className="hidden xl:block"
+            title={description}
             style={{
+              minWidth: 0,
+              textOverflow: 'ellipsis',
               background: 'transparent',
               color: 'var(--t-text-muted)',
               border: 'none',
@@ -430,34 +436,29 @@ function InnerFlow({
             }}
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <span
-            style={{
-              fontFamily: MONO,
-              fontSize: 10,
-              color: 'var(--t-text-muted)',
-              letterSpacing: 0,
-            }}
+            className="hidden lg:inline whitespace-nowrap"
+            style={{ fontSize: 12, color: 'var(--t-text-secondary)', fontVariantNumeric: 'tabular-nums' }}
           >
             {nodes.length} nodes · {edges.length} edges
           </span>
           <button
             onClick={handleAutoLayout}
-            className="flex items-center gap-1.5"
+            className="flex items-center gap-2 whitespace-nowrap hover:bg-[var(--t-panel-hover)]"
             style={{
-              padding: '6px 10px',
+              height: 32,
+              padding: '0 12px',
               background: 'transparent',
-              border: '1px solid var(--t-border)',
-              color: 'var(--t-text-secondary)',
-              fontFamily: MONO,
-              fontSize: 11,
-              letterSpacing: 0,
-              borderRadius: 2,
+              border: 'none',
+              color: 'var(--t-accent)',
+              fontSize: 14,
+              borderRadius: 0,
             }}
             title="Auto-layout"
           >
-            <Wand2 className="w-3.5 h-3.5" />
-            Auto-layout
+            <Wand2 className="w-4 h-4" />
+            <span className="hidden lg:inline">Auto-layout</span>
           </button>
           {showTestButton && onTest && !readOnly && (
             <button
@@ -543,17 +544,15 @@ function InnerFlow({
                 </p>
                 <span
                   style={{
-                    fontFamily: MONO,
-                    fontSize: 10,
-                    color: 'var(--t-text-muted)',
-                    background: 'var(--t-input)',
-                    border: '1px solid var(--t-border)',
-                    padding: '1px 5px',
-                    borderRadius: 2,
+                    color: 'var(--tag-gray-text)',
+                    background: 'var(--tag-gray-bg)',
+                    padding: '0 8px',
+                    borderRadius: 24,
+                    fontSize: 12,
                     fontVariantNumeric: 'tabular-nums',
                   }}
                 >
-                  {String(mergedPalette.reduce((n, c) => n + c.items.length, 0)).padStart(2, '0')}
+                  {mergedPalette.reduce((n, c) => n + c.items.length, 0)}
                 </span>
               </div>
               <div
@@ -629,17 +628,15 @@ function InnerFlow({
                       </div>
                       <span
                         style={{
-                          fontFamily: MONO,
-                          fontSize: 9.5,
-                          color: 'var(--t-text-muted)',
-                          background: 'var(--t-input)',
-                          border: '1px solid var(--t-border)',
-                          padding: '1px 4px',
-                          borderRadius: 2,
+                          color: 'var(--tag-gray-text)',
+                          background: 'var(--tag-gray-bg)',
+                          padding: '0 8px',
+                          borderRadius: 24,
+                          fontSize: 12,
                           fontVariantNumeric: 'tabular-nums',
                         }}
                       >
-                        {String(category.items.length).padStart(2, '0')}
+                        {category.items.length}
                       </span>
                     </button>
                     {!isCollapsed && (

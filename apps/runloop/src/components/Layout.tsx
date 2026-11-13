@@ -121,7 +121,7 @@ function Breadcrumb() {
         const href = `${projectPrefix}/` + segments.slice(0, index + 1).join('/');
         const label = breadcrumbMap[segment] || segment;
         return (
-          <div key={segment + index} className="flex items-center gap-1.5 min-w-0">
+          <div key={segment + index} className={`flex items-center gap-1.5 ${isLast ? 'min-w-0' : 'flex-shrink-0'}`}>
             {index > 0 && <span style={{ color: 'var(--t-text-muted)' }}>/</span>}
             {isLast ? (
               <span
@@ -569,7 +569,8 @@ function UtcClock() {
 function EngineDot() {
   return (
     <span
-      className="flex items-center gap-1.5"
+      className="flex items-center gap-1.5 whitespace-nowrap"
+      title="Engine online"
       style={{ fontSize: 12, color: 'var(--t-text-secondary)' }}
     >
       <span
@@ -579,7 +580,7 @@ function EngineDot() {
           background: 'var(--t-success)',
         }}
       />
-      Engine online
+      <span className="hidden xl:inline">Engine online</span>
     </span>
   );
 }
@@ -875,7 +876,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
           }}
           className="h-12 border-b flex items-center px-4 sticky top-0 z-30 transition-colors"
         >
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 min-w-0">
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               style={{ color: 'var(--t-text-muted)', borderRadius: 2 }}
