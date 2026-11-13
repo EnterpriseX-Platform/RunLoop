@@ -570,3 +570,20 @@ main table thead, main table thead tr { background: var(--t-selected) !important
 main table th { height: 48px; font-size: 14px !important; font-weight: 600 !important; color: var(--t-text) !important; text-transform: none !important; letter-spacing: 0 !important; }
 main table tbody tr + tr td { border-top: 1px solid var(--t-border); }
 main table td { font-size: 14px; }
+
+/* Shell header is always Carbon's dark header (g100 tokens), in both themes. */
+.rl-shell {
+  --t-text: #f4f4f4;
+  --t-text-secondary: #c6c6c6;
+  --t-text-muted: #a8a8a8;
+  --t-accent: #78a9ff;
+  --t-input: #262626;
+  --t-panel: #262626;
+  --t-panel-hover: #333333;
+  --t-border: #393939;
+  --t-border-light: #393939;
+  --t-border-strong: #6f6f6f;
+  --t-header: #161616;
+  color: #f4f4f4;
+}
+.rl-shell :is(input) { background-color: #262626 !important; border-bottom-color: #6f6f6f !important; color: #f4f4f4; }

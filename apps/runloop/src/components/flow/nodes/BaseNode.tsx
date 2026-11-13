@@ -119,7 +119,7 @@ export function BaseNode({ data, type: nodeType, selected, inputs = 1, outputs =
     ? 'inset 0 0 0 2px var(--t-error)'
     : selected
       ? 'inset 0 0 0 2px var(--t-text)'
-      : 'inset 0 0 0 1px var(--t-border)';
+      : 'none';
 
   const tileStyle: React.CSSProperties = isStart
     ? { background: 'var(--t-text)', color: 'var(--t-bg)' }

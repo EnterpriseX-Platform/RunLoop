@@ -332,7 +332,7 @@ export default function FlowDetailPage() {
             onClick={handleRunNow}
             disabled={running}
             className="h-8 text-sm flex items-center gap-2 disabled:opacity-50 pl-3 pr-4 hover:bg-[var(--t-panel-hover)]"
-            style={{ background: 'transparent', color: 'var(--t-accent)', border: '1px solid var(--t-accent)' }}
+            style={{ background: 'transparent', color: 'var(--t-accent)', border: 'none' }}
             title="Run this flow once with its saved config"
           >
             {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
@@ -401,7 +401,7 @@ export default function FlowDetailPage() {
             ) : (
               <div className="p-4 space-y-3">
                 {versions.map((v, i) => (
-                  <div key={v.id} style={{ padding: 12, borderRadius: 0, background: 'var(--t-input)', border: `1px solid ${THEME.border}` }}>
+                  <div key={v.id} style={{ padding: 12, background: 'var(--t-input)' }}>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-semibold" style={{ color: THEME.text.primary }}>
                         v{v.version}
@@ -418,7 +418,7 @@ export default function FlowDetailPage() {
                       <button
                         onClick={() => handleRollback(v.id, v.version)}
                         className="text-[11px] px-2 py-1 rounded flex items-center gap-1"
-                        style={{ background: `${THEME.accent}15`, color: THEME.accent, border: `1px solid ${THEME.accent}40` }}
+                        style={{ background: 'transparent', color: THEME.accent, border: 'none' }}
                       >
                         <RotateCcw className="w-3 h-3" />
                         Roll back to v{v.version}

@@ -471,13 +471,12 @@ function InnerFlow({
               disabled={testing}
               className="flex items-center gap-1.5 disabled:opacity-50"
               style={{
-                padding: '6px 10px',
-                background: 'color-mix(in srgb, #10B981 12%, transparent)',
-                border: '1px solid color-mix(in srgb, #10B981 40%, transparent)',
-                color: '#10B981',
-                fontFamily: MONO,
-                fontSize: 11,
-                letterSpacing: 0,
+                height: 32,
+                padding: '0 12px',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--t-accent)',
+                fontSize: 14,
                 borderRadius: 2,
               }}
             >
@@ -564,8 +563,7 @@ function InnerFlow({
                 className="relative flex items-center"
                 style={{
                   background: 'var(--t-input)',
-                  border: '1px solid var(--t-border)',
-                  borderRadius: 2,
+                  borderBottom: '1px solid var(--t-border-strong)',
                 }}
               >
                 <Search
@@ -682,14 +680,12 @@ function InnerFlow({
                               <div
                                 className="flex items-center justify-center flex-shrink-0"
                                 style={{
-                                  width: 22,
-                                  height: 22,
-                                  borderRadius: 2,
-                                  background: `color-mix(in srgb, ${item.color} 14%, transparent)`,
-                                  border: `1px solid color-mix(in srgb, ${item.color} 36%, transparent)`,
+                                  width: 24,
+                                  height: 24,
+                                  background: `color-mix(in srgb, ${item.color} 16%, transparent)`,
                                 }}
                               >
-                                <Icon style={{ color: item.color, width: 12, height: 12 }} strokeWidth={1.75} />
+                                <Icon style={{ color: item.color, width: 14, height: 14 }} strokeWidth={1.75} />
                               </div>
                               <span
                                 className="truncate flex-1"
@@ -788,7 +784,7 @@ function InnerFlow({
                 width: 168,
                 height: 104,
                 background: 'var(--t-panel)',
-                border: '1px solid var(--t-border)',
+                border: 'none',
                 borderRadius: 0,
                 marginBottom: 76,
               }}
@@ -814,9 +810,7 @@ function InnerFlow({
                   <div
                     className="w-10 h-10 flex items-center justify-center"
                     style={{
-                      borderRadius: 2,
                       background: 'color-mix(in srgb, var(--t-accent) 14%, transparent)',
-                      border: '1px solid color-mix(in srgb, var(--t-accent) 36%, transparent)',
                     }}
                   >
                     <Plus className="w-5 h-5" style={{ color: 'var(--t-accent)' }} strokeWidth={2} />
@@ -1104,7 +1098,7 @@ function ZoomBar() {
   return (
     <div
       className="flex items-center"
-      style={{ background: 'var(--t-panel)', boxShadow: 'inset 0 0 0 1px var(--t-border)' }}
+      style={{ background: 'var(--t-panel)' }}
     >
       <button style={btn} className="hover:bg-[var(--t-panel-hover)]" onClick={() => rf.zoomOut()} title="Zoom out" aria-label="Zoom out">
         <Minus className="w-4 h-4" />

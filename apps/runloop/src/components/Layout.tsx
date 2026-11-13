@@ -2,11 +2,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { LogoMark } from './Logo';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useProject } from '@/context/ProjectContext';
-import { ControlBackdrop } from './ControlBackdrop';
 import {
   LayoutDashboard,
   Workflow,
@@ -761,33 +761,14 @@ export function Layout({ children }: { children?: React.ReactNode }) {
   const handleLogout = async () => { await logout(); };
 
   return (
-    <div className="min-h-screen flex" style={{ fontFamily: SANS, backgroundColor: 'var(--t-bg)' }}>
+    <div className="min-h-screen flex" style={{ fontFamily: SANS, backgroundColor: 'var(--t-bg)', paddingTop: 48 }}>
       {/* ===== Sidebar ===== */}
       <aside
         style={{ fontFamily: SANS, backgroundColor: 'var(--t-sidebar)', borderColor: 'var(--t-border-light)' }}
-        className={`fixed top-0 left-0 z-40 h-full border-r flex flex-col transition-all duration-200 ${
+        className={`fixed top-12 bottom-0 left-0 z-40 border-r flex flex-col transition-all duration-200 ${
           sidebarCollapsed ? 'w-16' : 'w-56'
         }`}
       >
-        {/* Brand — Carbon shell header bar */}
-        <div
-          className={`flex items-center h-12 flex-shrink-0 ${sidebarCollapsed ? 'justify-center px-2' : 'px-4'}`}
-          style={{ background: 'var(--t-shell)', color: '#fff' }}
-        >
-          {sidebarCollapsed ? (
-            <span style={{ fontSize: 14, fontWeight: 600 }}>RL</span>
-          ) : (
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <span style={{ fontSize: 14 }} className="leading-none whitespace-nowrap">
-                Run<span style={{ fontWeight: 600 }}>Loop</span>
-              </span>
-              <span style={{ fontSize: 12, lineHeight: '16px', padding: '0 8px', borderRadius: 24, background: '#393939', color: '#f4f4f4' }}>
-                Beta
-              </span>
-            </div>
-          )}
-        </div>
-
         {/* Project selector — now a prominent row under the brand */}
         {!sidebarCollapsed && (
           <div className="px-4 pt-4 pb-3">
@@ -860,35 +841,44 @@ export function Layout({ children }: { children?: React.ReactNode }) {
 
       {/* ===== Main ===== */}
       <main className="flex-1 flex flex-col overflow-hidden relative" style={{ backgroundColor: 'var(--t-bg)' }}>
-        {/* Atmospheric backdrop — positioned within the main scroll
-            container so it scrolls with the grid, but content sits
-            above it via z-index. */}
-        <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }}>
-
-        </div>
 
         {/* ===== Header (control strip) ===== */}
         <header
           style={{
             fontFamily: SANS,
-            backgroundColor: 'var(--t-header)',
-            borderColor: 'var(--t-border)',
+            backgroundColor: 'var(--t-shell)',
+            borderBottom: '1px solid #393939',
           }}
-          className="h-12 border-b flex items-center px-4 sticky top-0 z-30 transition-colors"
+          className="rl-shell fixed top-0 left-0 right-0 h-12 flex items-center z-50"
         >
-          <div className="flex items-center gap-4 min-w-0">
+          <div className="flex items-center min-w-0 h-full">
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              style={{ color: 'var(--t-text-muted)', borderRadius: 2 }}
-              className="h-8 w-8 flex items-center justify-center hover:text-[var(--t-accent)] transition-colors"
+              className="h-12 w-12 flex items-center justify-center hover:bg-[#333333]"
+              style={{ color: '#f4f4f4' }}
               title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
-              <Menu className="w-4 h-4" />
+              <Menu className="w-5 h-5" />
             </button>
-            <Breadcrumb />
+            <Link
+              href={`${projectPrefix}/dashboard`}
+              className="flex items-center gap-2 h-full pr-4 pl-1 whitespace-nowrap"
+              style={{ color: '#f4f4f4', fontSize: 14 }}
+            >
+              <LogoMark size={20} />
+              <span>Run<span style={{ fontWeight: 600 }}>Loop</span></span>
+              <span style={{ fontSize: 12, lineHeight: '16px', padding: '0 8px', borderRadius: 24, background: '#393939', color: '#c6c6c6' }}>
+                Beta
+              </span>
+            </Link>
+            <span aria-hidden className="hidden md:block" style={{ width: 1, height: 24, background: '#393939', marginRight: 16 }} />
+            <div className="hidden md:flex min-w-0">
+              <Breadcrumb />
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-1 ml-auto pr-2 h-full">
             {/* Telemetry strip — sits right where eyes land after the breadcrumb */}
             <div
               className="hidden xl:flex items-center gap-3 mr-2"
