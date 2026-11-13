@@ -199,7 +199,7 @@ export function AIAssistant() {
             maxHeight: 'calc(100vh - 80px)',
             background: 'var(--t-panel)',
             border: '1px solid var(--t-border)',
-            borderRadius: 6,
+            borderRadius: 0,
           }}
         >
           {/* Header */}
@@ -311,7 +311,7 @@ export function AIAssistant() {
                 <div
                   style={{
                     fontSize: 13,
-                    color: m.error ? 'var(--t-error, #ef4444)' : 'var(--t-text)',
+                    color: m.error ? 'var(--t-error, #da1e28)' : 'var(--t-text)',
                     lineHeight: 1.55,
                     whiteSpace: 'pre-wrap',
                     wordBreak: 'break-word',

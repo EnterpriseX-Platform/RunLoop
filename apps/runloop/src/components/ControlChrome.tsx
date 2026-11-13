@@ -543,10 +543,12 @@ export function ContentSwitcher<T extends string>({
   options,
   value,
   onChange,
+  labels,
 }: {
   options: readonly T[];
   value: T;
   onChange: (v: T) => void;
+  labels?: Partial<Record<T, string>>;
 }) {
   return (
     <div className="flex items-center" role="tablist" style={{ width: 'fit-content', boxShadow: 'inset 0 0 0 1px var(--t-border)' }}>
@@ -568,7 +570,7 @@ export function ContentSwitcher<T extends string>({
               color: on ? 'var(--t-bg)' : 'var(--t-text-secondary)',
             }}
           >
-            {o.charAt(0).toUpperCase() + o.slice(1)}
+            {labels?.[o] ?? o.charAt(0).toUpperCase() + o.slice(1)}
           </button>
         );
       })}

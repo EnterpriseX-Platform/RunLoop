@@ -21,18 +21,18 @@ const THEME = {
   accent: 'var(--t-accent)',
   accentLight: 'var(--t-accent-light)',
   input: 'var(--t-input)',
-  colors: { blue: '#3B82F6', emerald: '#10B981', purple: '#8B5CF6', amber: '#F59E0B', red: '#EF4444', cyan: '#06B6D4' }
+  colors: { blue: '#0f62fe', emerald: '#24a148', purple: '#8a3ffc', amber: '#eb6200', red: '#da1e28', cyan: '#1192e8' }
 };
 
 const COLORS = [
-  { name: 'Cyan', value: '#06b6d4' },
-  { name: 'Blue', value: '#3b82f6' },
-  { name: 'Purple', value: '#8b5cf6' },
-  { name: 'Pink', value: '#ec4899' },
-  { name: 'Orange', value: '#f97316' },
-  { name: 'Green', value: '#22c55e' },
-  { name: 'Red', value: '#ef4444' },
-  { name: 'Yellow', value: '#eab308' },
+  { name: 'Cyan', value: '#1192e8' },
+  { name: 'Blue', value: '#0f62fe' },
+  { name: 'Purple', value: '#8a3ffc' },
+  { name: 'Pink', value: '#d02670' },
+  { name: 'Orange', value: '#eb6200' },
+  { name: 'Green', value: '#24a148' },
+  { name: 'Red', value: '#da1e28' },
+  { name: 'Yellow', value: '#eb6200' },
 ];
 
 export default function ProjectsPage() {
@@ -167,7 +167,7 @@ export default function ProjectsPage() {
                 <textarea
                   value={newProject.description}
                   onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
-                  style={{ background: THEME.input, border: `1px solid ${THEME.border}`, color: THEME.text.primary, borderRadius: 8, fontSize: 13, padding: '8px 12px' }}
+                  style={{ background: THEME.input, border: `1px solid ${THEME.border}`, color: THEME.text.primary, borderRadius: 0, fontSize: 13, padding: '8px 12px' }}
                   className="w-full outline-none"
                   placeholder="Enter project description"
                   rows={3}
@@ -197,14 +197,14 @@ export default function ProjectsPage() {
                   type="button"
                   onClick={() => setIsCreating(false)}
                   disabled={isSubmitting}
-                  style={{ flex: 1, border: `1px solid ${THEME.border}`, color: THEME.text.secondary, borderRadius: 8, padding: '8px 0', fontSize: 13, fontWeight: 500, background: 'transparent' }}
+                  style={{ flex: 1, border: `1px solid ${THEME.border}`, color: THEME.text.secondary, borderRadius: 0, padding: '8px 0', fontSize: 13, fontWeight: 500, background: 'transparent' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  style={{ flex: 1, background: THEME.accent, color: '#fff', borderRadius: 8, padding: '8px 0', fontSize: 13, fontWeight: 500, opacity: isSubmitting ? 0.6 : 1 }}
+                  style={{ flex: 1, background: THEME.accent, color: '#fff', borderRadius: 0, padding: '8px 0', fontSize: 13, fontWeight: 500, opacity: isSubmitting ? 0.6 : 1 }}
                   className="flex items-center justify-center gap-2"
                 >
                   {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -224,7 +224,7 @@ export default function ProjectsPage() {
           </div>
           <h3 style={{ fontSize: 15, fontWeight: 600, color: THEME.text.primary, marginBottom: 4 }}>No projects yet</h3>
           <p style={{ fontSize: 13, color: THEME.text.muted, marginBottom: 12 }}>Create your first project to get started</p>
-          <button onClick={() => setIsCreating(true)} style={{ background: THEME.accent, color: '#fff', borderRadius: 8, padding: '6px 16px', fontSize: 13, fontWeight: 500 }} className="inline-flex items-center gap-2">
+          <button onClick={() => setIsCreating(true)} style={{ background: THEME.accent, color: '#fff', borderRadius: 0, padding: '6px 16px', fontSize: 13, fontWeight: 500 }} className="inline-flex items-center gap-2">
             <Plus className="w-4 h-4" /> Create Project
           </button>
         </div>

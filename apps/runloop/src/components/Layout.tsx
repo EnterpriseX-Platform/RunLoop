@@ -648,8 +648,8 @@ function SidebarFooter({ collapsed }: { collapsed: boolean }) {
           aria-hidden
           style={{
             width: 6, height: 6, borderRadius: 999,
-            background: '#10B981',
-            boxShadow: '0 0 0 3px color-mix(in srgb, #10B981 18%, transparent)',
+            background: '#24a148',
+            boxShadow: '0 0 0 3px color-mix(in srgb, #24a148 18%, transparent)',
             animation: 'rl-engine-pulse 2.4s ease-in-out infinite',
           }}
         />
@@ -674,13 +674,13 @@ function SidebarFooter({ collapsed }: { collapsed: boolean }) {
           aria-hidden
           style={{
             width: 6, height: 6, borderRadius: 999,
-            background: '#10B981',
-            boxShadow: '0 0 0 3px color-mix(in srgb, #10B981 18%, transparent)',
+            background: '#24a148',
+            boxShadow: '0 0 0 3px color-mix(in srgb, #24a148 18%, transparent)',
             animation: 'rl-engine-pulse 2.4s ease-in-out infinite',
           }}
         />
         ENGINE
-        <span style={{ marginLeft: 'auto', color: '#10B981' }}>ONLINE</span>
+        <span style={{ marginLeft: 'auto', color: '#24a148' }}>ONLINE</span>
       </div>
       <div
         className="flex items-center gap-1.5"
@@ -1004,7 +1004,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
                       style={{ borderColor: 'var(--t-border)' }}
                     >
                       <div className="flex gap-2">
-                        <div className="w-1.5 h-1.5 bg-[#10B981] rounded-full mt-1.5 flex-shrink-0" />
+                        <div className="w-1.5 h-1.5 bg-[#24a148] rounded-full mt-1.5 flex-shrink-0" />
                         <div>
                           <p className="text-[12px]" style={{ color: 'var(--t-text)' }}>Flow executed successfully</p>
                           <p
@@ -1138,8 +1138,8 @@ export function Layout({ children }: { children?: React.ReactNode }) {
       {/* Global keyframes */}
       <style jsx global>{`
         @keyframes rl-engine-pulse {
-          0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, #10B981 18%, transparent); }
-          50%      { box-shadow: 0 0 0 5px color-mix(in srgb, #10B981 8%, transparent); }
+          0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, #24a148 18%, transparent); }
+          50%      { box-shadow: 0 0 0 5px color-mix(in srgb, #24a148 8%, transparent); }
         }
       `}</style>
     </div>

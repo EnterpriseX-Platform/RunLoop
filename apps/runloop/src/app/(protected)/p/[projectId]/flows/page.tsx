@@ -29,12 +29,12 @@ const THEME = {
   accent: 'var(--t-accent)',
   accentLight: 'var(--t-accent-light)',
   input: 'var(--t-input)',
-  colors: { blue: '#3B82F6', emerald: '#10B981', purple: '#8B5CF6', amber: '#F59E0B', red: '#EF4444', cyan: '#06B6D4' }
+  colors: { blue: '#0f62fe', emerald: '#24a148', purple: '#8a3ffc', amber: '#eb6200', red: '#da1e28', cyan: '#1192e8' }
 };
 
 const statusColors: Record<FlowStatus, { bg: string; color: string; label: string }> = {
   ACTIVE: { bg: `${THEME.colors.emerald}18`, color: THEME.colors.emerald, label: 'Active' },
-  INACTIVE: { bg: '#64748B18', color: '#64748B', label: 'Inactive' },
+  INACTIVE: { bg: '#64748B18', color: '#6f6f6f', label: 'Inactive' },
   DRAFT: { bg: `${THEME.colors.amber}18`, color: THEME.colors.amber, label: 'Draft' },
 };
 
@@ -113,7 +113,7 @@ export default function FlowsPage() {
           <AlertCircle className="w-10 h-10 mx-auto mb-3" style={{ color: THEME.colors.red }} />
           <h3 style={{ fontSize: 16, fontWeight: 600, color: THEME.text.primary, marginBottom: 4 }}>Failed to load flows</h3>
           <p style={{ fontSize: 13, color: THEME.text.muted, marginBottom: 12 }}>{error}</p>
-          <button onClick={fetchFlows} style={{ background: THEME.accent, color: '#fff', borderRadius: 8, padding: '6px 16px', fontSize: 13, fontWeight: 500 }}>
+          <button onClick={fetchFlows} style={{ background: THEME.accent, color: '#fff', borderRadius: 0, padding: '6px 16px', fontSize: 13, fontWeight: 500 }}>
             Try Again
           </button>
         </div>
@@ -152,12 +152,12 @@ export default function FlowsPage() {
       {/* List */}
       {filtered.length === 0 ? (
         <div className="text-center py-16">
-          <div style={{ width: 56, height: 56, background: THEME.panel, border: `1px solid ${THEME.border}`, borderRadius: 12 }} className="mx-auto mb-4 flex items-center justify-center">
+          <div style={{ width: 56, height: 56, background: THEME.panel, border: `1px solid ${THEME.border}`, borderRadius: 0 }} className="mx-auto mb-4 flex items-center justify-center">
             <Workflow className="w-7 h-7" style={{ color: THEME.text.muted }} />
           </div>
           <h3 style={{ fontSize: 15, fontWeight: 600, color: THEME.text.primary, marginBottom: 4 }}>No flows found</h3>
           <p style={{ fontSize: 13, color: THEME.text.muted, marginBottom: 12 }}>Create a flow to define your workflow pipelines</p>
-          <Link href={`/p/${projectId}/flows/new`} style={{ background: THEME.accent, color: '#fff', borderRadius: 8, padding: '6px 16px', fontSize: 13, fontWeight: 500 }} className="inline-flex items-center gap-2">
+          <Link href={`/p/${projectId}/flows/new`} style={{ background: THEME.accent, color: '#fff', borderRadius: 0, padding: '6px 16px', fontSize: 13, fontWeight: 500 }} className="inline-flex items-center gap-2">
             <Plus className="w-4 h-4" /> Create Flow
           </Link>
         </div>

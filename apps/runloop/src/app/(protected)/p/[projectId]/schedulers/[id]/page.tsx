@@ -20,7 +20,7 @@ const THEME = {
   accent: 'var(--t-accent)',
   accentLight: 'var(--t-accent-light)',
   input: 'var(--t-input)',
-  colors: { blue: '#3B82F6', emerald: '#10B981', purple: '#8B5CF6', amber: '#F59E0B', red: '#EF4444' }
+  colors: { blue: '#0f62fe', emerald: '#24a148', purple: '#8a3ffc', amber: '#eb6200', red: '#da1e28' }
 };
 
 export default function SchedulerDetailPage({ params }: { params: { id: string } }) {
@@ -424,8 +424,8 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
             {schedulerFlows.length > 0 ? (
               <div className="space-y-2">
                 {schedulerFlows.map((sf: any, index: number) => (
-                  <div key={sf.id} className="flex items-center gap-3" style={{ padding: 10, background: THEME.input, borderRadius: 8 }}>
-                    <span className="flex items-center justify-center" style={{ width: 24, height: 24, borderRadius: 12, background: `${THEME.colors.blue}20`, color: THEME.colors.blue, fontSize: 11, fontWeight: 500 }}>
+                  <div key={sf.id} className="flex items-center gap-3" style={{ padding: 10, background: THEME.input, borderRadius: 0 }}>
+                    <span className="flex items-center justify-center" style={{ width: 24, height: 24, borderRadius: 0, background: `${THEME.colors.blue}20`, color: THEME.colors.blue, fontSize: 11, fontWeight: 500 }}>
                       {index + 1}
                     </span>
                     <div className="flex-1">
@@ -478,7 +478,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
                       });
                       if (res.ok) fetchWebhooks();
                     }}
-                    style={{ fontSize: 12, padding: '6px 12px', background: `${THEME.colors.purple}20`, color: THEME.colors.purple, border: `1px solid ${THEME.colors.purple}40`, borderRadius: 6, cursor: 'pointer' }}
+                    style={{ fontSize: 12, padding: '6px 12px', background: `${THEME.colors.purple}20`, color: THEME.colors.purple, border: `1px solid ${THEME.colors.purple}40`, borderRadius: 0, cursor: 'pointer' }}
                   >
                     + Create webhook
                   </button>
@@ -495,7 +495,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
                     const webhookUrl = `${baseUrl}/api/webhooks/${wh.id}`;
                     const showSecret = !!showWebhookSecret[wh.id];
                     return (
-                      <div key={wh.id} style={{ padding: 14, background: THEME.input, borderRadius: 8 }}>
+                      <div key={wh.id} style={{ padding: 14, background: THEME.input, borderRadius: 0 }}>
                         <div className="flex items-center justify-between mb-2">
                           <span style={{ fontSize: 13, fontWeight: 500, color: THEME.text.primary }}>{wh.name}</span>
                           <span style={{ fontSize: 11, padding: '1px 8px', borderRadius: 4, background: wh.status === 'ACTIVE' ? `${THEME.colors.emerald}20` : THEME.panelHover, color: wh.status === 'ACTIVE' ? THEME.colors.emerald : THEME.text.secondary }}>
@@ -506,13 +506,13 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
                           <div>
                             <label style={{ fontSize: 11, color: THEME.text.muted, display: 'block', marginBottom: 4 }}>POST URL</label>
                             <div className="flex items-center gap-2">
-                              <code style={{ flex: 1, fontSize: 12, fontFamily: 'monospace', color: THEME.text.primary, background: THEME.bg, padding: '6px 10px', borderRadius: 6, border: `1px solid ${THEME.border}`, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              <code style={{ flex: 1, fontSize: 12, fontFamily: 'monospace', color: THEME.text.primary, background: THEME.bg, padding: '6px 10px', borderRadius: 0, border: `1px solid ${THEME.border}`, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {webhookUrl}
                               </code>
                               <button
                                 type="button"
                                 onClick={() => navigator.clipboard?.writeText(webhookUrl)}
-                                style={{ padding: 6, background: 'transparent', border: `1px solid ${THEME.border}`, borderRadius: 6, color: THEME.text.secondary, cursor: 'pointer' }}
+                                style={{ padding: 6, background: 'transparent', border: `1px solid ${THEME.border}`, borderRadius: 0, color: THEME.text.secondary, cursor: 'pointer' }}
                                 title="Copy URL"
                               >
                                 <Copy className="w-3.5 h-3.5" />
@@ -523,13 +523,13 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
                             <div>
                               <label style={{ fontSize: 11, color: THEME.text.muted, display: 'block', marginBottom: 4 }}>HMAC Secret (X-Webhook-Signature)</label>
                               <div className="flex items-center gap-2">
-                                <code style={{ flex: 1, fontSize: 12, fontFamily: 'monospace', color: THEME.text.primary, background: THEME.bg, padding: '6px 10px', borderRadius: 6, border: `1px solid ${THEME.border}`, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                <code style={{ flex: 1, fontSize: 12, fontFamily: 'monospace', color: THEME.text.primary, background: THEME.bg, padding: '6px 10px', borderRadius: 0, border: `1px solid ${THEME.border}`, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                   {showSecret ? wh.secret : '••••••••••••••••••••••••••••••••'}
                                 </code>
                                 <button
                                   type="button"
                                   onClick={() => setShowWebhookSecret((s) => ({ ...s, [wh.id]: !s[wh.id] }))}
-                                  style={{ padding: 6, background: 'transparent', border: `1px solid ${THEME.border}`, borderRadius: 6, color: THEME.text.secondary, cursor: 'pointer' }}
+                                  style={{ padding: 6, background: 'transparent', border: `1px solid ${THEME.border}`, borderRadius: 0, color: THEME.text.secondary, cursor: 'pointer' }}
                                   title={showSecret ? 'Hide secret' : 'Show secret'}
                                 >
                                   {showSecret ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -537,7 +537,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
                                 <button
                                   type="button"
                                   onClick={() => navigator.clipboard?.writeText(wh.secret)}
-                                  style={{ padding: 6, background: 'transparent', border: `1px solid ${THEME.border}`, borderRadius: 6, color: THEME.text.secondary, cursor: 'pointer' }}
+                                  style={{ padding: 6, background: 'transparent', border: `1px solid ${THEME.border}`, borderRadius: 0, color: THEME.text.secondary, cursor: 'pointer' }}
                                   title="Copy secret"
                                 >
                                   <Copy className="w-3.5 h-3.5" />
@@ -631,7 +631,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
             {(dependencies.predecessors || []).length > 0 ? (
               <div className="space-y-2">
                 {(dependencies.predecessors || []).map((dep: any) => (
-                  <div key={dep.id} className="flex items-center gap-3" style={{ padding: 10, background: THEME.input, borderRadius: 8 }}>
+                  <div key={dep.id} className="flex items-center gap-3" style={{ padding: 10, background: THEME.input, borderRadius: 0 }}>
                     <GitBranch className="w-4 h-4" style={{ color: THEME.text.muted }} />
                     <div className="flex-1">
                       <span style={{ color: THEME.text.primary, fontWeight: 500, fontSize: 13 }}>{dep.dependsOnName || dep.dependsOnSchedulerId}</span>
@@ -661,7 +661,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
             {(dependencies.successors || []).length > 0 ? (
               <div className="space-y-2">
                 {(dependencies.successors || []).map((dep: any) => (
-                  <div key={dep.id} className="flex items-center gap-3" style={{ padding: 10, background: THEME.input, borderRadius: 8 }}>
+                  <div key={dep.id} className="flex items-center gap-3" style={{ padding: 10, background: THEME.input, borderRadius: 0 }}>
                     <GitBranch className="w-4 h-4" style={{ color: THEME.text.muted }} />
                     <div className="flex-1">
                       <span style={{ color: THEME.text.primary, fontWeight: 500, fontSize: 13 }}>{dep.schedulerName || dep.schedulerId}</span>
@@ -687,7 +687,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
                 <select
                   value={newDepSchedulerId}
                   onChange={(e) => setNewDepSchedulerId(e.target.value)}
-                  style={{ background: THEME.input, border: `1px solid ${THEME.border}`, color: THEME.text.primary, borderRadius: 8, height: 38, width: '100%', padding: '0 12px', fontSize: 13 }}
+                  style={{ background: THEME.input, border: `1px solid ${THEME.border}`, color: THEME.text.primary, borderRadius: 0, height: 38, width: '100%', padding: '0 12px', fontSize: 13 }}
                 >
                   <option value="">Select a scheduler...</option>
                   {allSchedulers.map((s) => (
@@ -700,7 +700,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
                 <select
                   value={newDepCondition}
                   onChange={(e) => setNewDepCondition(e.target.value as DependencyCondition)}
-                  style={{ background: THEME.input, border: `1px solid ${THEME.border}`, color: THEME.text.primary, borderRadius: 8, height: 38, width: '100%', padding: '0 12px', fontSize: 13 }}
+                  style={{ background: THEME.input, border: `1px solid ${THEME.border}`, color: THEME.text.primary, borderRadius: 0, height: 38, width: '100%', padding: '0 12px', fontSize: 13 }}
                 >
                   <option value="ON_SUCCESS">ON_SUCCESS</option>
                   <option value="ON_FAILURE">ON_FAILURE</option>
@@ -711,7 +711,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
                 onClick={handleAddDependency}
                 disabled={!newDepSchedulerId || isAddingDep}
                 className="flex items-center gap-2 whitespace-nowrap disabled:opacity-50"
-                style={{ background: THEME.accent, color: '#fff', padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer', height: 38 }}
+                style={{ background: THEME.accent, color: '#fff', padding: '8px 16px', borderRadius: 0, fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer', height: 38 }}
               >
                 {isAddingDep ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 Add Dependency
@@ -754,7 +754,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
                   const TypeIcon = typeIcon;
                   const typeColor = n.type === 'EMAIL' ? THEME.colors.amber : n.type === 'SLACK' ? THEME.colors.purple : THEME.colors.blue;
                   return (
-                    <div key={n.id} style={{ padding: 14, background: THEME.input, borderRadius: 8, borderLeft: `3px solid ${typeColor}` }}>
+                    <div key={n.id} style={{ padding: 14, background: THEME.input, borderRadius: 0, borderLeft: `3px solid ${typeColor}` }}>
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
@@ -817,7 +817,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
               Pause this scheduler until a specific time. Cron triggers and manual triggers will be skipped.
             </p>
             {(scheduler as any).pausedUntil && new Date((scheduler as any).pausedUntil) > new Date() ? (
-              <div className="flex items-center gap-3 mb-3" style={{ padding: 12, background: `${THEME.colors.amber}10`, borderRadius: 8, border: `1px solid ${THEME.colors.amber}30` }}>
+              <div className="flex items-center gap-3 mb-3" style={{ padding: 12, background: `${THEME.colors.amber}10`, borderRadius: 0, border: `1px solid ${THEME.colors.amber}30` }}>
                 <Pause className="w-4 h-4" style={{ color: THEME.colors.amber }} />
                 <span style={{ fontSize: 13, color: THEME.colors.amber }}>
                   Paused until {new Date((scheduler as any).pausedUntil).toLocaleString()}
@@ -843,7 +843,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
                 type="datetime-local"
                 value={pausedUntilInput}
                 onChange={(e) => setPausedUntilInput(e.target.value)}
-                style={{ background: THEME.input, border: `1px solid ${THEME.border}`, borderRadius: 6, padding: '8px 10px', color: THEME.text.primary, fontSize: 13 }}
+                style={{ background: THEME.input, border: `1px solid ${THEME.border}`, borderRadius: 0, padding: '8px 10px', color: THEME.text.primary, fontSize: 13 }}
               />
               <button
                 onClick={async () => {
@@ -954,7 +954,7 @@ function NotificationModal({ schedulerId, onClose, onSave }: { schedulerId: stri
                 { key: 'success', label: 'Execution succeeds', val: onSuccess, set: setOnSuccess, color: THEME.colors.emerald },
                 { key: 'failure', label: 'Execution fails', val: onFailure, set: setOnFailure, color: THEME.colors.red },
               ].map((e) => (
-                <label key={e.key} className="flex items-center gap-3 cursor-pointer" style={{ padding: 8, background: e.val ? e.color + '10' : 'transparent', borderRadius: 6, border: `1px solid ${e.val ? e.color + '40' : THEME.border}` }}>
+                <label key={e.key} className="flex items-center gap-3 cursor-pointer" style={{ padding: 8, background: e.val ? e.color + '10' : 'transparent', borderRadius: 0, border: `1px solid ${e.val ? e.color + '40' : THEME.border}` }}>
                   <input type="checkbox" checked={e.val} onChange={(ev) => e.set(ev.target.checked)} />
                   <span style={{ fontSize: 13, color: e.val ? e.color : THEME.text.secondary }}>{e.label}</span>
                 </label>

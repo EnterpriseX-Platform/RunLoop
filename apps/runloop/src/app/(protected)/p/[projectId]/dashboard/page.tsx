@@ -269,10 +269,10 @@ export default function DashboardPage() {
             <div>
               {recentExecutions?.length > 0 ? recentExecutions.slice(0, 5).map((execution: Execution, i: number) => {
                 const statusColor =
-                  execution.status === 'SUCCESS' ? '#10B981'
-                  : execution.status === 'FAILED' || execution.status === 'TIMEOUT' ? '#EF4444'
-                  : execution.status === 'RUNNING' ? '#3B82F6'
-                  : '#F59E0B';
+                  execution.status === 'SUCCESS' ? '#24a148'
+                  : execution.status === 'FAILED' || execution.status === 'TIMEOUT' ? '#da1e28'
+                  : execution.status === 'RUNNING' ? '#0f62fe'
+                  : '#eb6200';
                 return (
                   <Link
                     key={execution.id}
@@ -447,14 +447,14 @@ export default function DashboardPage() {
               </span>
               <span
                 className="flex items-center gap-1.5"
-                style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 0, color: '#10B981' }}
+                style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 0, color: '#24a148' }}
               >
                 <span
                   aria-hidden
                   style={{
                     width: 6, height: 6, borderRadius: 999,
-                    background: '#10B981',
-                    boxShadow: '0 0 0 3px color-mix(in srgb, #10B981 20%, transparent)',
+                    background: '#24a148',
+                    boxShadow: '0 0 0 3px color-mix(in srgb, #24a148 20%, transparent)',
                   }}
                 />
                 Online
@@ -474,8 +474,8 @@ export default function DashboardPage() {
                       aria-hidden
                       style={{
                         width: 5, height: 5, borderRadius: 999,
-                        background: '#10B981',
-                        boxShadow: '0 0 0 2px color-mix(in srgb, #10B981 15%, transparent)',
+                        background: '#24a148',
+                        boxShadow: '0 0 0 2px color-mix(in srgb, #24a148 15%, transparent)',
                       }}
                     />
                     <span style={{ color: THEME.text.secondary, fontSize: 11.5 }}>{svc.name}</span>

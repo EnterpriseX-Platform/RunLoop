@@ -38,7 +38,7 @@ const THEME = {
   accent: 'var(--t-accent)',
   accentLight: 'var(--t-accent-light)',
   input: 'var(--t-input)',
-  colors: { blue: '#3B82F6', emerald: '#10B981', purple: '#8B5CF6', amber: '#F59E0B', red: '#EF4444', cyan: '#06B6D4' },
+  colors: { blue: '#0f62fe', emerald: '#24a148', purple: '#8a3ffc', amber: '#eb6200', red: '#da1e28', cyan: '#1192e8' },
 };
 
 const statusConfig: Record<string, { bg: string; color: string; label: string }> = {
@@ -46,7 +46,7 @@ const statusConfig: Record<string, { bg: string; color: string; label: string }>
   FAILED: { bg: `${THEME.colors.red}18`, color: THEME.colors.red, label: 'Failed' },
   RUNNING: { bg: `${THEME.colors.blue}18`, color: THEME.colors.blue, label: 'Running' },
   PENDING: { bg: `${THEME.colors.amber}18`, color: THEME.colors.amber, label: 'Pending' },
-  CANCELLED: { bg: '#64748B18', color: '#64748B', label: 'Cancelled' },
+  CANCELLED: { bg: '#64748B18', color: '#6f6f6f', label: 'Cancelled' },
   TIMEOUT: { bg: `${THEME.colors.red}18`, color: THEME.colors.red, label: 'Timeout' },
 };
 
@@ -361,7 +361,7 @@ export default function ExecutionsPage() {
       case 'RUNNING':
         return <Loader2 className="animate-spin" style={{ width: size, height: size, color: THEME.colors.blue }} />;
       case 'CANCELLED':
-        return <AlertCircle style={{ width: size, height: size, color: '#64748B' }} />;
+        return <AlertCircle style={{ width: size, height: size, color: '#6f6f6f' }} />;
       case 'TIMEOUT':
         return <XCircle style={{ width: size, height: size, color: THEME.colors.red }} />;
       default:
@@ -461,7 +461,7 @@ export default function ExecutionsPage() {
             padding: '10px 16px',
             background: THEME.panel,
             border: `1px solid ${THEME.colors.blue}40`,
-            borderRadius: 10,
+            borderRadius: 0,
             display: 'flex',
             alignItems: 'center',
             gap: 12,
@@ -479,7 +479,7 @@ export default function ExecutionsPage() {
               background: `${THEME.colors.blue}20`,
               color: THEME.colors.blue,
               border: `1px solid ${THEME.colors.blue}40`,
-              borderRadius: 6,
+              borderRadius: 0,
               fontSize: 12,
               fontWeight: 500,
               cursor: 'pointer',
@@ -494,7 +494,7 @@ export default function ExecutionsPage() {
               background: `${THEME.colors.red}20`,
               color: THEME.colors.red,
               border: `1px solid ${THEME.colors.red}40`,
-              borderRadius: 6,
+              borderRadius: 0,
               fontSize: 12,
               fontWeight: 500,
               cursor: 'pointer',
@@ -534,7 +534,7 @@ export default function ExecutionsPage() {
                 width: 56, height: 56,
                 background: THEME.panel,
                 border: `1px solid ${THEME.border}`,
-                borderRadius: 12,
+                borderRadius: 0,
               }}
               className="mx-auto mb-4 flex items-center justify-center"
             >
@@ -552,7 +552,7 @@ export default function ExecutionsPage() {
             style={{
               background: THEME.panel,
               border: `1px solid ${THEME.border}`,
-              borderRadius: 12,
+              borderRadius: 0,
               overflow: 'hidden',
             }}
           >
@@ -574,7 +574,7 @@ export default function ExecutionsPage() {
                       width: 32, height: 32,
                       background: `${THEME.colors.red}18`,
                       border: `1px solid ${THEME.colors.red}30`,
-                      borderRadius: 6,
+                      borderRadius: 0,
                       flexShrink: 0,
                     }}
                     className="flex items-center justify-center"
@@ -675,7 +675,7 @@ export default function ExecutionsPage() {
               height: 56,
               background: THEME.panel,
               border: `1px solid ${THEME.border}`,
-              borderRadius: 12,
+              borderRadius: 0,
             }}
             className="mx-auto mb-4 flex items-center justify-center"
           >
@@ -800,7 +800,7 @@ export default function ExecutionsPage() {
                         title="Replay"
                         style={{
                           display: 'flex', alignItems: 'center', gap: 4,
-                          padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 500,
+                          padding: '3px 8px', borderRadius: 0, fontSize: 11, fontWeight: 500,
                           background: `${THEME.colors.blue}15`, color: THEME.colors.blue,
                           border: `1px solid ${THEME.colors.blue}40`, cursor: 'pointer',
                         }}
@@ -822,7 +822,7 @@ export default function ExecutionsPage() {
                         title="Discard"
                         style={{
                           display: 'flex', alignItems: 'center', gap: 4,
-                          padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 500,
+                          padding: '3px 8px', borderRadius: 0, fontSize: 11, fontWeight: 500,
                           background: `${THEME.colors.red}15`, color: THEME.colors.red,
                           border: `1px solid ${THEME.colors.red}40`, cursor: 'pointer',
                         }}
@@ -842,7 +842,7 @@ export default function ExecutionsPage() {
                       justifyContent: 'center',
                       width: 28,
                       height: 28,
-                      borderRadius: 6,
+                      borderRadius: 0,
                       border: `1px solid ${THEME.border}`,
                       color: THEME.text.muted,
                       transition: 'all 0.15s ease',
@@ -871,7 +871,7 @@ export default function ExecutionsPage() {
                         style={{
                           background: `${THEME.colors.red}0C`,
                           border: `1px solid ${THEME.colors.red}25`,
-                          borderRadius: 8,
+                          borderRadius: 0,
                           padding: '10px 14px',
                         }}
                       >
@@ -905,7 +905,7 @@ export default function ExecutionsPage() {
                         style={{
                           background: '#0D1117',
                           border: `1px solid ${THEME.border}`,
-                          borderRadius: 8,
+                          borderRadius: 0,
                           padding: '10px 14px',
                           maxHeight: 180,
                           overflow: 'auto',
@@ -940,7 +940,7 @@ export default function ExecutionsPage() {
                         style={{
                           background: '#0D1117',
                           border: `1px solid ${THEME.border}`,
-                          borderRadius: 8,
+                          borderRadius: 0,
                           padding: '10px 14px',
                           maxHeight: 180,
                           overflow: 'auto',

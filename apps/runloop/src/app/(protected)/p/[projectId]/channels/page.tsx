@@ -261,7 +261,7 @@ export default function ChannelsPage() {
                   color:
                     tapStatus === 'open' ? 'var(--t-success)' :
                     tapStatus === 'connecting' ? 'var(--t-text)' :
-                    tapStatus === 'error' ? 'var(--t-error, #ef4444)' :
+                    tapStatus === 'error' ? 'var(--t-error, #da1e28)' :
                     'var(--t-text-muted)',
                 }}
               >

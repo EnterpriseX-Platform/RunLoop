@@ -32,11 +32,11 @@ const THEME = {
   accentLight: 'var(--t-accent-light)',
   input: 'var(--t-input)',
   colors: {
-    blue: '#3B82F6',
-    emerald: '#10B981',
-    purple: '#8B5CF6',
-    amber: '#F59E0B',
-    red: '#EF4444',
+    blue: '#0f62fe',
+    emerald: '#24a148',
+    purple: '#8a3ffc',
+    amber: '#eb6200',
+    red: '#da1e28',
   },
 };
 

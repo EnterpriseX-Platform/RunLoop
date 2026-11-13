@@ -32,7 +32,7 @@ const THEME = {
   accent: 'var(--t-accent)',
   accentLight: 'var(--t-accent-light)',
   input: 'var(--t-input)',
-  colors: { blue: '#3B82F6', emerald: '#10B981', purple: '#8B5CF6', amber: '#F59E0B', red: '#EF4444', cyan: '#06B6D4' }
+  colors: { blue: '#0f62fe', emerald: '#24a148', purple: '#8a3ffc', amber: '#eb6200', red: '#da1e28', cyan: '#1192e8' }
 };
 
 interface Scheduler {
@@ -180,7 +180,7 @@ function Toast({ toast, onClose }: { toast: ToastState; onClose: () => void }) {
   if (!toast.visible) return null;
   const bgColor = toast.type === 'success' ? THEME.colors.emerald : THEME.colors.red;
   return (
-    <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999, background: bgColor, color: '#fff', padding: '12px 20px', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.3)', fontSize: 14, fontWeight: 500 }}>
+    <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999, background: bgColor, color: '#fff', padding: '12px 20px', borderRadius: 0, display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.3)', fontSize: 14, fontWeight: 500 }}>
       {toast.type === 'success' ? <Check size={16} /> : <AlertCircle size={16} />}
       {toast.message}
       <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', marginLeft: 8, padding: 0, display: 'flex' }}><X size={14} /></button>
@@ -306,7 +306,7 @@ export default function SchedulersPage() {
           <AlertCircle className="w-10 h-10 mx-auto mb-3" style={{ color: THEME.colors.red }} />
           <h3 style={{ fontSize: 16, fontWeight: 600, color: THEME.text.primary, marginBottom: 4 }}>Failed to load schedulers</h3>
           <p style={{ fontSize: 13, color: THEME.text.muted, marginBottom: 12 }}>{error}</p>
-          <button onClick={fetchSchedulers} style={{ background: THEME.accent, color: '#fff', borderRadius: 8, padding: '6px 16px', fontSize: 13, fontWeight: 500 }}>
+          <button onClick={fetchSchedulers} style={{ background: THEME.accent, color: '#fff', borderRadius: 0, padding: '6px 16px', fontSize: 13, fontWeight: 500 }}>
             Try Again
           </button>
         </div>
@@ -345,12 +345,12 @@ export default function SchedulersPage() {
       {/* List */}
       {filtered.length === 0 ? (
         <div className="text-center py-16">
-          <div style={{ width: 56, height: 56, background: THEME.panel, border: `1px solid ${THEME.border}`, borderRadius: 12 }} className="mx-auto mb-4 flex items-center justify-center">
+          <div style={{ width: 56, height: 56, background: THEME.panel, border: `1px solid ${THEME.border}`, borderRadius: 0 }} className="mx-auto mb-4 flex items-center justify-center">
             <Clock className="w-7 h-7" style={{ color: THEME.text.muted }} />
           </div>
           <h3 style={{ fontSize: 15, fontWeight: 600, color: THEME.text.primary, marginBottom: 4 }}>No schedulers found</h3>
           <p style={{ fontSize: 13, color: THEME.text.muted, marginBottom: 12 }}>Create a schedule to run your tasks automatically</p>
-          <Link href={`/p/${projectId}/schedulers/new`} style={{ background: THEME.accent, color: '#fff', borderRadius: 8, padding: '6px 16px', fontSize: 13, fontWeight: 500 }} className="inline-flex items-center gap-2">
+          <Link href={`/p/${projectId}/schedulers/new`} style={{ background: THEME.accent, color: '#fff', borderRadius: 0, padding: '6px 16px', fontSize: 13, fontWeight: 500 }} className="inline-flex items-center gap-2">
             <Plus className="w-4 h-4" /> Create Schedule
           </Link>
         </div>

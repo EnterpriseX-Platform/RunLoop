@@ -20,11 +20,11 @@ const T = {
   textMuted: 'var(--t-text-muted)',
   accent: 'var(--t-accent)',
   input: 'var(--t-input)',
-  red: '#EF4444',
-  amber: '#F59E0B',
-  blue: '#3B82F6',
-  emerald: '#10B981',
-  purple: '#8B5CF6',
+  red: '#da1e28',
+  amber: '#eb6200',
+  blue: '#0f62fe',
+  emerald: '#24a148',
+  purple: '#8a3ffc',
 };
 
 const TRIGGER_TYPES: { value: TriggerType; label: string }[] = [
@@ -218,8 +218,8 @@ export default function NewSchedulerPage() {
         <div
           className="flex items-center gap-2 mb-4 p-3"
           style={{
-            background: 'color-mix(in srgb, #EF4444 10%, transparent)',
-            border: '1px solid color-mix(in srgb, #EF4444 30%, transparent)',
+            background: 'color-mix(in srgb, #da1e28 10%, transparent)',
+            border: '1px solid color-mix(in srgb, #da1e28 30%, transparent)',
             borderRadius: 2,
           }}
         >
@@ -392,11 +392,11 @@ Body: { "input": {...} }`}
                     ...inp(),
                     fontFamily: 'IBM Plex Mono, ui-monospace, SFMono-Regular, monospace',
                     resize: 'vertical' as const,
-                    borderColor: paramsValid ? 'var(--t-border)' : '#EF4444',
+                    borderColor: paramsValid ? 'var(--t-border)' : '#da1e28',
                   }}
                 />
                 {!paramsValid && (
-                  <p style={{ fontSize: 11, color: '#EF4444', marginTop: 4 }}>
+                  <p style={{ fontSize: 11, color: '#da1e28', marginTop: 4 }}>
                     Invalid JSON — fix syntax before saving
                   </p>
                 )}

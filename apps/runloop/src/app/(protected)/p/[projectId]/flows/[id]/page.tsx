@@ -16,7 +16,7 @@ const THEME = {
   border: 'var(--t-border)',
   text: { primary: 'var(--t-text)', secondary: 'var(--t-text-secondary)', muted: 'var(--t-text-muted)' },
   accent: 'var(--t-accent)',
-  colors: { red: '#EF4444', emerald: '#10B981' },
+  colors: { red: '#da1e28', emerald: '#24a148' },
 };
 
 type BackendFlow = {
@@ -400,11 +400,11 @@ export default function FlowDetailPage() {
             ) : (
               <div className="p-4 space-y-3">
                 {versions.map((v, i) => (
-                  <div key={v.id} style={{ padding: 12, borderRadius: 8, background: 'var(--t-input)', border: `1px solid ${THEME.border}` }}>
+                  <div key={v.id} style={{ padding: 12, borderRadius: 0, background: 'var(--t-input)', border: `1px solid ${THEME.border}` }}>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-semibold" style={{ color: THEME.text.primary }}>
                         v{v.version}
-                        {i === 0 && <span className="ml-2 text-[10px] px-2 py-0.5 rounded" style={{ background: '#10B98120', color: '#10B981' }}>CURRENT</span>}
+                        {i === 0 && <span className="ml-2" style={{ fontSize: 12, padding: '2px 8px', borderRadius: 24, background: 'var(--tag-green-bg)', color: 'var(--tag-green-text)' }}>Current</span>}
                       </span>
                       <span className="text-[11px]" style={{ color: THEME.text.muted }}>
                         {new Date(v.createdAt).toLocaleString()}

@@ -94,7 +94,7 @@ const ENDPOINTS = RAW_ENDPOINTS.map((e) => ({
 }));
 
 const METHOD_COLORS: Record<string, string> = {
-  GET: '#10B981', POST: '#3B82F6', PUT: '#F59E0B', PATCH: '#A855F7', DELETE: '#EF4444',
+  GET: '#24a148', POST: '#0f62fe', PUT: '#eb6200', PATCH: '#8a3ffc', DELETE: '#da1e28',
 };
 
 // ─────────────────────────────────────────────────────────────────

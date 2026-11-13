@@ -25,11 +25,11 @@ const T = {
 };
 
 const STATUS_META: Record<string, { color: string; icon: React.ElementType; label: string }> = {
-  PENDING:    { color: '#F59E0B', icon: Clock,        label: 'Pending' },
-  PROCESSING: { color: '#3B82F6', icon: PlayCircle,   label: 'Running' },
-  COMPLETED:  { color: '#10B981', icon: CheckCircle2, label: 'Done' },
-  FAILED:     { color: '#F97316', icon: XCircle,      label: 'Failed' },
-  DLQ:        { color: '#EF4444', icon: AlertCircle,  label: 'DLQ' },
+  PENDING:    { color: '#eb6200', icon: Clock,        label: 'Pending' },
+  PROCESSING: { color: '#0f62fe', icon: PlayCircle,   label: 'Running' },
+  COMPLETED:  { color: '#24a148', icon: CheckCircle2, label: 'Done' },
+  FAILED:     { color: '#eb6200', icon: XCircle,      label: 'Failed' },
+  DLQ:        { color: '#da1e28', icon: AlertCircle,  label: 'DLQ' },
 };
 
 interface QueueDef {
@@ -258,7 +258,7 @@ export default function QueueDetailPage() {
               {def.Name}
             </h1>
             <MonoTag tone="accent">{def.Backend}</MonoTag>
-            {!def.Enabled && <MonoTag tone="danger">DISABLED</MonoTag>}
+            {!def.Enabled && <MonoTag tone="muted">Disabled</MonoTag>}
           </div>
           <p style={{ fontSize: 13, color: T.textMuted }}>
             Flow {def.FlowID} · concurrency={def.Concurrency} · max_attempts={def.MaxAttempts} · visibility={def.VisibilitySec}s
@@ -289,7 +289,7 @@ export default function QueueDetailPage() {
             style={{
               background: T.panel,
               border: `1px solid ${T.border}`,
-              borderRadius: 6,
+              borderRadius: 0,
               boxShadow: '0 24px 60px rgba(0,0,0,0.4)',
             }}
           >
@@ -655,10 +655,10 @@ export default function QueueDetailPage() {
         {jobs.length === 0 ? (
           <div className="text-center py-12" style={{ color: T.textMuted }}>
             <Inbox className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 0 }}>
+            <p style={{ fontSize: 14 }}>
               {def.Backend === 'postgres'
-                ? '// NO JOBS MATCH THIS FILTER'
-                : `// ${def.Backend.toUpperCase()} STORES JOBS IN BROKER — ONLY DLQ MIRRORED`}
+                ? 'No jobs match this filter'
+                : `${def.Backend} keeps jobs in its broker; only dead letters are listed here`}
             </p>
           </div>
         ) : (
@@ -743,7 +743,7 @@ export default function QueueDetailPage() {
                     <button
                       onClick={() => deleteJob(j.id)}
                       title="Delete"
-                      style={{ color: '#EF4444' }}
+                      style={{ color: '#da1e28' }}
                       className="p-1 hover:opacity-70"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

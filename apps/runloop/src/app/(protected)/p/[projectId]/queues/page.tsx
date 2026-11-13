@@ -23,8 +23,8 @@ const THEME = {
   accent: 'var(--t-accent)',
   input: 'var(--t-input)',
   colors: {
-    blue: '#3B82F6', emerald: '#10B981', purple: '#8B5CF6',
-    amber: '#F59E0B', red: '#EF4444', cyan: '#06B6D4',
+    blue: '#0f62fe', emerald: '#24a148', purple: '#8a3ffc',
+    amber: '#eb6200', red: '#da1e28', cyan: '#1192e8',
   },
 };
 
@@ -190,7 +190,7 @@ export default function QueuesPage() {
       {queues.length === 0 ? (
         <div className="text-center py-16">
           <div
-            style={{ width: 56, height: 56, background: THEME.panel, border: `1px solid ${THEME.border}`, borderRadius: 12 }}
+            style={{ width: 56, height: 56, background: THEME.panel, border: `1px solid ${THEME.border}`, borderRadius: 0 }}
             className="mx-auto mb-4 flex items-center justify-center"
           >
             <Inbox className="w-7 h-7" style={{ color: THEME.text.muted }} />

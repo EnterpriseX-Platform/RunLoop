@@ -18,7 +18,7 @@ const T = {
   textSec: 'var(--t-text-secondary)',
   textMuted: 'var(--t-text-muted)',
   accent: 'var(--t-accent)',
-  red: '#EF4444',
+  red: '#da1e28',
 };
 
 type Backend = 'postgres' | 'redis' | 'rabbitmq' | 'kafka';
@@ -128,8 +128,8 @@ export default function NewQueuePage() {
         <div
           className="mb-4 p-3 flex items-start gap-2"
           style={{
-            background: 'color-mix(in srgb, #EF4444 10%, transparent)',
-            border: '1px solid color-mix(in srgb, #EF4444 30%, transparent)',
+            background: 'color-mix(in srgb, #da1e28 10%, transparent)',
+            border: '1px solid color-mix(in srgb, #da1e28 30%, transparent)',
             borderRadius: 2,
           }}
         >

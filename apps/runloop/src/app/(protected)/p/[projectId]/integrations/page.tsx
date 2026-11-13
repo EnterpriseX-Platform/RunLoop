@@ -55,7 +55,7 @@ const PROVIDERS: Provider[] = [
     keyPlaceholder: 'sk-...',
     getKeyUrl: 'https://platform.openai.com/api-keys',
     getKeyLabel: 'platform.openai.com',
-    accent: '#0EA5E9',
+    accent: '#0f62fe',
   },
   {
     id: 'kimi',
@@ -73,7 +73,7 @@ const PROVIDERS: Provider[] = [
     keyPlaceholder: 'sk-...',
     getKeyUrl: 'https://platform.moonshot.cn/console/api-keys',
     getKeyLabel: 'platform.moonshot.cn',
-    accent: '#10B981',
+    accent: '#24a148',
   },
 ];
 
@@ -398,7 +398,7 @@ export default function IntegrationsPage() {
                 {c.result && (
                   <span
                     className="flex items-center gap-1.5 text-sm"
-                    style={{ color: c.result.ok ? 'var(--t-success)' : 'var(--t-error, #ef4444)' }}
+                    style={{ color: c.result.ok ? 'var(--t-success)' : 'var(--t-error, #da1e28)' }}
                   >
                     {c.result.ok ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
                     {c.result.msg}

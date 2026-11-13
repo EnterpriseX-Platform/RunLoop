@@ -275,7 +275,7 @@ export default function EnvVarsPage() {
                   onClick={() => remove(r)}
                   className="p-1.5 hover:opacity-70"
                   title="Delete"
-                  style={{ color: 'var(--t-error, #ef4444)' }}
+                  style={{ color: 'var(--t-error, #da1e28)' }}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>

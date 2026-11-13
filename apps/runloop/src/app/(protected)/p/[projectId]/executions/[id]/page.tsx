@@ -22,7 +22,7 @@ const THEME = {
   accent: 'var(--t-accent)',
   accentLight: 'var(--t-accent-light)',
   input: 'var(--t-input)',
-  colors: { blue: '#3B82F6', emerald: '#10B981', purple: '#8B5CF6', amber: '#F59E0B', red: '#EF4444' }
+  colors: { blue: '#0f62fe', emerald: '#24a148', purple: '#8a3ffc', amber: '#eb6200', red: '#da1e28' }
 };
 
 export default function ExecutionDetailPage({ params }: { params: { id: string } }) {
@@ -247,7 +247,7 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
                 color: THEME.text.muted,
               }}
             >
-              <span style={{ opacity: 0.5 }}>{'//'}</span> started
+              <span style={{ opacity: 0.5 }}></span> started
             </p>
             <p
               style={{
@@ -285,7 +285,7 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
                 color: THEME.text.muted,
               }}
             >
-              <span style={{ opacity: 0.5 }}>{'//'}</span> completed
+              <span style={{ opacity: 0.5 }}></span> completed
             </p>
             <p
               style={{
@@ -338,7 +338,7 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
               Node execution breakdown
             </h3>
             {nodeRows.length === 0 ? (
-              <div className="text-center py-12" style={{ background: THEME.input, borderRadius: 8 }}>
+              <div className="text-center py-12" style={{ background: THEME.input, borderRadius: 0 }}>
                 <Boxes className="w-12 h-12 mx-auto mb-3" style={{ color: THEME.text.muted }} />
                 <p style={{ color: THEME.text.muted, fontSize: 13 }}>
                   {execution.status === 'RUNNING' ? 'Waiting for nodes to run…' : 'No per-node data recorded for this execution'}
@@ -352,7 +352,7 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
                     style={{
                       background: THEME.input,
                       border: `1px solid ${row.status === 'FAILED' ? THEME.colors.red + '60' : THEME.border}`,
-                      borderRadius: 8,
+                      borderRadius: 0,
                       padding: 12,
                     }}
                   >
@@ -411,11 +411,11 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
               )}
             </div>
             {execution.logs ? (
-              <pre style={{ background: THEME.input, borderRadius: 8, padding: 16, overflow: 'auto', fontSize: 13, fontFamily: 'monospace', color: THEME.text.secondary, maxHeight: 384, whiteSpace: 'pre-wrap' }}>
+              <pre style={{ background: THEME.input, borderRadius: 0, padding: 16, overflow: 'auto', fontSize: 13, fontFamily: 'monospace', color: THEME.text.secondary, maxHeight: 384, whiteSpace: 'pre-wrap' }}>
                 {execution.logs}
               </pre>
             ) : (
-              <div className="text-center py-12" style={{ background: THEME.input, borderRadius: 8 }}>
+              <div className="text-center py-12" style={{ background: THEME.input, borderRadius: 0 }}>
                 <Terminal className="w-12 h-12 mx-auto mb-3" style={{ color: THEME.text.muted }} />
                 <p style={{ color: THEME.text.muted, fontSize: 13 }}>
                   {execution.status === 'RUNNING' ? 'Logs will appear here...' : 'No logs available'}
@@ -429,11 +429,11 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
           <div style={{ padding: 16 }}>
             <h3 style={{ fontSize: 13, fontWeight: 500, color: THEME.text.primary, marginBottom: 12 }}>Input Parameters</h3>
             {execution.input && Object.keys(execution.input).length > 0 ? (
-              <pre style={{ background: THEME.input, borderRadius: 8, padding: 16, overflow: 'auto', fontSize: 13, fontFamily: 'monospace', color: THEME.text.secondary }}>
+              <pre style={{ background: THEME.input, borderRadius: 0, padding: 16, overflow: 'auto', fontSize: 13, fontFamily: 'monospace', color: THEME.text.secondary }}>
                 {JSON.stringify(execution.input, null, 2)}
               </pre>
             ) : (
-              <div className="text-center py-12" style={{ background: THEME.input, borderRadius: 8 }}>
+              <div className="text-center py-12" style={{ background: THEME.input, borderRadius: 0 }}>
                 <FileJson className="w-12 h-12 mx-auto mb-3" style={{ color: THEME.text.muted }} />
                 <p style={{ color: THEME.text.muted, fontSize: 13 }}>No input data</p>
               </div>
@@ -445,11 +445,11 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
           <div style={{ padding: 16 }}>
             <h3 style={{ fontSize: 13, fontWeight: 500, color: THEME.text.primary, marginBottom: 12 }}>Output Data</h3>
             {execution.output && Object.keys(execution.output).length > 0 ? (
-              <pre style={{ background: THEME.input, borderRadius: 8, padding: 16, overflow: 'auto', fontSize: 13, fontFamily: 'monospace', color: THEME.text.secondary }}>
+              <pre style={{ background: THEME.input, borderRadius: 0, padding: 16, overflow: 'auto', fontSize: 13, fontFamily: 'monospace', color: THEME.text.secondary }}>
                 {JSON.stringify(execution.output, null, 2)}
               </pre>
             ) : execution.errorMessage ? (
-              <div style={{ background: `${THEME.colors.red}10`, border: `1px solid ${THEME.colors.red}30`, borderRadius: 8, padding: 16 }}>
+              <div style={{ background: `${THEME.colors.red}10`, border: `1px solid ${THEME.colors.red}30`, borderRadius: 0, padding: 16 }}>
                 <div className="flex items-center gap-2 mb-2">
                   <AlertCircle className="w-5 h-5" style={{ color: THEME.colors.red }} />
                   <span style={{ fontWeight: 500, color: THEME.colors.red, fontSize: 13 }}>Error</span>
@@ -459,7 +459,7 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
                 </pre>
               </div>
             ) : (
-              <div className="text-center py-12" style={{ background: THEME.input, borderRadius: 8 }}>
+              <div className="text-center py-12" style={{ background: THEME.input, borderRadius: 0 }}>
                 <FileJson className="w-12 h-12 mx-auto mb-3" style={{ color: THEME.text.muted }} />
                 <p style={{ color: THEME.text.muted, fontSize: 13 }}>
                   {execution.status === 'RUNNING' ? 'Waiting for output...' : 'No output data'}
@@ -530,9 +530,9 @@ function parseNodeLogs(logs: string, output: Record<string, unknown>): NodeRow[]
 
 function nodeStatusColor(status: string): string {
   switch (status.toUpperCase()) {
-    case 'SUCCESS': return '#10B981';
-    case 'FAILED': return '#EF4444';
-    case 'SKIPPED': return '#6B7280';
-    default: return '#3B82F6';
+    case 'SUCCESS': return '#24a148';
+    case 'FAILED': return '#da1e28';
+    case 'SKIPPED': return '#6f6f6f';
+    default: return '#0f62fe';
   }
 }

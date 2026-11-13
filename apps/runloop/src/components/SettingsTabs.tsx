@@ -116,7 +116,6 @@ export function SettingsTabs() {
         const active = tab.match(pathname);
         // Next.js basePath ('/runloop') is auto-prepended by Link — do NOT include it here
         const href = tab.buildHref(projectId);
-        const Icon = tab.icon;
         return (
           <Link
             key={tab.key}
@@ -124,23 +123,20 @@ export function SettingsTabs() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
-              padding: '12px 16px',
-              fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
-              fontSize: 11,
-              fontWeight: 500,
-              letterSpacing: 0,
+              height: 48,
+              padding: '0 16px',
+              fontSize: 14,
+              fontWeight: active ? 600 : 400,
               borderRadius: 0,
               whiteSpace: 'nowrap',
               background: 'transparent',
-              color: active ? 'var(--t-text)' : 'var(--t-text-muted)',
+              color: active ? 'var(--t-text)' : 'var(--t-text-secondary)',
               borderBottom: `2px solid ${active ? 'var(--t-accent)' : 'transparent'}`,
               marginBottom: -1,
               transition: 'color 0.12s, border-color 0.12s',
             }}
             className="hover:!text-[var(--t-text)]"
           >
-            <Icon className="w-3.5 h-3.5" style={{ opacity: active ? 1 : 0.7 }} />
             {tab.label}
           </Link>
         );
