@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, AlertCircle, Trash2, History, RotateCcw, X, Play } from 'lucide-react';
 import { Node, Edge } from 'reactflow';
+import { resolveKind } from '@/components/flow/nodes/BaseNode';
 import { FlowCanvas } from '@/components/flow/FlowCanvas';
 import { AskAIButton } from '@/components/AskAIButton';
 
@@ -81,7 +82,7 @@ function backendNodesToReactFlow(flow: BackendFlow): { nodes: Node[]; edges: Edg
         id: n.id || `node_${idx}`,
         type: n.type,
         position: n.position || { x: 80 + idx * 260, y: 200 },
-        data: { ...n.data, label: n.data.label || n.id || 'Node', config: n.data.config || {} },
+        data: { ...n.data, type: resolveKind(n.data.type, n.type), label: n.data.label || n.id || 'Node', config: n.data.config || {} },
       };
     }
     const nodeKind = n.nodeKind || jobTypeToNodeKind(n.type);
@@ -105,7 +106,7 @@ function backendNodesToReactFlow(flow: BackendFlow): { nodes: Node[]; edges: Edg
     source: e.source,
     target: e.target,
     data: { condition: e.condition || 'ON_SUCCESS' },
-    type: 'smoothstep',
+    type: 'default',
   }));
 
   return { nodes, edges };

@@ -7,7 +7,7 @@ export function ConditionNode(props: NodeProps<BaseNodeData>) {
   const { condition, operator = 'equals' } = props.data.config || {};
   
   return (
-    <BaseNode {...props} inputs={1} outputs={2}>
+    <BaseNode {...props} inputs={1} outputs={2} outputLabels={['true', 'false']}>
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-[#ec4899]">IF</span>

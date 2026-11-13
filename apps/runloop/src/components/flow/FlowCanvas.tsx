@@ -16,6 +16,7 @@ import ReactFlow, {
   NodeChange,
   ReactFlowProvider,
   useReactFlow,
+  useViewport,
   MarkerType,
   ConnectionLineType,
   Panel,
@@ -25,7 +26,7 @@ import {
   Play, Square, Globe, Database, Terminal, Code2, Hash,
   Container as Docker, Slack, Mail, GitBranch, Clock, RotateCcw, Variable,
   GitMerge, Split, FileText, PenLine, Workflow, Webhook, Hourglass, Inbox, BellRing, Sparkles,
-  Save, TestTube2, Wand2, Plus, Settings, X, AlertCircle, Search, ChevronDown,
+  Save, TestTube2, Wand2, Plus, Minus, Maximize, Settings, X, AlertCircle, Search, ChevronDown,
 } from 'lucide-react';
 import { nodeTypes as importedNodeTypes } from './nodes';
 import { propertiesComponents } from './properties';
@@ -87,15 +88,17 @@ export interface FlowCanvasProps {
 // rather than soft, coloured by edge condition so the eye catches
 // failure branches immediately.
 const DEFAULT_EDGE_STYLE = {
-  style: { stroke: 'var(--t-text-muted)', strokeWidth: 1.75 },
-  markerEnd: { type: MarkerType.ArrowClosed, color: '#64748B', width: 18, height: 18 },
-  type: 'smoothstep' as const,
+  style: { stroke: '#8d8d8d', strokeWidth: 1.5 },
+  markerEnd: { type: MarkerType.ArrowClosed, color: '#8d8d8d', width: 14, height: 14 },
+  type: 'default' as const,
 };
 
+// Carbon support colours. Plain success edges stay neutral grey so only
+// the branches that differ draw the eye.
 const CONDITION_COLORS: Record<string, string> = {
-  ON_SUCCESS: '#10B981',
-  ON_FAILURE: '#EF4444',
-  ON_ALWAYS: '#6366F1',
+  ON_SUCCESS: '#8d8d8d',
+  ON_FAILURE: '#da1e28',
+  ON_ALWAYS: '#8a3ffc',
 };
 
 const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
@@ -107,17 +110,17 @@ function styleForCondition(condition?: string) {
   return {
     style: {
       stroke: color,
-      strokeWidth: 1.75,
+      strokeWidth: 1.5,
       strokeDasharray: cond === 'ON_FAILURE' ? '5 3' : undefined,
     },
-    markerEnd: { type: MarkerType.ArrowClosed, color, width: 18, height: 18 },
-    type: 'smoothstep' as const,
+    markerEnd: { type: MarkerType.ArrowClosed, color, width: 14, height: 14 },
+    type: 'default' as const,
     animated: cond === 'ON_ALWAYS',
     label: isDefault ? undefined : cond === 'ON_FAILURE' ? 'on fail' : 'always',
-    labelStyle: { fill: color, fontSize: 10, fontWeight: 600, fontFamily: MONO, letterSpacing: 0 },
-    labelBgStyle: { fill: 'var(--t-panel)', stroke: color, strokeWidth: 1 },
-    labelBgPadding: [6, 3] as [number, number],
-    labelBgBorderRadius: 2,
+    labelStyle: { fill: color, fontSize: 11, fontWeight: 600, fontFamily: MONO },
+    labelBgStyle: { fill: 'var(--flow-canvas-bg)' },
+    labelBgPadding: [4, 2] as [number, number],
+    labelBgBorderRadius: 0,
   };
 }
 
@@ -753,10 +756,10 @@ function InnerFlow({
             onPaneClick={onPaneClick}
             nodeTypes={importedNodeTypes}
             defaultEdgeOptions={DEFAULT_EDGE_STYLE}
-            connectionLineType={ConnectionLineType.SmoothStep}
-            connectionLineStyle={{ stroke: '#3B82F6', strokeWidth: 2.5, strokeDasharray: '6 4' }}
+            connectionLineType={ConnectionLineType.Bezier}
+            connectionLineStyle={{ stroke: 'var(--t-accent)', strokeWidth: 2 }}
             fitView
-            fitViewOptions={{ padding: 0.3, minZoom: 0.4, maxZoom: 0.85 }}
+            fitViewOptions={{ padding: 0.2, minZoom: 0.4, maxZoom: 1 }}
             snapToGrid
             snapGrid={[20, 20]}
             nodesDraggable={!readOnly}
@@ -768,24 +771,20 @@ function InnerFlow({
           >
             <Background
               variant={BackgroundVariant.Dots}
-              gap={28}
-              size={1}
-              color="color-mix(in srgb, var(--t-border) 80%, transparent)"
+              gap={20}
+              size={1.4}
+              color="var(--flow-canvas-dots)"
             />
-            <Controls
-              showInteractive={false}
-              style={{
-                background: 'var(--t-panel)',
-                border: '1px solid var(--t-border)',
-                borderRadius: 2,
-                overflow: 'hidden',
-              }}
-            />
+            <Panel position="bottom-left">
+              <ZoomBar />
+            </Panel>
             <MiniMap
               maskColor="color-mix(in srgb, var(--t-bg) 70%, transparent)"
               pannable
               zoomable
               style={{
+                width: 168,
+                height: 104,
                 background: 'var(--t-panel)',
                 border: '1px solid var(--t-border)',
                 borderRadius: 0,
@@ -810,15 +809,6 @@ function InnerFlow({
                     borderRadius: 2,
                   }}
                 >
-                  {/* Schematic corner marks like login's form frame */}
-                  <span style={{ position: 'absolute', top: -1, left: -1, width: 10, height: 1, background: 'var(--t-accent)' }} />
-                  <span style={{ position: 'absolute', top: -1, left: -1, width: 1, height: 10, background: 'var(--t-accent)' }} />
-                  <span style={{ position: 'absolute', top: -1, right: -1, width: 10, height: 1, background: 'var(--t-accent)' }} />
-                  <span style={{ position: 'absolute', top: -1, right: -1, width: 1, height: 10, background: 'var(--t-accent)' }} />
-                  <span style={{ position: 'absolute', bottom: -1, left: -1, width: 10, height: 1, background: 'var(--t-accent)' }} />
-                  <span style={{ position: 'absolute', bottom: -1, left: -1, width: 1, height: 10, background: 'var(--t-accent)' }} />
-                  <span style={{ position: 'absolute', bottom: -1, right: -1, width: 10, height: 1, background: 'var(--t-accent)' }} />
-                  <span style={{ position: 'absolute', bottom: -1, right: -1, width: 1, height: 10, background: 'var(--t-accent)' }} />
                   <div
                     className="w-10 h-10 flex items-center justify-center"
                     style={{
@@ -1157,6 +1147,36 @@ function InnerFlow({
  * - Auto-layout, MiniMap, snap-to-grid
  * - Keyboard shortcuts: Cmd/Ctrl+S save, Del/Backspace delete selected, Esc deselect
  */
+// Zoom bar: − 70% + and fit; the readout tells the user where they are.
+function ZoomBar() {
+  const rf = useReactFlow();
+  const { zoom } = useViewport();
+  const btn: React.CSSProperties = {
+    width: 32, height: 32, display: 'grid', placeItems: 'center',
+    background: 'transparent', color: 'var(--t-text)', border: 'none', cursor: 'pointer',
+  };
+  return (
+    <div
+      className="flex items-center"
+      style={{ background: 'var(--t-panel)', boxShadow: 'inset 0 0 0 1px var(--t-border)' }}
+    >
+      <button style={btn} className="hover:bg-[var(--t-panel-hover)]" onClick={() => rf.zoomOut()} title="Zoom out" aria-label="Zoom out">
+        <Minus className="w-4 h-4" />
+      </button>
+      <span style={{ minWidth: 48, textAlign: 'center', fontSize: 12, fontVariantNumeric: 'tabular-nums', color: 'var(--t-text)' }}>
+        {Math.round(zoom * 100)}%
+      </span>
+      <button style={btn} className="hover:bg-[var(--t-panel-hover)]" onClick={() => rf.zoomIn()} title="Zoom in" aria-label="Zoom in">
+        <Plus className="w-4 h-4" />
+      </button>
+      <span aria-hidden style={{ width: 1, height: 20, background: 'var(--t-border)' }} />
+      <button style={btn} className="hover:bg-[var(--t-panel-hover)]" onClick={() => rf.fitView({ padding: 0.2 })} title="Fit to screen" aria-label="Fit to screen">
+        <Maximize className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
 export function FlowCanvas(props: FlowCanvasProps) {
   return (
     <ReactFlowProvider>
