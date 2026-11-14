@@ -422,9 +422,10 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
           border: 'none',
           background: isOpen ? 'var(--t-panel-hover)' : 'transparent',
           height: 48,
-          maxWidth: 240,
+          maxWidth: 280,
+          padding: '0 16px 0 32px',
         }}
-        className="flex items-center gap-2 px-4 transition-colors hover:bg-[var(--t-panel-hover)]"
+        className="flex items-center gap-2 transition-colors hover:bg-[var(--t-panel-hover)]"
         title={selectedProject?.name || 'Select Project'}
       >
         <span
@@ -842,6 +843,13 @@ export function Layout({ children }: { children?: React.ReactNode }) {
           className="rl-shell fixed top-0 left-0 right-0 h-12 flex items-center z-50"
         >
           <div className="flex items-center min-w-0 h-full">
+            {/* Brand block is exactly as wide as the side nav (224px, or
+                content-wide when the nav is collapsed) so its right rule
+                continues the side nav's edge. */}
+            <div
+              className="flex items-center h-full flex-shrink-0"
+              style={{ width: sidebarCollapsed ? 'auto' : 224, borderRight: '1px solid #393939' }}
+            >
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               className="h-12 w-12 flex items-center justify-center hover:bg-[#333333]"
@@ -859,7 +867,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
               <LogoMark size={20} />
               <span>Run<span style={{ fontWeight: 600 }}>Loop</span></span>
             </Link>
-            <span aria-hidden style={{ width: 1, height: 24, background: '#393939' }} />
+            </div>
             <ProjectSelector collapsed={false} />
           </div>
 
