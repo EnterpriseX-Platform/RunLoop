@@ -844,11 +844,11 @@ export function Layout({ children }: { children?: React.ReactNode }) {
         >
           <div className="flex items-center min-w-0 h-full">
             {/* Brand block is exactly as wide as the side nav (224px, or
-                content-wide when the nav is collapsed) so its right rule
-                continues the side nav's edge. */}
+                content-wide when the nav is collapsed) so the project
+                switcher lines up with the page content. */}
             <div
               className="flex items-center h-full flex-shrink-0"
-              style={{ width: sidebarCollapsed ? 'auto' : 224, borderRight: '1px solid #393939' }}
+              style={{ width: sidebarCollapsed ? 'auto' : 224 }}
             >
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
