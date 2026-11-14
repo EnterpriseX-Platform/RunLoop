@@ -1,3 +1,4 @@
+import { ENGINE_BASE_PATH } from '@/lib/engine-path';
 import { NextRequest, NextResponse } from 'next/server';
 
 // GET /api/flows/[id] - Get a single flow
@@ -8,7 +9,7 @@ export async function GET(
   try {
     const engineUrl = process.env.ENGINE_URL || 'http://localhost:8080';
 
-    const res = await fetch(`${engineUrl}/rl/api/flows/${params.id}`, {
+    const res = await fetch(`${engineUrl}${ENGINE_BASE_PATH}/api/flows/${params.id}`, {
       headers: {
         'Authorization': request.headers.get('authorization') || '',
         'Content-Type': 'application/json',
@@ -33,7 +34,7 @@ export async function PUT(
     const engineUrl = process.env.ENGINE_URL || 'http://localhost:8080';
     const body = await request.json();
 
-    const res = await fetch(`${engineUrl}/rl/api/flows/${params.id}`, {
+    const res = await fetch(`${engineUrl}${ENGINE_BASE_PATH}/api/flows/${params.id}`, {
       method: 'PUT',
       headers: {
         'Authorization': request.headers.get('authorization') || '',
@@ -59,7 +60,7 @@ export async function DELETE(
   try {
     const engineUrl = process.env.ENGINE_URL || 'http://localhost:8080';
 
-    const res = await fetch(`${engineUrl}/rl/api/flows/${params.id}`, {
+    const res = await fetch(`${engineUrl}${ENGINE_BASE_PATH}/api/flows/${params.id}`, {
       method: 'DELETE',
       headers: {
         'Authorization': request.headers.get('authorization') || '',

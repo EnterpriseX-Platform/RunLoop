@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
@@ -67,7 +68,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
   const fetchNotifications = async () => {
     try {
       setIsLoadingNotifs(true);
-      const res = await fetch(`/runloop/api/notifications?schedulerId=${params.id}`);
+      const res = await fetch(`${BASE_PATH}/api/notifications?schedulerId=${params.id}`);
       if (res.ok) {
         const data = await res.json();
         setNotifications(data.notifications || []);
@@ -82,7 +83,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
   const fetchWebhooks = async () => {
     try {
       if (!projectId) return;
-      const res = await fetch(`/runloop/api/webhooks?projectId=${projectId}&schedulerId=${params.id}`);
+      const res = await fetch(`${BASE_PATH}/api/webhooks?projectId=${projectId}&schedulerId=${params.id}`);
       if (res.ok) {
         const data = await res.json();
         setWebhooks(data.webhooks || []);
@@ -94,7 +95,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
 
   const fetchScheduler = async () => {
     try {
-      const res = await fetch(`/runloop/api/schedulers/${params.id}`);
+      const res = await fetch(`${BASE_PATH}/api/schedulers/${params.id}`);
       if (res.ok) {
         const data = await res.json();
         setScheduler(data.data);
@@ -108,7 +109,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
 
   const fetchExecutions = async () => {
     try {
-      const res = await fetch(`/runloop/api/executions?schedulerId=${params.id}&limit=20`);
+      const res = await fetch(`${BASE_PATH}/api/executions?schedulerId=${params.id}&limit=20`);
       if (res.ok) {
         const data = await res.json();
         setExecutions(data.data || []);
@@ -120,7 +121,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
 
   const fetchSchedulerFlows = async () => {
     try {
-      const res = await fetch(`/runloop/api/schedulers/${params.id}/flows`);
+      const res = await fetch(`${BASE_PATH}/api/schedulers/${params.id}/flows`);
       if (res.ok) {
         const data = await res.json();
         setSchedulerFlows(data.data?.flows || []);
@@ -132,7 +133,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
 
   const fetchDependencies = async () => {
     try {
-      const res = await fetch(`/runloop/api/schedulers/${params.id}/dependencies`);
+      const res = await fetch(`${BASE_PATH}/api/schedulers/${params.id}/dependencies`);
       if (res.ok) {
         const data = await res.json();
         setDependencies(data.data || { predecessors: [], successors: [] });
@@ -144,7 +145,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
 
   const fetchAllSchedulers = async () => {
     try {
-      const res = await fetch('/runloop/api/schedulers');
+      const res = await fetch(`${BASE_PATH}/api/schedulers`);
       if (res.ok) {
         const data = await res.json();
         setAllSchedulers((data.data || []).filter((s: RunLoop) => s.id !== params.id));
@@ -158,7 +159,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
     if (!newDepSchedulerId) return;
     setIsAddingDep(true);
     try {
-      const res = await fetch(`/runloop/api/schedulers/${params.id}/dependencies`, {
+      const res = await fetch(`${BASE_PATH}/api/schedulers/${params.id}/dependencies`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -180,7 +181,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
 
   const handleDeleteDependency = async (depId: string) => {
     try {
-      const res = await fetch(`/runloop/api/schedulers/${params.id}/dependencies/${depId}`, {
+      const res = await fetch(`${BASE_PATH}/api/schedulers/${params.id}/dependencies/${depId}`, {
         method: 'DELETE',
       });
       if (res.ok) {
@@ -199,7 +200,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
   const handleTrigger = async () => {
     setIsTriggering(true);
     try {
-      const res = await fetch(`/runloop/api/schedulers/${params.id}/trigger`, {
+      const res = await fetch(`${BASE_PATH}/api/schedulers/${params.id}/trigger`, {
         method: 'POST',
       });
       if (res.ok) {
@@ -222,7 +223,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
 
     const newStatus = scheduler.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     try {
-      const res = await fetch(`/runloop/api/schedulers/${params.id}`, {
+      const res = await fetch(`${BASE_PATH}/api/schedulers/${params.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
@@ -239,7 +240,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
     if (!confirm('Are you sure you want to delete this scheduler?')) return;
 
     try {
-      const res = await fetch(`/runloop/api/schedulers/${params.id}`, {
+      const res = await fetch(`${BASE_PATH}/api/schedulers/${params.id}`, {
         method: 'DELETE',
       });
       if (res.ok) {
@@ -464,7 +465,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
                     type="button"
                     onClick={async () => {
                       if (!projectId || !scheduler) return;
-                      const res = await fetch('/runloop/api/webhooks', {
+                      const res = await fetch(`${BASE_PATH}/api/webhooks`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -550,7 +551,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
                               type="button"
                               onClick={async () => {
                                 if (!confirm('Delete this webhook? Existing integrations will stop working.')) return;
-                                await fetch(`/runloop/api/webhooks/${wh.id}`, { method: 'DELETE' });
+                                await fetch(`${BASE_PATH}/api/webhooks/${wh.id}`, { method: 'DELETE' });
                                 fetchWebhooks();
                               }}
                               style={{ fontSize: 11, color: THEME.colors.red, background: 'transparent', border: 'none', cursor: 'pointer' }}
@@ -774,7 +775,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
                           type="button"
                           onClick={async () => {
                             if (!confirm('Delete this notification?')) return;
-                            await fetch(`/runloop/api/notifications/${n.id}`, { method: 'DELETE' });
+                            await fetch(`${BASE_PATH}/api/notifications/${n.id}`, { method: 'DELETE' });
                             fetchNotifications();
                           }}
                           style={{ background: 'transparent', color: THEME.colors.red, border: 'none', cursor: 'pointer', padding: 4 }}
@@ -821,7 +822,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
                 </span>
                 <button
                   onClick={async () => {
-                    await fetch(`/runloop/api/schedulers/${params.id}`, {
+                    await fetch(`${BASE_PATH}/api/schedulers/${params.id}`, {
                       method: 'PUT',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ pausedUntil: null }),
@@ -845,7 +846,7 @@ export default function SchedulerDetailPage({ params }: { params: { id: string }
               <button
                 onClick={async () => {
                   if (!pausedUntilInput) return;
-                  await fetch(`/runloop/api/schedulers/${params.id}`, {
+                  await fetch(`${BASE_PATH}/api/schedulers/${params.id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ pausedUntil: new Date(pausedUntilInput).toISOString() }),
@@ -889,7 +890,7 @@ function NotificationModal({ schedulerId, onClose, onSave }: { schedulerId: stri
     setSaving(true);
     try {
       const config = type === 'EMAIL' ? { to: target } : type === 'SLACK' ? { webhook: target } : { url: target };
-      const res = await fetch('/runloop/api/notifications', {
+      const res = await fetch(`${BASE_PATH}/api/notifications`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ schedulerId, type, config, onSuccess, onFailure, onStart }),

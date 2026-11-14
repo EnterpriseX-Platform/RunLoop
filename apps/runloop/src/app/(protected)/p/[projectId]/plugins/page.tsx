@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useState, useEffect, useCallback } from 'react';
 import {
@@ -52,7 +53,7 @@ export default function PluginsPage() {
 
   const fetchPlugins = useCallback(async () => {
     try {
-      const res = await fetch('/runloop/api/plugins');
+      const res = await fetch(`${BASE_PATH}/api/plugins`);
       const d = await res.json();
       setPlugins(d.data || []);
     } finally {
@@ -82,7 +83,7 @@ export default function PluginsPage() {
           throw new Error('Manifest JSON is invalid');
         }
       }
-      const res = await fetch('/runloop/api/plugins', {
+      const res = await fetch(`${BASE_PATH}/api/plugins`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -103,7 +104,7 @@ export default function PluginsPage() {
   }
 
   async function toggle(name: string, enabled: boolean) {
-    await fetch(`/runloop/api/plugins/${encodeURIComponent(name)}`, {
+    await fetch(`${BASE_PATH}/api/plugins/${encodeURIComponent(name)}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ enabled }),
@@ -113,7 +114,7 @@ export default function PluginsPage() {
 
   async function uninstall(name: string) {
     if (!confirm(`Uninstall plugin "${name}"? Flows using its nodes will fail at next execution.`)) return;
-    await fetch(`/runloop/api/plugins/${encodeURIComponent(name)}`, { method: 'DELETE' });
+    await fetch(`${BASE_PATH}/api/plugins/${encodeURIComponent(name)}`, { method: 'DELETE' });
     fetchPlugins();
     notify('Uninstalled');
   }

@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
@@ -39,7 +40,7 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
     const DELAY_MS = 400;
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       try {
-        const res = await fetch(`/runloop/api/executions/${params.id}`);
+        const res = await fetch(`${BASE_PATH}/api/executions/${params.id}`);
         if (res.ok) {
           const data = await res.json();
           if (data?.data) {
@@ -83,6 +84,19 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
       });
     },
   });
+
+  // The engine only streams changes from the moment we subscribe. A run that
+  // finished between the first fetch and the socket opening would otherwise
+  // stay "Running" forever, so re-read once on connect, and poll every 5s
+  // while the run is active and the socket is down.
+  useEffect(() => {
+    if (isActive && liveConnected) fetchExecution();
+  }, [isActive, liveConnected, fetchExecution]);
+  useEffect(() => {
+    if (!isActive || liveConnected) return;
+    const t = setInterval(fetchExecution, 5000);
+    return () => clearInterval(t);
+  }, [isActive, liveConnected, fetchExecution]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -205,7 +219,7 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
             size="sm"
             onClick={async () => {
               if (!confirm('Cancel this running execution?')) return;
-              const res = await fetch(`/runloop/api/executions/${params.id}/cancel`, { method: 'POST' });
+              const res = await fetch(`${BASE_PATH}/api/executions/${params.id}/cancel`, { method: 'POST' });
               if (res.ok) fetchExecution();
               else alert('Cancel failed');
             }}

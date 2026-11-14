@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 import { sentence } from '@/components/ControlChrome';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -135,7 +136,7 @@ export default function FlowDetailPage() {
     if (!flow?.flowConfig) return;
     setRunning(true);
     try {
-      const res = await fetch('/runloop/api/flows/test', {
+      const res = await fetch(`${BASE_PATH}/api/flows/test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId, flowConfig: flow.flowConfig }),
@@ -156,7 +157,7 @@ export default function FlowDetailPage() {
 
   const fetchVersions = async () => {
     try {
-      const res = await fetch(`/runloop/api/flow-versions?flowId=${flowId}`);
+      const res = await fetch(`${BASE_PATH}/api/flow-versions?flowId=${flowId}`);
       if (res.ok) {
         const data = await res.json();
         setVersions(data.versions || []);
@@ -169,10 +170,10 @@ export default function FlowDetailPage() {
   const handleRollback = async (versionId: string, versionNumber: number) => {
     if (!confirm(`Roll back to version ${versionNumber}? Current state will be preserved as a new version.`)) return;
     try {
-      const res = await fetch(`/runloop/api/flow-versions/${versionId}/rollback`, { method: 'POST' });
+      const res = await fetch(`${BASE_PATH}/api/flow-versions/${versionId}/rollback`, { method: 'POST' });
       if (res.ok) {
         // Refresh flow + versions
-        const fres = await fetch(`/runloop/api/flows/${flowId}`);
+        const fres = await fetch(`${BASE_PATH}/api/flows/${flowId}`);
         if (fres.ok) {
           const fd = await fres.json();
           setFlow(fd.data);
@@ -191,7 +192,7 @@ export default function FlowDetailPage() {
   useEffect(() => {
     async function fetchFlow() {
       try {
-        const res = await fetch(`/runloop/api/flows/${flowId}`);
+        const res = await fetch(`${BASE_PATH}/api/flows/${flowId}`);
         if (res.ok) {
           const data = await res.json();
           setFlow(data.data);
@@ -237,7 +238,7 @@ export default function FlowDetailPage() {
         },
       };
 
-      const res = await fetch(`/runloop/api/flows/${flowId}`, {
+      const res = await fetch(`${BASE_PATH}/api/flows/${flowId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -254,7 +255,7 @@ export default function FlowDetailPage() {
       // Snapshot a version after a successful save. Best-effort — we don't
       // fail the UI if the versions table is unreachable.
       try {
-        await fetch('/runloop/api/flow-versions', {
+        await fetch(`${BASE_PATH}/api/flow-versions`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -278,7 +279,7 @@ export default function FlowDetailPage() {
     if (!confirm('Delete this flow? This action cannot be undone.')) return;
     setDeleting(true);
     try {
-      const res = await fetch(`/runloop/api/flows/${flowId}`, { method: 'DELETE' });
+      const res = await fetch(`${BASE_PATH}/api/flows/${flowId}`, { method: 'DELETE' });
       if (res.ok) {
         router.push(`/p/${projectId}/flows`);
       } else {

@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useState, useEffect } from 'react';
 import { useProject } from '@/context/ProjectContext';
@@ -102,7 +103,7 @@ export default function SecretsPage() {
       setLoading(true);
       setError(null);
 
-      const res = await fetch(`/runloop/api/secrets?projectId=${selectedProject.id}`);
+      const res = await fetch(`${BASE_PATH}/api/secrets?projectId=${selectedProject.id}`);
       if (!res.ok) {
         throw new Error('Failed to fetch secrets');
       }
@@ -121,7 +122,7 @@ export default function SecretsPage() {
     if (!selectedProject) return;
 
     try {
-      const res = await fetch('/runloop/api/secrets', {
+      const res = await fetch(`${BASE_PATH}/api/secrets`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -145,7 +146,7 @@ export default function SecretsPage() {
 
   const handleUpdateSecret = async (id: string, formData: any) => {
     try {
-      const res = await fetch(`/runloop/api/secrets/${id}`, {
+      const res = await fetch(`${BASE_PATH}/api/secrets/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -170,7 +171,7 @@ export default function SecretsPage() {
 
     try {
       // API accepts `ids` (plural, comma-separated) for bulk/single delete
-      const res = await fetch(`/runloop/api/secrets?ids=${id}&projectId=${selectedProject.id}`, {
+      const res = await fetch(`${BASE_PATH}/api/secrets?ids=${id}&projectId=${selectedProject.id}`, {
         method: 'DELETE',
       });
 
@@ -794,7 +795,7 @@ function AuditLogModal({ secret, onClose }: { secret: Secret; onClose: () => voi
   const fetchAuditLogs = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/runloop/api/secrets/${secret.id}/audit`);
+      const res = await fetch(`${BASE_PATH}/api/secrets/${secret.id}/audit`);
       if (res.ok) {
         const data = await res.json();
         setLogs(data.logs || []);

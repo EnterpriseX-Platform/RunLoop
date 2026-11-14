@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -63,7 +64,7 @@ export default function NewQueuePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/runloop/api/flows?projectId=${projectId}`)
+    fetch(`${BASE_PATH}/api/flows?projectId=${projectId}`)
       .then((r) => r.json())
       .then((d) => setFlows((d.data || []).map((f: any) => ({ id: f.id, name: f.name }))))
       .catch(() => setFlows([]));
@@ -87,7 +88,7 @@ export default function NewQueuePage() {
 
     setSubmitting(true);
     try {
-      const res = await fetch('/runloop/api/queues', {
+      const res = await fetch(`${BASE_PATH}/api/queues`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

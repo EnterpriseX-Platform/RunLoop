@@ -1,3 +1,4 @@
+import { ENGINE_BASE_PATH } from '@/lib/engine-path';
 import { NextRequest, NextResponse } from 'next/server';
 
 // POST /api/schedulers/[id]/trigger - Trigger a runloop manually
@@ -15,7 +16,7 @@ export async function POST(
       // No body is fine for trigger
     }
     
-    const res = await fetch(`${engineUrl}/rl/api/schedulers/${params.id}/trigger`, {
+    const res = await fetch(`${engineUrl}${ENGINE_BASE_PATH}/api/schedulers/${params.id}/trigger`, {
       method: 'POST',
       headers: {
         'Authorization': request.headers.get('authorization') || '',

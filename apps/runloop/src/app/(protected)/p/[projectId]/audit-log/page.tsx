@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
@@ -155,7 +156,7 @@ export default function AuditLogPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/runloop/api/audit-logs?${queryString}`);
+      const res = await fetch(`${BASE_PATH}/api/audit-logs?${queryString}`);
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data?.error || 'Failed to fetch audit logs');

@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
@@ -100,7 +101,7 @@ export default function QueuesPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`/runloop/api/queues?projectId=${projectId}`);
+      const res = await fetch(`${BASE_PATH}/api/queues?projectId=${projectId}`);
       if (!res.ok) throw new Error('failed to fetch queues');
       const d = await res.json();
       const rows: QueueRow[] = d.data || [];
@@ -109,7 +110,7 @@ export default function QueuesPage() {
       const stats = await Promise.all(
         rows.map(async (q) => {
           try {
-            const r = await fetch(`/runloop/api/queues/${encodeURIComponent(q.name)}/stats`);
+            const r = await fetch(`${BASE_PATH}/api/queues/${encodeURIComponent(q.name)}/stats`);
             const j = await r.json();
             return [q.name, j.data] as [string, Stats];
           } catch {

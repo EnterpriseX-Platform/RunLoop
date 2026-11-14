@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useEffect, useState } from 'react';
 import { useProject } from '@/context/ProjectContext';
@@ -112,7 +113,7 @@ export default function IntegrationsPage() {
   // Pull current state for all providers in one shot.
   useEffect(() => {
     if (!selectedProject?.id) return;
-    fetch(`/runloop/api/secrets?projectId=${selectedProject.id}`)
+    fetch(`${BASE_PATH}/api/secrets?projectId=${selectedProject.id}`)
       .then((r) => r.json())
       .then((d) => {
         const secrets: Array<{ name: string; value?: string }> = d.secrets || d.data || [];
@@ -142,7 +143,7 @@ export default function IntegrationsPage() {
     setActiveProvider(next);
     setSavingActive(true);
     try {
-      await fetch('/runloop/api/secrets', {
+      await fetch(`${BASE_PATH}/api/secrets`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -170,7 +171,7 @@ export default function IntegrationsPage() {
     setCard(p.id, { saving: true, result: null });
     try {
       if (c.keyInput.trim()) {
-        const res = await fetch('/runloop/api/secrets', {
+        const res = await fetch(`${BASE_PATH}/api/secrets`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -184,7 +185,7 @@ export default function IntegrationsPage() {
         if (!res.ok) throw new Error((await res.json()).error || 'save failed');
         setCard(p.id, { hasKey: true, keyInput: '' });
       }
-      await fetch('/runloop/api/secrets', {
+      await fetch(`${BASE_PATH}/api/secrets`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -206,7 +207,7 @@ export default function IntegrationsPage() {
   const testConnection = async (p: Provider) => {
     setCard(p.id, { testing: true, result: null });
     try {
-      const r = await fetch('/runloop/api/ai/chat', {
+      const r = await fetch(`${BASE_PATH}/api/ai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

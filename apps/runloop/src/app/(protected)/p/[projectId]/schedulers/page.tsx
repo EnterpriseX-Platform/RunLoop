@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
@@ -213,8 +214,8 @@ export default function SchedulersPage() {
       // project (we bucket by schedulerId client-side). 200 rows is enough
       // for a 7-dot sparkline across dozens of schedulers.
       const [schedRes, execRes] = await Promise.all([
-        fetch(`/runloop/api/schedulers${params}`),
-        fetch(`/runloop/api/executions${params}${params ? '&' : '?'}limit=200`).catch(() => null),
+        fetch(`${BASE_PATH}/api/schedulers${params}`),
+        fetch(`${BASE_PATH}/api/executions${params}${params ? '&' : '?'}limit=200`).catch(() => null),
       ]);
 
       if (!schedRes.ok) throw new Error('Failed to fetch schedulers');
@@ -247,12 +248,15 @@ export default function SchedulersPage() {
   const handleToggleStatus = async (id: string, currentStatus: string) => {
     try {
       const newStatus = currentStatus === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
-      const res = await fetch(`/runloop/api/schedulers/${id}`, {
-        method: 'PATCH',
+      // The scheduler update route (web proxy and engine) is PUT-only;
+      // PATCH answered 405 and the toggle silently did nothing.
+      const res = await fetch(`${BASE_PATH}/api/schedulers/${id}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
       });
       if (res.ok) fetchSchedulers();
+      else showToast(newStatus === 'PAUSED' ? 'Could not pause scheduler' : 'Could not resume scheduler', 'error');
     } catch (err) {
       console.error('Failed to toggle scheduler status:', err);
     }
@@ -265,7 +269,7 @@ export default function SchedulersPage() {
 
   const handleTrigger = async (id: string) => {
     try {
-      const res = await fetch(`/runloop/api/schedulers/${id}/trigger`, { method: 'POST' });
+      const res = await fetch(`${BASE_PATH}/api/schedulers/${id}/trigger`, { method: 'POST' });
       if (res.ok) {
         showToast('RunLoop triggered successfully', 'success');
         setTimeout(fetchSchedulers, 1000);

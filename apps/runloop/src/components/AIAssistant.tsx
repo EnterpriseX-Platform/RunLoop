@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 // AIAssistant — small floating chat panel that proxies through
 // /api/ai/chat (which decrypts CLAUDE_API_KEY server-side and calls
@@ -116,7 +117,7 @@ export function AIAssistant() {
         pageCtx.prompt || null,
       ].filter((s) => s !== null).join('\n');
 
-      const r = await fetch('/runloop/api/ai/chat', {
+      const r = await fetch(`${BASE_PATH}/api/ai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

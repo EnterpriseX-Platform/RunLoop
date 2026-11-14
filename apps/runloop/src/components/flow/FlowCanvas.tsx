@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ReactFlow, {
@@ -151,7 +152,7 @@ function InnerFlow({
   // toast should re-trigger a fetch.
   const [pluginCategory, setPluginCategory] = useState<{ category: string; items: any[] } | null>(null);
   useEffect(() => {
-    fetch('/runloop/api/plugins')
+    fetch(`${BASE_PATH}/api/plugins`)
       .then((r) => r.json())
       .then((d) => {
         const items = (d.data || [])

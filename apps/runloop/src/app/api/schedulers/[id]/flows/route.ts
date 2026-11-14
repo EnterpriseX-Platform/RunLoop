@@ -1,3 +1,4 @@
+import { ENGINE_BASE_PATH } from '@/lib/engine-path';
 import { NextRequest, NextResponse } from 'next/server';
 
 // GET /api/schedulers/[id]/flows - Get flows linked to a scheduler
@@ -7,7 +8,7 @@ export async function GET(
 ) {
   try {
     const engineUrl = process.env.ENGINE_URL || 'http://localhost:8080';
-    const res = await fetch(`${engineUrl}/rl/api/schedulers/${params.id}/flows`, {
+    const res = await fetch(`${engineUrl}${ENGINE_BASE_PATH}/api/schedulers/${params.id}/flows`, {
       headers: {
         'Authorization': request.headers.get('authorization') || '',
         'Content-Type': 'application/json',
@@ -30,7 +31,7 @@ export async function POST(
   try {
     const engineUrl = process.env.ENGINE_URL || 'http://localhost:8080';
     const body = await request.json();
-    const res = await fetch(`${engineUrl}/rl/api/schedulers/${params.id}/flows`, {
+    const res = await fetch(`${engineUrl}${ENGINE_BASE_PATH}/api/schedulers/${params.id}/flows`, {
       method: 'POST',
       headers: {
         'Authorization': request.headers.get('authorization') || '',

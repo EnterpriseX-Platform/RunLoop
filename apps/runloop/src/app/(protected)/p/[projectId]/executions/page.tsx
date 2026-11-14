@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
@@ -170,8 +171,8 @@ export default function ExecutionsPage() {
       // we filtered to PENDING only. Anything RESOLVED / DISCARDED /
       // REPLAYED is considered handled and stays out of view.
       const [pending, reviewing] = await Promise.all([
-        fetch(`/runloop/api/dlq?projectId=${projectId}&status=PENDING&limit=200`),
-        fetch(`/runloop/api/dlq?projectId=${projectId}&status=REVIEWING&limit=200`),
+        fetch(`${BASE_PATH}/api/dlq?projectId=${projectId}&status=PENDING&limit=200`),
+        fetch(`${BASE_PATH}/api/dlq?projectId=${projectId}&status=REVIEWING&limit=200`),
       ]);
       const combined: DLQEntry[] = [];
       if (pending.ok) {
@@ -193,7 +194,7 @@ export default function ExecutionsPage() {
   const replayDLQ = async (id: string) => {
     setDlqActingOn(id);
     try {
-      const res = await fetch(`/runloop/api/dlq/${id}/replay`, { method: 'POST' });
+      const res = await fetch(`${BASE_PATH}/api/dlq/${id}/replay`, { method: 'POST' });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         alert(`Replay failed: ${err.error || res.statusText}`);
@@ -209,7 +210,7 @@ export default function ExecutionsPage() {
     if (!confirm('Discard this entry? It will be removed from Needs Review.')) return;
     setDlqActingOn(id);
     try {
-      const res = await fetch(`/runloop/api/dlq/${id}/discard`, {
+      const res = await fetch(`${BASE_PATH}/api/dlq/${id}/discard`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason: 'discarded by operator' }),
@@ -242,7 +243,7 @@ export default function ExecutionsPage() {
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
     if (!confirm(`Delete ${ids.length} execution(s)? This cannot be undone.`)) return;
-    const res = await fetch('/runloop/api/executions/bulk-delete', {
+    const res = await fetch(`${BASE_PATH}/api/executions/bulk-delete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ids }),
@@ -252,7 +253,7 @@ export default function ExecutionsPage() {
       // Refetch
       const pid = projectId;
       const qs = pid ? `?projectId=${pid}` : '';
-      const refreshRes = await fetch(`/runloop/api/executions${qs}`);
+      const refreshRes = await fetch(`${BASE_PATH}/api/executions${qs}`);
       if (refreshRes.ok) {
         const data = await refreshRes.json();
         setExecutions(data.data || []);
@@ -266,7 +267,7 @@ export default function ExecutionsPage() {
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
     if (!confirm(`Retry ${ids.length} execution(s)?`)) return;
-    const res = await fetch('/runloop/api/executions/bulk-retry', {
+    const res = await fetch(`${BASE_PATH}/api/executions/bulk-retry`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ids }),
@@ -275,7 +276,7 @@ export default function ExecutionsPage() {
       clearSelection();
       const pid = projectId;
       const qs = pid ? `?projectId=${pid}` : '';
-      const refreshRes = await fetch(`/runloop/api/executions${qs}`);
+      const refreshRes = await fetch(`${BASE_PATH}/api/executions${qs}`);
       if (refreshRes.ok) {
         const data = await refreshRes.json();
         setExecutions(data.data || []);
@@ -289,7 +290,7 @@ export default function ExecutionsPage() {
     try {
       const pid = projectId;
       const params = pid ? `?projectId=${pid}` : '';
-      const res = await fetch(`/runloop/api/executions${params}`);
+      const res = await fetch(`${BASE_PATH}/api/executions${params}`);
       if (res.ok) {
         const data = await res.json();
         setExecutions(data.data || []);
@@ -769,7 +770,7 @@ export default function ExecutionsPage() {
                         onClick={async (e) => {
                           e.stopPropagation();
                           if (!confirm(`Replay this execution? A new run will be triggered.`)) return;
-                          const r = await fetch('/runloop/api/executions/bulk-retry', {
+                          const r = await fetch(`${BASE_PATH}/api/executions/bulk-retry`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ ids: [execution.id] }),
@@ -791,7 +792,7 @@ export default function ExecutionsPage() {
                         onClick={async (e) => {
                           e.stopPropagation();
                           if (!confirm(`Discard this failed execution?`)) return;
-                          const r = await fetch('/runloop/api/executions/bulk-delete', {
+                          const r = await fetch(`${BASE_PATH}/api/executions/bulk-delete`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ ids: [execution.id] }),

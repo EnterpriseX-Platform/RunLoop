@@ -587,3 +587,7 @@ main table td { font-size: 14px; }
   color: #f4f4f4;
 }
 .rl-shell :is(input) { background-color: #262626 !important; border-bottom-color: #6f6f6f !important; color: #f4f4f4; }
+
+/* Floating menus (dropdowns, comboboxes, header menus) keep Carbon's
+   menu elevation so they read above the panel they open over. */
+.rl-menu { box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important; background: var(--t-panel-hover); }

@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useState, useEffect } from 'react';
 import { useProject } from '@/context/ProjectContext';
@@ -109,7 +110,7 @@ export default function MembersPage() {
 
   const fetchCurrentUser = async () => {
     try {
-      const res = await fetch('/runloop/api/auth/me');
+      const res = await fetch(`${BASE_PATH}/api/auth/me`);
       if (res.ok) {
         const data = await res.json();
         setCurrentUserId(data.user?.id || data.user?.userId || null);
@@ -125,7 +126,7 @@ export default function MembersPage() {
       setLoading(true);
       setError(null);
       const res = await fetch(
-        `/runloop/api/projects/${selectedProject.id}/members`
+        `${BASE_PATH}/api/projects/${selectedProject.id}/members`
       );
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -146,7 +147,7 @@ export default function MembersPage() {
     if (!selectedProject) return { ok: false, error: 'No project selected' };
     try {
       const res = await fetch(
-        `/runloop/api/projects/${selectedProject.id}/members`,
+        `${BASE_PATH}/api/projects/${selectedProject.id}/members`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -170,7 +171,7 @@ export default function MembersPage() {
     if (newRole === member.role) return;
     try {
       const res = await fetch(
-        `/runloop/api/projects/${selectedProject.id}/members/${member.userId}`,
+        `${BASE_PATH}/api/projects/${selectedProject.id}/members/${member.userId}`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -199,7 +200,7 @@ export default function MembersPage() {
       return;
     try {
       const res = await fetch(
-        `/runloop/api/projects/${selectedProject.id}/members/${member.userId}`,
+        `${BASE_PATH}/api/projects/${selectedProject.id}/members/${member.userId}`,
         { method: 'DELETE' }
       );
       if (!res.ok) {

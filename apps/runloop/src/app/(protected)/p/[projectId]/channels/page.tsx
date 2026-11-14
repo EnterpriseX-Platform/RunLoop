@@ -1,4 +1,6 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
+import { engineWsUrl } from '@/lib/engine-ws';
 
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
@@ -35,7 +37,7 @@ export default function ChannelsPage() {
   const refresh = useCallback(async () => {
     if (!projectId) return;
     try {
-      const r = await fetch(`/runloop/api/channels?projectId=${encodeURIComponent(projectId)}`);
+      const r = await fetch(`${BASE_PATH}/api/channels?projectId=${encodeURIComponent(projectId)}`);
       if (!r.ok) throw new Error(String(r.status));
       const d = await r.json();
       setChannels(d.data || []);
@@ -68,7 +70,7 @@ export default function ChannelsPage() {
     }
     setBusy('publish');
     try {
-      const r = await fetch(`/runloop/api/channels/${encodeURIComponent(testChannel)}/publish`, {
+      const r = await fetch(`${BASE_PATH}/api/channels/${encodeURIComponent(testChannel)}/publish`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId, payload }),
@@ -90,12 +92,11 @@ export default function ChannelsPage() {
     setTapMessages([]);
     setTapStatus('connecting');
     // WebSocket upgrades don't pass through Next.js rewrites in production.
-    // The ingress has a carve-out at /runloop/rl/* that goes straight to the
+    // The ingress has a carve-out at <BASE_PATH>/rl/* that goes straight to the
     // engine container — that's also what useWebSocket uses for execution
     // streams. The session cookie (Path=/runloop) is sent on the upgrade
     // and JWTMiddleware reads it from c.Cookies("token").
-    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const url = `${proto}//${window.location.host}/runloop/rl/ws/channel/${encodeURIComponent(tapName)}?projectId=${encodeURIComponent(projectId || '')}`;
+    const url = engineWsUrl(`channel/${encodeURIComponent(tapName)}?projectId=${encodeURIComponent(projectId || '')}`);
     const ws = new WebSocket(url);
     ws.onopen = () => setTapStatus('open');
     ws.onerror = () => setTapStatus('error');

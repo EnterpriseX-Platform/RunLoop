@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -62,6 +63,8 @@ export default function QueueDetailPage() {
   const name = decodeURIComponent(params.name as string);
 
   const [def, setDef] = useState<QueueDef | null>(null);
+  const [flowName, setFlowName] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [stats, setStats] = useState<Record<string, number>>({});
   const [oldestSec, setOldestSec] = useState(0);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -82,8 +85,17 @@ export default function QueueDetailPage() {
   const [editVisibility, setEditVisibility] = useState(300);
   const [editEnabled, setEditEnabled] = useState(true);
 
+  // Resolve the bound flow's name for the configuration panel.
   useEffect(() => {
-    fetch(`/runloop/api/flows?projectId=${projectId}`)
+    if (!def?.FlowID) return;
+    fetch(`${BASE_PATH}/api/flows/${def.FlowID}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setFlowName(d?.data?.name ?? d?.name ?? null))
+      .catch(() => setFlowName(null));
+  }, [def?.FlowID]);
+
+  useEffect(() => {
+    fetch(`${BASE_PATH}/api/flows?projectId=${projectId}`)
       .then((r) => r.json())
       .then((d) => setFlows((d.data || []).map((f: any) => ({ id: f.id, name: f.name }))))
       .catch(() => {});
@@ -114,7 +126,7 @@ export default function QueueDetailPage() {
     }
     setBusy(true);
     try {
-      const res = await fetch(`/runloop/api/queues/${encodeURIComponent(name)}`, {
+      const res = await fetch(`${BASE_PATH}/api/queues/${encodeURIComponent(name)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
@@ -138,10 +150,10 @@ export default function QueueDetailPage() {
   const fetchAll = useCallback(async () => {
     try {
       const [d, s, j] = await Promise.all([
-        fetch(`/runloop/api/queues/${encodeURIComponent(name)}`).then((r) => r.json()),
-        fetch(`/runloop/api/queues/${encodeURIComponent(name)}/stats`).then((r) => r.json()),
+        fetch(`${BASE_PATH}/api/queues/${encodeURIComponent(name)}`).then((r) => r.json()),
+        fetch(`${BASE_PATH}/api/queues/${encodeURIComponent(name)}/stats`).then((r) => r.json()),
         fetch(
-          `/runloop/api/queues/${encodeURIComponent(name)}/jobs` +
+          `${BASE_PATH}/api/queues/${encodeURIComponent(name)}/jobs` +
           (filterStatus !== 'ALL' ? `?status=${filterStatus}` : ''),
         ).then((r) => r.json()),
       ]);
@@ -177,7 +189,7 @@ export default function QueueDetailPage() {
     }
     setBusy(true);
     try {
-      const res = await fetch(`/runloop/api/queues/${encodeURIComponent(name)}/jobs`, {
+      const res = await fetch(`${BASE_PATH}/api/queues/${encodeURIComponent(name)}/jobs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ payload, idempotencyKey: enqueueKey || undefined }),
@@ -196,21 +208,21 @@ export default function QueueDetailPage() {
   }
 
   async function retryJob(id: string) {
-    const res = await fetch(`/runloop/api/queues/${encodeURIComponent(name)}/jobs/${id}/retry`, { method: 'POST' });
+    const res = await fetch(`${BASE_PATH}/api/queues/${encodeURIComponent(name)}/jobs/${id}/retry`, { method: 'POST' });
     notify(res.ok ? 'Requeued' : 'Retry failed');
     fetchAll();
   }
 
   async function deleteJob(id: string) {
     if (!confirm(`Delete job ${id.slice(0, 8)}…?`)) return;
-    const res = await fetch(`/runloop/api/queues/${encodeURIComponent(name)}/jobs/${id}`, { method: 'DELETE' });
+    const res = await fetch(`${BASE_PATH}/api/queues/${encodeURIComponent(name)}/jobs/${id}`, { method: 'DELETE' });
     notify(res.ok ? 'Deleted' : 'Delete failed');
     fetchAll();
   }
 
   async function deleteQueue() {
     if (!confirm(`Delete the entire queue "${name}"? Jobs will be purged. This cannot be undone.`)) return;
-    const res = await fetch(`/runloop/api/queues/${encodeURIComponent(name)}`, { method: 'DELETE' });
+    const res = await fetch(`${BASE_PATH}/api/queues/${encodeURIComponent(name)}`, { method: 'DELETE' });
     if (res.ok) router.push(`/p/${projectId}/queues`);
     else notify('Delete failed');
   }
@@ -259,9 +271,6 @@ export default function QueueDetailPage() {
             <MonoTag tone="accent">{def.Backend}</MonoTag>
             {!def.Enabled && <MonoTag tone="muted">Disabled</MonoTag>}
           </div>
-          <p style={{ fontSize: 13, color: T.textMuted }}>
-            Flow {def.FlowID} · concurrency={def.Concurrency} · max_attempts={def.MaxAttempts} · visibility={def.VisibilitySec}s
-          </p>
         </div>
         <div className="flex items-center gap-2">
             <SharpButton variant="ghost" onClick={openEdit}>
@@ -430,7 +439,7 @@ export default function QueueDetailPage() {
             <input
               value={enqueueKey}
               onChange={(e) => setEnqueueKey(e.target.value)}
-              placeholder="idempotency_key (optional)"
+              placeholder="Idempotency key (optional)"
               style={{
                 flex: 1, background: T.input, border: `1px solid ${T.border}`,
                 color: T.text, borderRadius: 2, padding: '8px 12px',
@@ -439,128 +448,64 @@ export default function QueueDetailPage() {
             />
             <SharpButton onClick={enqueue} disabled={busy}>
               {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-              $ ENQUEUE →
+              Enqueue
             </SharpButton>
           </div>
         </SchematicPanel>
       )}
 
-      {/* Lifecycle diagram — explains how a job actually moves through the
-          system. Live counters fed from `stats` so you can see backlog flow. */}
-      <div
-        className="mb-4 p-4"
-        style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 2 }}
-      >
-        <div
-          style={{
-            fontSize: 11,
-            fontWeight: 600,
-            color: T.textMuted,
-            letterSpacing: 0,
-            marginBottom: 12,
-          }}
-        >
-          Lifecycle
-        </div>
-        <div className="flex items-stretch gap-2 overflow-x-auto">
-          {[
-            {
-              title: 'Producer',
-              sub: 'POST /api/queues/' + def.Name + '/jobs',
-              note: 'or Enqueue node in another flow',
-              count: null as number | null,
-              color: T.textSec,
-            },
-            {
-              title: 'Queue',
-              sub: def.Backend + ' · concurrency ' + def.Concurrency,
-              note: 'pending + scheduled',
-              count: (stats.PENDING || 0),
-              color: STATUS_META.PENDING.color,
-            },
-            {
-              title: 'Worker',
-              sub: 'pulls up to ' + def.Concurrency + ' at a time',
-              note: 'in-flight',
-              count: (stats.PROCESSING || 0),
-              color: STATUS_META.PROCESSING.color,
-            },
-            {
-              title: 'Flow run',
-              sub: 'execution of bound flow per job',
-              note: 'see Executions for traces',
-              count: null,
-              color: T.accent,
-            },
-            {
-              title: 'Result',
-              sub: 'success → done, fail → retry → DLQ',
-              note: 'DLQ = ' + (stats.DLQ || 0) + ' · failed = ' + (stats.FAILED || 0),
-              count: (stats.COMPLETED || 0),
-              color: STATUS_META.COMPLETED.color,
-            },
-          ].map((step, i, arr) => (
-            <React.Fragment key={step.title}>
-              <div
-                className="flex-1 min-w-0 p-3"
-                style={{
-                  border: `1px solid ${T.border}`,
-                  background: T.input,
-                  borderRadius: 2,
-                  minWidth: 160,
-                }}
+      {/* Configuration — every value comes from the queue definition. */}
+      {(() => {
+        // Base path and origin come from where the app is actually served
+        // (BASE_PATH is configurable), not from a literal.
+        const base = typeof window !== 'undefined'
+          ? window.location.origin + window.location.pathname.split('/p/')[0]
+          : '';
+        const endpoint = `${base}/api/queues/${encodeURIComponent(def.Name)}/jobs`;
+        const rows: Array<[string, React.ReactNode]> = [
+          ['Flow', (
+            <Link key="f" href={`/p/${projectId}/flows/${def.FlowID}`} style={{ color: T.accent }} className="hover:underline">
+              {flowName || def.FlowID}
+            </Link>
+          )],
+          ['Backend', def.Backend],
+          ['Concurrency', def.Concurrency],
+          ['Max attempts', def.MaxAttempts],
+          ['Visibility timeout', `${def.VisibilitySec} s`],
+          ['Producer endpoint', (
+            <span key="e" className="flex items-center gap-2 min-w-0">
+              <code className="truncate" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace", fontSize: 13 }} title={endpoint}>
+                POST {endpoint}
+              </code>
+              <button
+                type="button"
+                onClick={() => { navigator.clipboard?.writeText(endpoint); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
+                className="flex-shrink-0 hover:bg-[var(--t-panel-hover)]"
+                style={{ height: 32, padding: '0 12px', fontSize: 14, color: T.accent, background: 'transparent', border: 'none' }}
               >
-                <div className="flex items-center justify-between mb-1">
-                  <span style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{step.title}</span>
-                  {step.count !== null && (
-                    <span
-                      style={{
-                        fontFamily: MONO, fontSize: 14, fontWeight: 700,
-                        color: step.count > 0 ? step.color : T.textMuted,
-                      }}
-                    >
-                      {step.count}
-                    </span>
-                  )}
-                </div>
-                <div style={{ fontSize: 10.5, color: T.textMuted, marginBottom: 4 }}>
-                  {step.sub}
-                </div>
-                <div style={{ fontSize: 10, color: T.textMuted, opacity: 0.8 }}>
-                  {step.note}
-                </div>
-              </div>
-              {i < arr.length - 1 && (
+                {copied ? 'Copied' : 'Copy'}
+              </button>
+            </span>
+          )],
+        ];
+        return (
+          <div className="mb-4" style={{ background: T.panel, padding: '16px 16px 8px' }}>
+            <div style={{ fontSize: 16, color: T.text, marginBottom: 8 }}>Configuration</div>
+            <dl>
+              {rows.map(([k, v], idx) => (
                 <div
-                  className="flex items-center"
-                  style={{ color: T.textMuted, fontFamily: MONO, fontSize: 14 }}
-                  aria-hidden
+                  key={k}
+                  className="grid items-center"
+                  style={{ gridTemplateColumns: '180px minmax(0, 1fr)', minHeight: 40, borderTop: idx === 0 ? 'none' : `1px solid ${T.border}` }}
                 >
-                  →
+                  <dt style={{ fontSize: 14, color: T.textSec }}>{k}</dt>
+                  <dd className="min-w-0" style={{ fontSize: 14, color: T.text }}>{v}</dd>
                 </div>
-              )}
-            </React.Fragment>
-          ))}
-        </div>
-        <div className="mt-3" style={{ fontSize: 11, color: T.textMuted, lineHeight: 1.5 }}>
-          Each enqueued job triggers a separate execution of flow{' '}
-          <Link
-            href={`/p/${projectId}/flows/${def.FlowID}`}
-            style={{ color: T.accent, textDecoration: 'underline', textUnderlineOffset: 2 }}
-          >
-            {def.FlowID}
-          </Link>
-          {'. '}
-          Failed jobs retry up to {def.MaxAttempts} times, then move to{' '}
-          <Link
-            href={`/p/${projectId}/executions?filter=needs_review`}
-            style={{ color: T.accent, textDecoration: 'underline', textUnderlineOffset: 2 }}
-          >
-            DLQ (Needs Review)
-          </Link>
-          .
-        </div>
-      </div>
+              ))}
+            </dl>
+          </div>
+        );
+      })()}
 
       {/* Stats strip — five sharp cells reading like instrument dials */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">

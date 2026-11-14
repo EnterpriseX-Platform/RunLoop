@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
@@ -262,7 +263,7 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
     if (!newProjectName.trim() || isCreating) return;
     setIsCreating(true);
     try {
-      const res = await fetch('/runloop/api/projects', {
+      const res = await fetch(`${BASE_PATH}/api/projects`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newProjectName.trim() }),
@@ -270,7 +271,12 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
       if (res.ok) {
         const data = await res.json();
         await refreshProjects();
-        if (data.project) selectProject(data.project);
+        if (data.project) {
+          selectProject(data.project);
+          // The URL carries the project id; without moving there the
+          // project layout switches the selection straight back.
+          psRouter.push(`/p/${data.project.id}/dashboard`);
+        }
         setNewProjectName('');
         setShowCreateForm(false);
         setIsOpen(false);
@@ -296,7 +302,7 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
   const dropdownMenu = (positionClass: string) => (
     <div
       style={{ backgroundColor: 'var(--t-panel)', borderColor: 'var(--t-border)', borderRadius: 2 }}
-      className={`${positionClass} border py-1 z-50`}
+      className={`${positionClass} border py-1 z-50 rl-menu`}
     >
       <div className="max-h-48 overflow-auto py-0.5">
         <button
@@ -722,9 +728,9 @@ export function Layout({ children }: { children?: React.ReactNode }) {
         const pid = selectedProject?.id;
         const qs = pid ? `?projectId=${pid}` : '';
         const [projRes, schedRes, flowRes] = await Promise.allSettled([
-          fetch('/runloop/api/projects'),
-          fetch(`/runloop/api/schedulers${qs}`),
-          fetch(`/runloop/api/flows${qs}`),
+          fetch(`${BASE_PATH}/api/projects`),
+          fetch(`${BASE_PATH}/api/schedulers${qs}`),
+          fetch(`${BASE_PATH}/api/flows${qs}`),
         ]);
         const newCounts: Record<string, number> = {};
         if (projRes.status === 'fulfilled' && projRes.value.ok) {
@@ -916,7 +922,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
               {showNotifications && (
                 <div
                   style={{ backgroundColor: 'var(--t-panel)', borderColor: 'var(--t-border)', borderRadius: 2 }}
-                  className="absolute right-0 top-full w-72 border py-2"
+                  className="absolute right-0 top-full w-72 border py-2 rl-menu"
                 >
                   <div
                     className="px-3 py-2 border-b flex items-center justify-between"
@@ -1008,7 +1014,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
               {showUserMenu && (
                 <div
                   style={{ backgroundColor: 'var(--t-panel)', borderColor: 'var(--t-border)', borderRadius: 2 }}
-                  className="absolute right-0 top-full w-56 border py-2"
+                  className="absolute right-0 top-full w-56 border py-2 rl-menu"
                 >
                   <div className="px-3 py-2.5 border-b" style={{ borderColor: 'var(--t-border)' }}>
                     <p
@@ -1089,7 +1095,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
         </header>
 
         {/* Page content — sits above the backdrop via z-index */}
-        <div className="flex-1 overflow-auto px-8 pt-6 pb-8 relative" style={{ zIndex: 1 }}>
+        <div className="flex-1 overflow-auto px-8 pt-6 pb-8 relative">
           {children}
         </div>
       </main>

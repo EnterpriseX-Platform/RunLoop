@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
@@ -62,7 +63,7 @@ export default function NewFlowPage() {
         },
       };
 
-      const res = await fetch('/runloop/api/flows', {
+      const res = await fetch(`${BASE_PATH}/api/flows`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -85,7 +86,7 @@ export default function NewFlowPage() {
     setTesting(true);
     try {
       // Dry-run submits an ephemeral flow to a test endpoint (executes without persisting as scheduled)
-      const res = await fetch('/runloop/api/flows/test', {
+      const res = await fetch(`${BASE_PATH}/api/flows/test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

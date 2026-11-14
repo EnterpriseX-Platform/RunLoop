@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
@@ -75,7 +76,7 @@ export default function NewSchedulerPage() {
     try {
       setIsLoadingFlows(true);
       const params = projectId ? `?projectId=${projectId}` : '';
-      const res = await fetch(`/runloop/api/flows${params}`);
+      const res = await fetch(`${BASE_PATH}/api/flows${params}`);
       if (res.ok) {
         const data = await res.json();
         setAvailableFlows(data.data || []);
@@ -124,7 +125,7 @@ export default function NewSchedulerPage() {
       };
       if (schedule && schedule.trim()) payload.schedule = schedule.trim();
 
-      const res = await fetch('/runloop/api/schedulers', {
+      const res = await fetch(`${BASE_PATH}/api/schedulers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -141,7 +142,7 @@ export default function NewSchedulerPage() {
 
       if (formData.triggerType === 'WEBHOOK') {
         try {
-          await fetch('/runloop/api/webhooks', {
+          await fetch(`${BASE_PATH}/api/webhooks`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -162,7 +163,7 @@ export default function NewSchedulerPage() {
           targetFlowId: selectedFlowIds[i + 1],
           condition: 'ON_SUCCESS',
         }));
-        await fetch(`/runloop/api/schedulers/${schedulerId}/flows`, {
+        await fetch(`${BASE_PATH}/api/schedulers/${schedulerId}/flows`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ flowIds: selectedFlowIds, edges }),
@@ -293,7 +294,7 @@ export default function NewSchedulerPage() {
                     secret can trigger this scheduler by POSTing JSON.
                   </p>
                   <pre style={preStyle()}>
-{`POST /runloop/api/webhooks/:id
+{`POST ${BASE_PATH}/api/webhooks/:id
 Header: X-Webhook-Signature: <HMAC-SHA256 of body using secret>`}
                   </pre>
                 </Callout>
@@ -305,7 +306,7 @@ Header: X-Webhook-Signature: <HMAC-SHA256 of body using secret>`}
                     Trigger this scheduler by calling the authenticated trigger endpoint:
                   </p>
                   <pre style={preStyle()}>
-{`POST /runloop/api/schedulers/<id>/trigger
+{`POST ${BASE_PATH}/api/schedulers/<id>/trigger
 Header: Authorization: Bearer <jwt-token>
 Body: { "input": {...} }`}
                   </pre>

@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 // API Docs — vertical icon+label nav on the left (mirrors the Orch.io
 // API editor pattern the user pointed at), content scrolls on the
@@ -457,7 +458,7 @@ export default function ApiDocsPage() {
           <ol className="mt-3 space-y-2 list-decimal pl-5" style={{ fontSize: 13, color: 'var(--t-text-secondary)' }}>
             <li>
               Create a project-scoped API key in{' '}
-              <a href={selectedProject ? `/runloop/p/${selectedProject.id}/api-keys` : '#'} style={{ color: 'var(--t-accent)' }}>
+              <a href={selectedProject ? `${BASE_PATH}/p/${selectedProject.id}/api-keys` : '#'} style={{ color: 'var(--t-accent)' }}>
                 Settings → API Keys
               </a>
               .
@@ -582,7 +583,7 @@ curl "$RUNLOOP_BASE/api/queues" \\
               <CodeBlock
                 lang="js"
                 code={`const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-const ws = new WebSocket(\`\${proto}//\${location.host}/runloop/rl/ws/channel/orders?projectId=\${PROJECT_ID}\`);
+const ws = new WebSocket(\`\${proto}//\${location.host}${BASE_PATH}/rl/ws/channel/orders?projectId=\${PROJECT_ID}\`);
 ws.onmessage = (e) => {
   const { channel, timestamp, payload } = JSON.parse(e.data);
   console.log(channel, payload);
@@ -605,7 +606,7 @@ ws.onmessage = (e) => {
 
         <p style={{ fontSize: 11.5, color: 'var(--t-text-muted)' }}>
           Missing something?{' '}
-          <a href="https://github.com/anthropics/runloop/issues" style={{ color: 'var(--t-accent)' }}>
+          <a href="https://github.com/EnterpriseX-Platform/RunLoop/issues" style={{ color: 'var(--t-accent)' }}>
             File an issue <ExternalLink className="w-3 h-3 inline" />
           </a>
         </p>

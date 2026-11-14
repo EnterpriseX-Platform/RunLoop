@@ -62,6 +62,12 @@ const securityHeaders = [
 const nextConfig = {
   output: 'standalone',
   basePath,
+  // Exposed to the browser so client code builds URLs from the configured
+  // base path instead of a hard-coded '/runloop'.
+  env: {
+    NEXT_PUBLIC_BASE_PATH: basePath,
+    NEXT_PUBLIC_ENGINE_BASE_PATH: process.env.ENGINE_BASE_PATH || '/rl',
+  },
   poweredByHeader: false,
   async redirects() {
     // Root → /projects. AuthProvider picks up from there:

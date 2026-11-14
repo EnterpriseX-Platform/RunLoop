@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
@@ -113,7 +114,7 @@ export default function ApiKeysPage() {
       setLoading(true);
       setError(null);
 
-      const res = await fetch(`/runloop/api/api-keys?projectId=${projectId}`);
+      const res = await fetch(`${BASE_PATH}/api/api-keys?projectId=${projectId}`);
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || 'Failed to fetch API keys');
@@ -131,7 +132,7 @@ export default function ApiKeysPage() {
 
   const handleCreate = async (name: string, expiration: ExpirationOption) => {
     if (!projectId) return;
-    const res = await fetch('/runloop/api/api-keys', {
+    const res = await fetch(`${BASE_PATH}/api/api-keys`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -153,7 +154,7 @@ export default function ApiKeysPage() {
 
   const handleRevoke = async (id: string) => {
     try {
-      const res = await fetch(`/runloop/api/api-keys/${id}`, {
+      const res = await fetch(`${BASE_PATH}/api/api-keys/${id}`, {
         method: 'DELETE',
       });
       if (res.ok) {

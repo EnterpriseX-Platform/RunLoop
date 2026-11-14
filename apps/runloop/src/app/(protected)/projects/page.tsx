@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -55,7 +56,7 @@ export default function ProjectsPage() {
     setIsSubmitting(true);
 
     try {
-      const url = '/runloop/api/projects';
+      const url = `${BASE_PATH}/api/projects`;
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

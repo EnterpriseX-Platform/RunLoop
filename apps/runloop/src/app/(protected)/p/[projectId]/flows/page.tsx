@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
@@ -68,7 +69,7 @@ export default function FlowsPage() {
       setError(null);
       const pid = projectId;
       const params = pid ? `?projectId=${pid}` : '';
-      const res = await fetch(`/runloop/api/flows${params}`);
+      const res = await fetch(`${BASE_PATH}/api/flows${params}`);
       if (!res.ok) throw new Error('Failed to fetch flows');
       const data = await res.json();
       setFlows(data.data || []);

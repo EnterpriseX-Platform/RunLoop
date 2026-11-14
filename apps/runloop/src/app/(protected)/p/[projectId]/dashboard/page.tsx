@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
@@ -80,8 +81,8 @@ export default function DashboardPage() {
         const pid = projectId;
         const params = pid ? `?projectId=${pid}` : '';
         const [statsRes, flowsRes] = await Promise.allSettled([
-          fetch(`/runloop/api/metrics/dashboard${params}`),
-          fetch(`/runloop/api/flows${params}`),
+          fetch(`${BASE_PATH}/api/metrics/dashboard${params}`),
+          fetch(`${BASE_PATH}/api/flows${params}`),
         ]);
 
         if (statsRes.status === 'fulfilled' && statsRes.value.ok) {

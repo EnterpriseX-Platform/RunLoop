@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 // usePageContext — derives a short, human-readable description of what
 // the user is looking at and (when applicable) fetches enough live data
@@ -50,7 +51,7 @@ export function usePageContext(projectId?: string): PageContext {
       const execMatch = pathname.match(/\/p\/[^/]+\/executions\/([^/?#]+)/);
       if (execMatch) {
         setCtx({ label: 'loading…', prompt: '', loading: true });
-        const data = await fetchJSON(`/runloop/api/executions/${execMatch[1]}`);
+        const data = await fetchJSON(`${BASE_PATH}/api/executions/${execMatch[1]}`);
         if (cancelled) return;
         const e = data?.data || data;
         if (!e) {
@@ -77,7 +78,7 @@ export function usePageContext(projectId?: string): PageContext {
       const flowMatch = pathname.match(/\/p\/[^/]+\/flows\/([^/?#]+)/);
       if (flowMatch && flowMatch[1] !== 'new') {
         setCtx({ label: 'loading…', prompt: '', loading: true });
-        const data = await fetchJSON(`/runloop/api/flows/${flowMatch[1]}`);
+        const data = await fetchJSON(`${BASE_PATH}/api/flows/${flowMatch[1]}`);
         if (cancelled) return;
         const f = data?.data || data;
         if (!f) {
@@ -112,7 +113,7 @@ export function usePageContext(projectId?: string): PageContext {
       const schedMatch = pathname.match(/\/p\/[^/]+\/schedulers\/([^/?#]+)/);
       if (schedMatch && schedMatch[1] !== 'new') {
         setCtx({ label: 'loading…', prompt: '', loading: true });
-        const data = await fetchJSON(`/runloop/api/schedulers/${schedMatch[1]}`);
+        const data = await fetchJSON(`${BASE_PATH}/api/schedulers/${schedMatch[1]}`);
         if (cancelled) return;
         const s = data?.data || data;
         if (!s) {
@@ -140,8 +141,8 @@ export function usePageContext(projectId?: string): PageContext {
       if (queueMatch && queueMatch[1] !== 'new') {
         setCtx({ label: 'loading…', prompt: '', loading: true });
         const [qd, jd] = await Promise.all([
-          fetchJSON(`/runloop/api/queues?projectId=${projectId || ''}`),
-          fetchJSON(`/runloop/api/queues/${queueMatch[1]}/jobs`),
+          fetchJSON(`${BASE_PATH}/api/queues?projectId=${projectId || ''}`),
+          fetchJSON(`${BASE_PATH}/api/queues/${queueMatch[1]}/jobs`),
         ]);
         if (cancelled) return;
         const q = (qd?.data || []).find((x: any) => x.name === queueMatch[1]);
@@ -162,7 +163,7 @@ export function usePageContext(projectId?: string): PageContext {
       // ─── Channels list ────────────────────────────────────────────
       if (pathname.match(/\/p\/[^/]+\/channels$/)) {
         setCtx({ label: 'loading…', prompt: '', loading: true });
-        const data = await fetchJSON(`/runloop/api/channels?projectId=${projectId || ''}`);
+        const data = await fetchJSON(`${BASE_PATH}/api/channels?projectId=${projectId || ''}`);
         if (cancelled) return;
         const channels = data?.data || [];
         const prompt = truncate(
