@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 // API Docs — vertical icon+label nav on the left (mirrors the Orch.io
 // API editor pattern the user pointed at), content scrolls on the
@@ -13,7 +14,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
+const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
 
 // ─────────────────────────────────────────────────────────────────
 // Endpoint catalog
@@ -94,7 +95,7 @@ const ENDPOINTS = RAW_ENDPOINTS.map((e) => ({
 }));
 
 const METHOD_COLORS: Record<string, string> = {
-  GET: '#10B981', POST: '#3B82F6', PUT: '#F59E0B', PATCH: '#A855F7', DELETE: '#EF4444',
+  GET: '#24a148', POST: '#0f62fe', PUT: '#eb6200', PATCH: '#8a3ffc', DELETE: '#da1e28',
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -144,9 +145,9 @@ function CodeBlock({ code, lang }: { code: string; lang?: string }) {
         <div
           style={{
             fontSize: 9.5, padding: '4px 10px',
-            color: 'var(--t-text-muted)', letterSpacing: '0.12em',
+            color: 'var(--t-text-muted)', letterSpacing: 0,
             borderBottom: '1px solid var(--t-border-light)',
-            fontFamily: MONO, textTransform: 'uppercase',
+            fontFamily: MONO,
           }}
         >
           {lang}
@@ -179,7 +180,7 @@ function MethodBadge({ method }: { method: string }) {
         padding: '2px 7px', borderRadius: 3,
         background: METHOD_COLORS[method] + '22',
         color: METHOD_COLORS[method],
-        letterSpacing: '0.06em',
+        letterSpacing: 0,
         minWidth: 50, textAlign: 'center', display: 'inline-block',
       }}
     >
@@ -209,23 +210,23 @@ function Endpoint({ ep, baseUrl }: { ep: EndpointDef; baseUrl: string }) {
         )}
         {ep.body && (
           <details className="mt-3" open>
-            <summary style={{ fontSize: 11, color: 'var(--t-text-muted)', letterSpacing: '0.08em', cursor: 'pointer', marginBottom: 6 }}>
-              REQUEST BODY
+            <summary style={{ fontSize: 11, color: 'var(--t-text-muted)', letterSpacing: 0, cursor: 'pointer', marginBottom: 6 }}>
+              Request body
             </summary>
             <CodeBlock code={ep.body} lang="json" />
           </details>
         )}
         {ep.response && (
           <details className="mt-3">
-            <summary style={{ fontSize: 11, color: 'var(--t-text-muted)', letterSpacing: '0.08em', cursor: 'pointer', marginBottom: 6 }}>
-              RESPONSE
+            <summary style={{ fontSize: 11, color: 'var(--t-text-muted)', letterSpacing: 0, cursor: 'pointer', marginBottom: 6 }}>
+              Response
             </summary>
             <CodeBlock code={ep.response} lang="json" />
           </details>
         )}
         <details className="mt-3">
-          <summary style={{ fontSize: 11, color: 'var(--t-text-muted)', letterSpacing: '0.08em', cursor: 'pointer', marginBottom: 6 }}>
-            CURL
+          <summary style={{ fontSize: 11, color: 'var(--t-text-muted)', letterSpacing: 0, cursor: 'pointer', marginBottom: 6 }}>
+            curl
           </summary>
           <CodeBlock
             lang="bash"
@@ -350,8 +351,7 @@ export default function ApiDocsPage() {
           <div
             style={{
               fontSize: 10.5, fontWeight: 600, color: 'var(--t-text-muted)',
-              letterSpacing: '0.14em', marginBottom: 8, paddingLeft: 6,
-              textTransform: 'uppercase',
+              letterSpacing: 0, marginBottom: 8, paddingLeft: 6,
             }}
           >
             Reference
@@ -365,8 +365,7 @@ export default function ApiDocsPage() {
               <div
                 style={{
                   fontSize: 10.5, fontWeight: 600, color: 'var(--t-text-muted)',
-                  letterSpacing: '0.14em', marginTop: 16, marginBottom: 8, paddingLeft: 6,
-                  textTransform: 'uppercase',
+                  letterSpacing: 0, marginTop: 16, marginBottom: 8, paddingLeft: 6,
                 }}
               >
                 Endpoints
@@ -390,8 +389,7 @@ export default function ApiDocsPage() {
           <div
             style={{
               fontSize: 10.5, fontWeight: 600, color: 'var(--t-text-muted)',
-              letterSpacing: '0.14em', marginTop: 16, marginBottom: 8, paddingLeft: 6,
-              textTransform: 'uppercase',
+              letterSpacing: 0, marginTop: 16, marginBottom: 8, paddingLeft: 6,
             }}
           >
             Guides
@@ -405,7 +403,7 @@ export default function ApiDocsPage() {
       {/* ── Main content ──────────────────────────────────────── */}
       <div ref={contentRef} className="flex-1 min-w-0 px-6 py-6 max-w-[920px]">
         <div className="mb-5">
-          <h1 style={{ fontSize: 26, fontWeight: 600, color: 'var(--t-text)', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: 26, fontWeight: 600, color: 'var(--t-text)', letterSpacing: 0 }}>
             API Reference
           </h1>
           <p style={{ fontSize: 13.5, color: 'var(--t-text-muted)', marginTop: 6 }}>
@@ -460,7 +458,7 @@ export default function ApiDocsPage() {
           <ol className="mt-3 space-y-2 list-decimal pl-5" style={{ fontSize: 13, color: 'var(--t-text-secondary)' }}>
             <li>
               Create a project-scoped API key in{' '}
-              <a href={selectedProject ? `/runloop/p/${selectedProject.id}/api-keys` : '#'} style={{ color: 'var(--t-accent)' }}>
+              <a href={selectedProject ? `${BASE_PATH}/p/${selectedProject.id}/api-keys` : '#'} style={{ color: 'var(--t-accent)' }}>
                 Settings → API Keys
               </a>
               .
@@ -548,7 +546,7 @@ curl "$RUNLOOP_BASE/api/queues" \\
               { title: 'Secrets & env',     code: `\${{secrets.<NAME>}}\n# AES-256-GCM, never logged\n\n\${{env.<NAME>}}\n# plaintext per-project config` },
             ].map((b) => (
               <div key={b.title} className="p-3" style={{ background: 'var(--t-panel)', border: '1px solid var(--t-border)', borderRadius: 4 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--t-text)', marginBottom: 6 }}>{b.title}</div>
+                <div style={{ fontSize: 16, fontWeight: 400, color: 'var(--t-text)', marginBottom: 6 }}>{b.title}</div>
                 <CodeBlock lang="text" code={b.code} />
               </div>
             ))}
@@ -585,7 +583,7 @@ curl "$RUNLOOP_BASE/api/queues" \\
               <CodeBlock
                 lang="js"
                 code={`const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-const ws = new WebSocket(\`\${proto}//\${location.host}/runloop/rl/ws/channel/orders?projectId=\${PROJECT_ID}\`);
+const ws = new WebSocket(\`\${proto}//\${location.host}${BASE_PATH}/rl/ws/channel/orders?projectId=\${PROJECT_ID}\`);
 ws.onmessage = (e) => {
   const { channel, timestamp, payload } = JSON.parse(e.data);
   console.log(channel, payload);
@@ -608,7 +606,7 @@ ws.onmessage = (e) => {
 
         <p style={{ fontSize: 11.5, color: 'var(--t-text-muted)' }}>
           Missing something?{' '}
-          <a href="https://github.com/anthropics/runloop/issues" style={{ color: 'var(--t-accent)' }}>
+          <a href="https://github.com/EnterpriseX-Platform/RunLoop/issues" style={{ color: 'var(--t-accent)' }}>
             File an issue <ExternalLink className="w-3 h-3 inline" />
           </a>
         </p>

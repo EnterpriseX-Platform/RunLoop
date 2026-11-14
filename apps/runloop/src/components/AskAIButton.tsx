@@ -27,14 +27,14 @@ export function AskAIButton({ prompt, label, size = 'sm', className = '' }: Prop
       title={prompt}
       className={`inline-flex items-center gap-1.5 hover:opacity-90 transition ${className}`}
       style={{
-        background: 'color-mix(in srgb, var(--t-accent) 12%, transparent)',
+        background: 'transparent',
         color: 'var(--t-accent)',
-        border: '1px solid color-mix(in srgb, var(--t-accent) 30%, transparent)',
-        borderRadius: 999,
+        border: 'none',
+        borderRadius: 0,
         padding,
         fontSize,
         fontWeight: 500,
-        letterSpacing: '0.01em',
+        letterSpacing: 0,
         cursor: 'pointer',
         whiteSpace: 'nowrap',
       }}

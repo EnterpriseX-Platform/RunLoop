@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
@@ -31,12 +32,12 @@ const THEME = {
   accentLight: 'var(--t-accent-light)',
   input: 'var(--t-input)',
   colors: {
-    blue: '#3B82F6',
-    emerald: '#10B981',
-    purple: '#8B5CF6',
-    amber: '#F59E0B',
-    red: '#EF4444',
-    cyan: '#06B6D4',
+    blue: '#0f62fe',
+    emerald: '#24a148',
+    purple: '#8a3ffc',
+    amber: '#eb6200',
+    red: '#da1e28',
+    cyan: '#1192e8',
   },
 };
 
@@ -155,7 +156,7 @@ export default function AuditLogPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/runloop/api/audit-logs?${queryString}`);
+      const res = await fetch(`${BASE_PATH}/api/audit-logs?${queryString}`);
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data?.error || 'Failed to fetch audit logs');
@@ -208,10 +209,10 @@ export default function AuditLogPage() {
     <div className="min-h-screen" style={{ background: THEME.bg, fontFamily: FONT }}>
       {/* Header */}
       <header
-        className="sticky top-0 z-30 backdrop-blur-xl"
-        style={{ background: `${THEME.bg}cc`, borderBottom: `1px solid ${THEME.border}` }}
+        className=""
+        
       >
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="pb-6">
           <div className="flex items-center justify-between">
             <div>
               <h1
@@ -362,7 +363,7 @@ export default function AuditLogPage() {
       </header>
 
       {/* Content */}
-      <main className="max-w-7xl mx-auto px-6 py-6">
+      <main className="">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin" style={{ color: THEME.accent }} />
@@ -414,41 +415,41 @@ export default function AuditLogPage() {
                 <thead>
                   <tr style={{ background: THEME.bg, borderBottom: `1px solid ${THEME.border}` }}>
                     <th
-                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider w-8"
+                      className="px-4 py-3 text-left text-xs font-medium   w-8"
                       style={{ color: THEME.text.secondary }}
                     />
                     <th
-                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                      className="px-4 py-3 text-left text-xs font-medium  "
                       style={{ color: THEME.text.secondary }}
                     >
                       Timestamp
                     </th>
                     <th
-                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                      className="px-4 py-3 text-left text-xs font-medium  "
                       style={{ color: THEME.text.secondary }}
                     >
                       User
                     </th>
                     <th
-                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                      className="px-4 py-3 text-left text-xs font-medium  "
                       style={{ color: THEME.text.secondary }}
                     >
                       Action
                     </th>
                     <th
-                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                      className="px-4 py-3 text-left text-xs font-medium  "
                       style={{ color: THEME.text.secondary }}
                     >
                       Resource
                     </th>
                     <th
-                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                      className="px-4 py-3 text-left text-xs font-medium  "
                       style={{ color: THEME.text.secondary }}
                     >
                       Details
                     </th>
                     <th
-                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                      className="px-4 py-3 text-left text-xs font-medium  "
                       style={{ color: THEME.text.secondary }}
                     >
                       IP

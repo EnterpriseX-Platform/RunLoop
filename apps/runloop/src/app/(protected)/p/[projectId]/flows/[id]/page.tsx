@@ -1,10 +1,13 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
+import { sentence } from '@/components/ControlChrome';
 
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, AlertCircle, Trash2, History, RotateCcw, X, Play } from 'lucide-react';
 import { Node, Edge } from 'reactflow';
+import { resolveKind } from '@/components/flow/nodes/BaseNode';
 import { FlowCanvas } from '@/components/flow/FlowCanvas';
 import { AskAIButton } from '@/components/AskAIButton';
 
@@ -15,7 +18,7 @@ const THEME = {
   border: 'var(--t-border)',
   text: { primary: 'var(--t-text)', secondary: 'var(--t-text-secondary)', muted: 'var(--t-text-muted)' },
   accent: 'var(--t-accent)',
-  colors: { red: '#EF4444', emerald: '#10B981' },
+  colors: { red: '#da1e28', emerald: '#24a148' },
 };
 
 type BackendFlow = {
@@ -72,6 +75,18 @@ function backendNodesToReactFlow(flow: BackendFlow): { nodes: Node[]; edges: Edg
   }
 
   const nodes: Node[] = (cfg.nodes || []).map((n: any, idx: number) => {
+    // Some flows (e.g. the demo seed) are stored in React Flow's own shape:
+    // `type: 'databaseNode'` plus `data.label`. Keep those as-is instead of
+    // pushing them through the backend jobType mapping, which would turn
+    // every node into an HTTP node labelled with its id.
+    if (typeof n.type === 'string' && /Node$/.test(n.type) && n.data) {
+      return {
+        id: n.id || `node_${idx}`,
+        type: n.type,
+        position: n.position || { x: 80 + idx * 260, y: 200 },
+        data: { ...n.data, type: resolveKind(n.data.type, n.type), label: n.data.label || n.id || 'Node', config: n.data.config || {} },
+      };
+    }
     const nodeKind = n.nodeKind || jobTypeToNodeKind(n.type);
     const nodeTypeData = (n.type || '').toLowerCase() === 'start' ? 'start'
       : (n.type || '').toLowerCase() === 'end' ? 'end'
@@ -93,7 +108,7 @@ function backendNodesToReactFlow(flow: BackendFlow): { nodes: Node[]; edges: Edg
     source: e.source,
     target: e.target,
     data: { condition: e.condition || 'ON_SUCCESS' },
-    type: 'smoothstep',
+    type: 'default',
   }));
 
   return { nodes, edges };
@@ -121,7 +136,7 @@ export default function FlowDetailPage() {
     if (!flow?.flowConfig) return;
     setRunning(true);
     try {
-      const res = await fetch('/runloop/api/flows/test', {
+      const res = await fetch(`${BASE_PATH}/api/flows/test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId, flowConfig: flow.flowConfig }),
@@ -142,7 +157,7 @@ export default function FlowDetailPage() {
 
   const fetchVersions = async () => {
     try {
-      const res = await fetch(`/runloop/api/flow-versions?flowId=${flowId}`);
+      const res = await fetch(`${BASE_PATH}/api/flow-versions?flowId=${flowId}`);
       if (res.ok) {
         const data = await res.json();
         setVersions(data.versions || []);
@@ -155,10 +170,10 @@ export default function FlowDetailPage() {
   const handleRollback = async (versionId: string, versionNumber: number) => {
     if (!confirm(`Roll back to version ${versionNumber}? Current state will be preserved as a new version.`)) return;
     try {
-      const res = await fetch(`/runloop/api/flow-versions/${versionId}/rollback`, { method: 'POST' });
+      const res = await fetch(`${BASE_PATH}/api/flow-versions/${versionId}/rollback`, { method: 'POST' });
       if (res.ok) {
         // Refresh flow + versions
-        const fres = await fetch(`/runloop/api/flows/${flowId}`);
+        const fres = await fetch(`${BASE_PATH}/api/flows/${flowId}`);
         if (fres.ok) {
           const fd = await fres.json();
           setFlow(fd.data);
@@ -177,7 +192,7 @@ export default function FlowDetailPage() {
   useEffect(() => {
     async function fetchFlow() {
       try {
-        const res = await fetch(`/runloop/api/flows/${flowId}`);
+        const res = await fetch(`${BASE_PATH}/api/flows/${flowId}`);
         if (res.ok) {
           const data = await res.json();
           setFlow(data.data);
@@ -223,7 +238,7 @@ export default function FlowDetailPage() {
         },
       };
 
-      const res = await fetch(`/runloop/api/flows/${flowId}`, {
+      const res = await fetch(`${BASE_PATH}/api/flows/${flowId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -240,7 +255,7 @@ export default function FlowDetailPage() {
       // Snapshot a version after a successful save. Best-effort — we don't
       // fail the UI if the versions table is unreachable.
       try {
-        await fetch('/runloop/api/flow-versions', {
+        await fetch(`${BASE_PATH}/api/flow-versions`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -264,7 +279,7 @@ export default function FlowDetailPage() {
     if (!confirm('Delete this flow? This action cannot be undone.')) return;
     setDeleting(true);
     try {
-      const res = await fetch(`/runloop/api/flows/${flowId}`, { method: 'DELETE' });
+      const res = await fetch(`${BASE_PATH}/api/flows/${flowId}`, { method: 'DELETE' });
       if (res.ok) {
         router.push(`/p/${projectId}/flows`);
       } else {
@@ -298,15 +313,15 @@ export default function FlowDetailPage() {
   }
 
   return (
-    <div style={{ height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', fontFamily: FONT }}>
+    <div style={{ height: 'calc(100vh - 48px - 56px)', display: 'flex', flexDirection: 'column', fontFamily: FONT }}>
       {/* Sticky top strip with back + delete */}
       <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: `1px solid ${THEME.border}`, background: THEME.panel }}>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <Link href={`/p/${projectId}/flows`} style={{ color: THEME.text.muted }}>
             <ArrowLeft className="w-4 h-4" />
           </Link>
-          <span className="text-xs font-medium" style={{ color: THEME.text.secondary }}>
-            Flow {flow.status === 'ACTIVE' ? '·' : `(${flow.status})`} {flow.type}
+          <span className="text-xs font-medium whitespace-nowrap" style={{ color: THEME.text.secondary }}>
+            Flow {flow.status === 'ACTIVE' ? '·' : `(${sentence(flow.status)})`} {flow.type}
           </span>
           <AskAIButton
             prompt="Explain what this flow does at a high level, then point out any obvious issue or improvement."
@@ -317,29 +332,31 @@ export default function FlowDetailPage() {
           <button
             onClick={handleRunNow}
             disabled={running}
-            className="text-xs px-3 py-1.5 rounded flex items-center gap-1.5 disabled:opacity-50"
-            style={{ background: `${THEME.colors.emerald}15`, color: THEME.colors.emerald, border: `1px solid ${THEME.colors.emerald}40` }}
+            className="h-8 text-sm flex items-center gap-2 disabled:opacity-50 pl-3 pr-4 hover:bg-[var(--t-panel-hover)]"
+            style={{ background: 'transparent', color: 'var(--t-accent)', border: 'none' }}
             title="Run this flow once with its saved config"
           >
             {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-            Run Now
+            Run now
           </button>
           <button
             onClick={() => { setShowVersions(true); fetchVersions(); }}
-            className="text-xs px-3 py-1.5 rounded flex items-center gap-1.5"
-            style={{ background: `${THEME.accent}15`, color: THEME.accent, border: `1px solid ${THEME.accent}40` }}
+            title="Version history"
+            className="h-8 text-sm flex items-center gap-2 disabled:opacity-50 px-3 hover:bg-[var(--t-panel-hover)]"
+            style={{ background: 'transparent', color: 'var(--t-accent)' }}
           >
-            <History className="w-3.5 h-3.5" />
-            Version History
+            <History className="w-4 h-4" />
+            <span className="hidden lg:inline">Version history</span>
           </button>
           <button
             onClick={handleDelete}
             disabled={deleting}
-            className="text-xs px-3 py-1.5 rounded flex items-center gap-1.5 disabled:opacity-50"
-            style={{ background: `${THEME.colors.red}15`, color: THEME.colors.red, border: `1px solid ${THEME.colors.red}40` }}
+            className="h-8 text-sm flex items-center gap-2 disabled:opacity-50 w-8 justify-center hover:bg-[var(--tag-red-bg)]"
+            style={{ background: 'transparent', color: 'var(--t-error)' }}
+            title="Delete flow"
+            aria-label="Delete flow"
           >
-            <Trash2 className="w-3.5 h-3.5" />
-            Delete Flow
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -372,7 +389,7 @@ export default function FlowDetailPage() {
             <div className="px-5 py-4 flex items-center justify-between sticky top-0" style={{ background: THEME.panel, borderBottom: `1px solid ${THEME.border}` }}>
               <h3 className="flex items-center gap-2 font-semibold" style={{ color: THEME.text.primary }}>
                 <History className="w-4 h-4" />
-                Version History
+                Version history
               </h3>
               <button onClick={() => setShowVersions(false)} style={{ color: THEME.text.secondary }}>
                 <X className="w-4 h-4" />
@@ -385,11 +402,11 @@ export default function FlowDetailPage() {
             ) : (
               <div className="p-4 space-y-3">
                 {versions.map((v, i) => (
-                  <div key={v.id} style={{ padding: 12, borderRadius: 8, background: 'var(--t-input)', border: `1px solid ${THEME.border}` }}>
+                  <div key={v.id} style={{ padding: 12, background: 'var(--t-input)' }}>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-semibold" style={{ color: THEME.text.primary }}>
                         v{v.version}
-                        {i === 0 && <span className="ml-2 text-[10px] px-2 py-0.5 rounded" style={{ background: '#10B98120', color: '#10B981' }}>CURRENT</span>}
+                        {i === 0 && <span className="ml-2" style={{ fontSize: 12, padding: '2px 8px', borderRadius: 24, background: 'var(--tag-green-bg)', color: 'var(--tag-green-text)' }}>Current</span>}
                       </span>
                       <span className="text-[11px]" style={{ color: THEME.text.muted }}>
                         {new Date(v.createdAt).toLocaleString()}
@@ -402,7 +419,7 @@ export default function FlowDetailPage() {
                       <button
                         onClick={() => handleRollback(v.id, v.version)}
                         className="text-[11px] px-2 py-1 rounded flex items-center gap-1"
-                        style={{ background: `${THEME.accent}15`, color: THEME.accent, border: `1px solid ${THEME.accent}40` }}
+                        style={{ background: 'transparent', color: THEME.accent, border: 'none' }}
                       >
                         <RotateCcw className="w-3 h-3" />
                         Roll back to v{v.version}

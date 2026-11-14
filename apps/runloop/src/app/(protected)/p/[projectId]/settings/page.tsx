@@ -33,7 +33,7 @@ const THEME = {
   border: 'var(--t-border)', borderLight: 'var(--t-border-light)',
   text: { primary: 'var(--t-text)', secondary: 'var(--t-text-secondary)', muted: 'var(--t-text-muted)' },
   accent: 'var(--t-accent)', accentLight: 'var(--t-accent-light)', input: 'var(--t-input)',
-  colors: { blue: '#3B82F6', emerald: '#10B981', purple: '#8B5CF6', amber: '#F59E0B', red: '#EF4444' }
+  colors: { blue: '#0f62fe', emerald: '#24a148', purple: '#8a3ffc', amber: '#eb6200', red: '#da1e28' }
 };
 
 interface ToastState {
@@ -89,7 +89,7 @@ function ConfirmDialog({ dialog, onClose }: { dialog: ConfirmDialogState; onClos
         onClick={e => e.stopPropagation()}
         style={{
           background: THEME.panel, border: `1px solid ${THEME.border}`,
-          borderRadius: 16, padding: 28, width: 440, maxWidth: '90vw',
+          borderRadius: 0, padding: 28, width: 440, maxWidth: '90vw',
           boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
         }}
       >
@@ -108,7 +108,7 @@ function ConfirmDialog({ dialog, onClose }: { dialog: ConfirmDialogState; onClos
           <button
             onClick={onClose}
             style={{
-              padding: '9px 18px', borderRadius: 8, fontSize: 14, fontWeight: 500,
+              padding: '9px 18px', borderRadius: 0, fontSize: 14, fontWeight: 500,
               background: 'transparent', color: THEME.text.secondary,
               border: `1px solid ${THEME.border}`, cursor: 'pointer',
               fontFamily: FONT, transition: 'all 0.15s',
@@ -119,7 +119,7 @@ function ConfirmDialog({ dialog, onClose }: { dialog: ConfirmDialogState; onClos
           <button
             onClick={() => { dialog.onConfirm(); onClose(); }}
             style={{
-              padding: '9px 18px', borderRadius: 8, fontSize: 14, fontWeight: 500,
+              padding: '9px 18px', borderRadius: 0, fontSize: 14, fontWeight: 500,
               background: THEME.colors.red, color: '#fff',
               border: 'none', cursor: 'pointer',
               fontFamily: FONT, transition: 'all 0.15s',
@@ -133,27 +133,21 @@ function ConfirmDialog({ dialog, onClose }: { dialog: ConfirmDialogState; onClos
   );
 }
 
-function SectionHeader({ icon: Icon, title, description, color }: {
-  icon: React.ComponentType<any>;
+function SectionHeader({ title, description }: {
   title: string;
   description: string;
-  color: string;
 }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
-      <div style={{ background: `${color}18`, borderRadius: 2, padding: 10, display: 'flex' }}>
-        <Icon size={20} color={color} />
-      </div>
+    <div style={{ marginBottom: 8 }}>
       <div>
-        <h2 style={{ color: THEME.text.primary, fontSize: 16, fontWeight: 600, margin: 0 }}>{title}</h2>
-        <p style={{ color: THEME.text.muted, fontSize: 13, margin: '2px 0 0 0' }}>{description}</p>
+        <h2 style={{ color: THEME.text.primary, fontSize: 20, lineHeight: '28px', fontWeight: 400, margin: 0 }}>{title}</h2>
+        <p style={{ color: THEME.text.secondary, fontSize: 14, margin: '4px 0 0 0' }}>{description}</p>
       </div>
     </div>
   );
 }
 
-function SettingRow({ icon: Icon, label, description, children }: {
-  icon: React.ComponentType<any>;
+function SettingRow({ label, description, children }: {
   label: string;
   description?: string;
   children: React.ReactNode;
@@ -161,15 +155,14 @@ function SettingRow({ icon: Icon, label, description, children }: {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '14px 0',
-      borderBottom: `1px solid ${THEME.borderLight}`,
+      gap: 16, minHeight: 64, padding: '12px 0',
+      borderBottom: `1px solid ${THEME.border}`,
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
-        <Icon size={16} color={THEME.text.muted} />
+      <div style={{ flex: 1, minWidth: 0 }}>
         <div>
-          <div style={{ color: THEME.text.primary, fontSize: 14, fontWeight: 500 }}>{label}</div>
+          <div style={{ color: THEME.text.primary, fontSize: 14, fontWeight: 600 }}>{label}</div>
           {description && (
-            <div style={{ color: THEME.text.muted, fontSize: 12, marginTop: 2 }}>{description}</div>
+            <div style={{ color: THEME.text.secondary, fontSize: 12, lineHeight: '16px', marginTop: 2 }}>{description}</div>
           )}
         </div>
       </div>
@@ -181,9 +174,8 @@ function SettingRow({ icon: Icon, label, description, children }: {
 function ReadOnlyValue({ value }: { value: string }) {
   return (
     <div style={{
-      background: THEME.input, border: `1px solid ${THEME.borderLight}`,
-      borderRadius: 8, padding: '7px 14px',
-      color: THEME.text.secondary, fontSize: 13, fontFamily: "'IBM Plex Mono', monospace",
+      background: 'transparent', padding: '0',
+      color: THEME.text.secondary, fontSize: 14, fontFamily: "'IBM Plex Mono', monospace",
       minWidth: 200, textAlign: 'right',
     }}>
       {value}
@@ -213,13 +205,13 @@ function NumberInput({ value, onChange, min, max, suffix }: {
         min={min}
         max={max}
         style={{
-          background: THEME.input, border: `1px solid ${THEME.borderLight}`,
-          borderRadius: 8, padding: '7px 14px', width: 100, textAlign: 'right',
-          color: THEME.text.primary, fontSize: 13, fontFamily: "'IBM Plex Mono', monospace",
+          background: THEME.input, border: 'none', borderBottom: '1px solid var(--t-border-strong)',
+          borderRadius: 0, height: 40, padding: '0 16px', width: 112, textAlign: 'right',
+          color: THEME.text.primary, fontSize: 14, fontVariantNumeric: 'tabular-nums',
           outline: 'none',
         }}
-        onFocus={e => { e.target.style.borderColor = THEME.accent; }}
-        onBlur={e => { e.target.style.borderColor = THEME.borderLight; }}
+        onFocus={e => { e.target.style.boxShadow = 'inset 0 0 0 2px var(--t-accent)'; }}
+        onBlur={e => { e.target.style.boxShadow = 'none'; }}
       />
       {suffix && <span style={{ color: THEME.text.muted, fontSize: 12 }}>{suffix}</span>}
     </div>
@@ -231,17 +223,16 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
     <button
       onClick={() => onChange(!checked)}
       style={{
-        width: 44, height: 24, borderRadius: 2, border: 'none', cursor: 'pointer',
-        background: checked ? THEME.accent : THEME.borderLight,
+        width: 48, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
+        background: checked ? 'var(--t-success)' : 'var(--t-border-strong)',
         position: 'relative', transition: 'background 0.2s', padding: 0,
       }}
     >
       <div style={{
         width: 18, height: 18, borderRadius: '50%', background: '#fff',
         position: 'absolute', top: 3,
-        left: checked ? 23 : 3,
+        left: checked ? 27 : 3,
         transition: 'left 0.2s',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
       }} />
     </button>
   );
@@ -259,14 +250,13 @@ function TextInput({ value, onChange, placeholder }: {
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
       style={{
-        background: THEME.input, border: `1px solid ${THEME.borderLight}`,
-        borderRadius: 8, padding: '7px 14px', width: 280,
-        color: THEME.text.primary, fontSize: 13,
-        fontFamily: "'IBM Plex Mono', monospace",
+        background: THEME.input, border: 'none', borderBottom: '1px solid var(--t-border-strong)',
+          borderRadius: 0, height: 40, padding: '0 16px', width: 280,
+        color: THEME.text.primary, fontSize: 14,
         outline: 'none',
       }}
-      onFocus={e => { e.target.style.borderColor = THEME.accent; }}
-      onBlur={e => { e.target.style.borderColor = THEME.borderLight; }}
+      onFocus={e => { e.target.style.boxShadow = 'inset 0 0 0 2px var(--t-accent)'; }}
+      onBlur={e => { e.target.style.boxShadow = 'none'; }}
     />
   );
 }
@@ -284,7 +274,7 @@ function DangerButton({ icon: Icon, label, onClick }: {
       onMouseLeave={() => setHovered(false)}
       style={{
         display: 'flex', alignItems: 'center', gap: 8,
-        padding: '10px 18px', borderRadius: 8, fontSize: 13, fontWeight: 500,
+        padding: '10px 18px', borderRadius: 0, fontSize: 13, fontWeight: 500,
         background: hovered ? `${THEME.colors.red}18` : 'transparent',
         color: THEME.colors.red,
         border: `1px solid ${hovered ? THEME.colors.red : THEME.border}`,
@@ -351,10 +341,10 @@ export default function SettingsPage() {
   const appVersion = '0.1.0';
 
   return (
-    <div className="space-y-4" style={{ fontFamily: FONT, maxWidth: 820 }}>
-      <div className="flex items-end justify-between mb-6 gap-4">
+    <div className="space-y-4" style={{ fontFamily: FONT, maxWidth: 868 }}>
+      <div className="flex items-start justify-between mb-6 gap-4">
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 600, color: THEME.text.primary, letterSpacing: '-0.02em' }}>General</h1>
+          <h1 style={{ fontSize: 28, lineHeight: '36px', fontWeight: 400, color: THEME.text.primary }}>General</h1>
           <p style={{ fontSize: 13, color: THEME.text.muted, marginTop: 6 }}>
             Manage your RunLoop platform configuration.
           </p>
@@ -366,66 +356,57 @@ export default function SettingsPage() {
       </div>
 
       {/* General Settings */}
-      <div className="" style={{ background: THEME.panel, border: `1px solid ${THEME.border}`, padding: 24 }}>
-        <SectionHeader
-          icon={Settings}
-          title="General Settings"
+      <div className="" style={{ background: THEME.panel, padding: '24px 24px 8px' }}>
+        <SectionHeader title="General Settings"
           description="Platform environment and version information"
-          color={THEME.colors.blue}
         />
         <div>
-          <SettingRow icon={Globe} label="Engine URL" description="Backend engine endpoint address">
+          <SettingRow label="Engine URL" description="Backend engine endpoint address">
             <ReadOnlyValue value={engineUrl} />
           </SettingRow>
-          <SettingRow icon={Hash} label="Base Path" description="Application route prefix">
+          <SettingRow label="Base Path" description="Application route prefix">
             <ReadOnlyValue value={basePath} />
           </SettingRow>
-          <SettingRow icon={Info} label="Application Version" description="Current running version">
+          <SettingRow label="Application Version" description="Current running version">
             <ReadOnlyValue value={`v${appVersion}`} />
           </SettingRow>
         </div>
       </div>
 
       {/* Engine Configuration */}
-      <div className="" style={{ background: THEME.panel, border: `1px solid ${THEME.border}`, padding: 24 }}>
-        <SectionHeader
-          icon={Cpu}
-          title="Engine Configuration"
+      <div className="" style={{ background: THEME.panel, padding: '24px 24px 8px' }}>
+        <SectionHeader title="Engine Configuration"
           description="Worker pool and execution defaults"
-          color={THEME.colors.purple}
         />
         <div>
-          <SettingRow icon={Server} label="Worker Pool Size" description="Number of concurrent worker goroutines">
+          <SettingRow label="Worker Pool Size" description="Number of concurrent worker goroutines">
             <ReadOnlyValue value="10" />
           </SettingRow>
-          <SettingRow icon={Timer} label="Default Timeout" description="Maximum execution time before timeout">
+          <SettingRow label="Default Timeout" description="Maximum execution time before timeout">
             <NumberInput value={defaultTimeout} onChange={setDefaultTimeout} min={1} max={3600} suffix="seconds" />
           </SettingRow>
-          <SettingRow icon={RefreshCw} label="Default Retry Count" description="Number of retry attempts on failure">
+          <SettingRow label="Default Retry Count" description="Number of retry attempts on failure">
             <NumberInput value={defaultRetryCount} onChange={setDefaultRetryCount} min={0} max={10} />
           </SettingRow>
-          <SettingRow icon={Clock} label="Default Retry Delay" description="Wait time between retry attempts">
+          <SettingRow label="Default Retry Delay" description="Wait time between retry attempts">
             <NumberInput value={defaultRetryDelay} onChange={setDefaultRetryDelay} min={1} max={300} suffix="seconds" />
           </SettingRow>
         </div>
       </div>
 
       {/* Notification Settings */}
-      <div className="" style={{ background: THEME.panel, border: `1px solid ${THEME.border}`, padding: 24 }}>
-        <SectionHeader
-          icon={Bell}
-          title="Notification Settings"
+      <div className="" style={{ background: THEME.panel, padding: '24px 24px 8px' }}>
+        <SectionHeader title="Notification Settings"
           description="Configure how you receive alerts and updates"
-          color={THEME.colors.amber}
         />
         <div>
-          <SettingRow icon={Mail} label="Email Notifications" description="Receive execution alerts via email">
+          <SettingRow label="Email Notifications" description="Receive execution alerts via email">
             <Toggle checked={emailNotifications} onChange={setEmailNotifications} />
           </SettingRow>
-          <SettingRow icon={MessageSquare} label="Slack Notifications" description="Send alerts to a Slack channel">
+          <SettingRow label="Slack Notifications" description="Send alerts to a Slack channel">
             <Toggle checked={slackNotifications} onChange={setSlackNotifications} />
           </SettingRow>
-          <SettingRow icon={Link} label="Webhook URL" description="POST execution events to a custom endpoint">
+          <SettingRow label="Webhook URL" description="POST execution events to a custom endpoint">
             <TextInput value={webhookUrl} onChange={setWebhookUrl} placeholder="https://example.com/webhook" />
           </SettingRow>
         </div>
@@ -437,11 +418,8 @@ export default function SettingsPage() {
         border: `1px solid ${THEME.colors.red}30`,
         padding: 24,
       }}>
-        <SectionHeader
-          icon={AlertTriangle}
-          title="Danger Zone"
+        <SectionHeader title="Danger Zone"
           description="Destructive actions that cannot be undone"
-          color={THEME.colors.red}
         />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 4 }}>
           <div style={{

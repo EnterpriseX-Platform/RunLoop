@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
 export default function HomePage() {
-  redirect('/runloop/dashboard');
+  redirect('/projects'); // redirect() adds the configured basePath itself
 }

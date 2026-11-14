@@ -1,3 +1,4 @@
+import { ENGINE_BASE_PATH } from '@/lib/engine-path';
 import { NextRequest, NextResponse } from 'next/server';
 
 // DELETE /api/schedulers/[id]/dependencies/[depId]
@@ -7,7 +8,7 @@ export async function DELETE(
 ) {
   try {
     const engineUrl = process.env.ENGINE_URL || 'http://localhost:8080';
-    const res = await fetch(`${engineUrl}/rl/api/schedulers/${params.id}/dependencies/${params.depId}`, {
+    const res = await fetch(`${engineUrl}${ENGINE_BASE_PATH}/api/schedulers/${params.id}/dependencies/${params.depId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': request.headers.get('authorization') || '',

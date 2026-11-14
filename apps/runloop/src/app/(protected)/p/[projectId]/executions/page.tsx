@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
@@ -25,7 +26,7 @@ import {
   MousePointerClick,
 } from 'lucide-react';
 import type { Execution } from '@/types';
-import { HeroHeader, MetricChip } from '@/components/ControlChrome';
+import { HeroHeader, MetricChip, ContentSwitcher, SearchField, Tag, sentence } from '@/components/ControlChrome';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const THEME = {
@@ -38,7 +39,7 @@ const THEME = {
   accent: 'var(--t-accent)',
   accentLight: 'var(--t-accent-light)',
   input: 'var(--t-input)',
-  colors: { blue: '#3B82F6', emerald: '#10B981', purple: '#8B5CF6', amber: '#F59E0B', red: '#EF4444', cyan: '#06B6D4' },
+  colors: { blue: '#0f62fe', emerald: '#24a148', purple: '#8a3ffc', amber: '#eb6200', red: '#da1e28', cyan: '#1192e8' },
 };
 
 const statusConfig: Record<string, { bg: string; color: string; label: string }> = {
@@ -46,7 +47,7 @@ const statusConfig: Record<string, { bg: string; color: string; label: string }>
   FAILED: { bg: `${THEME.colors.red}18`, color: THEME.colors.red, label: 'Failed' },
   RUNNING: { bg: `${THEME.colors.blue}18`, color: THEME.colors.blue, label: 'Running' },
   PENDING: { bg: `${THEME.colors.amber}18`, color: THEME.colors.amber, label: 'Pending' },
-  CANCELLED: { bg: '#64748B18', color: '#64748B', label: 'Cancelled' },
+  CANCELLED: { bg: '#64748B18', color: '#6f6f6f', label: 'Cancelled' },
   TIMEOUT: { bg: `${THEME.colors.red}18`, color: THEME.colors.red, label: 'Timeout' },
 };
 
@@ -170,8 +171,8 @@ export default function ExecutionsPage() {
       // we filtered to PENDING only. Anything RESOLVED / DISCARDED /
       // REPLAYED is considered handled and stays out of view.
       const [pending, reviewing] = await Promise.all([
-        fetch(`/runloop/api/dlq?projectId=${projectId}&status=PENDING&limit=200`),
-        fetch(`/runloop/api/dlq?projectId=${projectId}&status=REVIEWING&limit=200`),
+        fetch(`${BASE_PATH}/api/dlq?projectId=${projectId}&status=PENDING&limit=200`),
+        fetch(`${BASE_PATH}/api/dlq?projectId=${projectId}&status=REVIEWING&limit=200`),
       ]);
       const combined: DLQEntry[] = [];
       if (pending.ok) {
@@ -193,7 +194,7 @@ export default function ExecutionsPage() {
   const replayDLQ = async (id: string) => {
     setDlqActingOn(id);
     try {
-      const res = await fetch(`/runloop/api/dlq/${id}/replay`, { method: 'POST' });
+      const res = await fetch(`${BASE_PATH}/api/dlq/${id}/replay`, { method: 'POST' });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         alert(`Replay failed: ${err.error || res.statusText}`);
@@ -209,7 +210,7 @@ export default function ExecutionsPage() {
     if (!confirm('Discard this entry? It will be removed from Needs Review.')) return;
     setDlqActingOn(id);
     try {
-      const res = await fetch(`/runloop/api/dlq/${id}/discard`, {
+      const res = await fetch(`${BASE_PATH}/api/dlq/${id}/discard`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason: 'discarded by operator' }),
@@ -242,7 +243,7 @@ export default function ExecutionsPage() {
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
     if (!confirm(`Delete ${ids.length} execution(s)? This cannot be undone.`)) return;
-    const res = await fetch('/runloop/api/executions/bulk-delete', {
+    const res = await fetch(`${BASE_PATH}/api/executions/bulk-delete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ids }),
@@ -252,7 +253,7 @@ export default function ExecutionsPage() {
       // Refetch
       const pid = projectId;
       const qs = pid ? `?projectId=${pid}` : '';
-      const refreshRes = await fetch(`/runloop/api/executions${qs}`);
+      const refreshRes = await fetch(`${BASE_PATH}/api/executions${qs}`);
       if (refreshRes.ok) {
         const data = await refreshRes.json();
         setExecutions(data.data || []);
@@ -266,7 +267,7 @@ export default function ExecutionsPage() {
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
     if (!confirm(`Retry ${ids.length} execution(s)?`)) return;
-    const res = await fetch('/runloop/api/executions/bulk-retry', {
+    const res = await fetch(`${BASE_PATH}/api/executions/bulk-retry`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ids }),
@@ -275,7 +276,7 @@ export default function ExecutionsPage() {
       clearSelection();
       const pid = projectId;
       const qs = pid ? `?projectId=${pid}` : '';
-      const refreshRes = await fetch(`/runloop/api/executions${qs}`);
+      const refreshRes = await fetch(`${BASE_PATH}/api/executions${qs}`);
       if (refreshRes.ok) {
         const data = await refreshRes.json();
         setExecutions(data.data || []);
@@ -289,7 +290,7 @@ export default function ExecutionsPage() {
     try {
       const pid = projectId;
       const params = pid ? `?projectId=${pid}` : '';
-      const res = await fetch(`/runloop/api/executions${params}`);
+      const res = await fetch(`${BASE_PATH}/api/executions${params}`);
       if (res.ok) {
         const data = await res.json();
         setExecutions(data.data || []);
@@ -361,7 +362,7 @@ export default function ExecutionsPage() {
       case 'RUNNING':
         return <Loader2 className="animate-spin" style={{ width: size, height: size, color: THEME.colors.blue }} />;
       case 'CANCELLED':
-        return <AlertCircle style={{ width: size, height: size, color: '#64748B' }} />;
+        return <AlertCircle style={{ width: size, height: size, color: '#6f6f6f' }} />;
       case 'TIMEOUT':
         return <XCircle style={{ width: size, height: size, color: THEME.colors.red }} />;
       default:
@@ -380,78 +381,26 @@ export default function ExecutionsPage() {
     );
   }
 
-  const MONO = "'IBM Plex Mono', ui-monospace, monospace";
+  const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
   return (
     <div style={{ fontFamily: FONT }}>
       <HeroHeader
         title="Executions"
         subtitle="Every run, every node, every millisecond — the raw log of what the engine actually did."
         metrics={<>
-          <MetricChip label="total"    value={String(totalCount).padStart(3, '0')} />
-          <MetricChip label="success"  value={`${successRate}%`} accent="#10B981" />
-          <MetricChip label="failed"   value={String(failedCount).padStart(2, '0')} accent={failedCount > 0 ? '#EF4444' : undefined} />
+          <MetricChip label="total"    value={String(totalCount)} />
+          <MetricChip label="success"  value={`${successRate}%`} />
+          <MetricChip label="failed"   value={String(failedCount)} />
           <MetricChip label="avg"      value={formatDuration(avgDuration)} />
         </>}
       />
 
 
       {/* Filter Bar */}
-      <div className="flex items-center gap-3 mb-4">
-        {/* Status tabs */}
-        <div
-          className="flex items-center gap-0.5"
-          style={{
-            background: THEME.panel,
-            border: `1px solid ${THEME.border}`,
-            borderRadius: 9,
-            padding: 3,
-          }}
-        >
-          {STATUS_TABS.map((tab) => {
-            const isActive = filterStatus === tab;
-            return (
-              <button
-                key={tab}
-                onClick={() => setFilterStatus(tab)}
-                style={{
-                  background: isActive ? THEME.accent : 'transparent',
-                  color: isActive ? '#fff' : THEME.text.secondary,
-                  border: `1px solid ${isActive ? THEME.accent : THEME.border}`,
-                  borderRadius: 2,
-                  padding: '5px 12px',
-                  fontSize: 12,
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                {tab}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Search */}
-        <div className="relative flex-1">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2"
-            style={{ width: 14, height: 14, color: THEME.text.muted }}
-          />
-          <input
-            type="text"
-            placeholder="Search by name or ID..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              background: THEME.panel,
-              border: `1px solid ${THEME.border}`,
-              color: THEME.text.primary,
-              borderRadius: 9,
-              height: 36,
-              fontSize: 12,
-            }}
-            className="w-full pl-9 pr-4 outline-none"
-          />
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
+        <ContentSwitcher options={STATUS_TABS} value={filterStatus} onChange={setFilterStatus} />
+        <div className="flex-1 min-w-[200px]">
+          <SearchField value={searchQuery} onChange={setSearchQuery} placeholder="Search by name or ID" />
         </div>
 
         {/* Select all */}
@@ -464,12 +413,12 @@ export default function ExecutionsPage() {
             background: selectedIds.size > 0 ? `${THEME.colors.blue}14` : THEME.panel,
             border: `1px solid ${selectedIds.size > 0 ? `${THEME.colors.blue}40` : THEME.border}`,
             color: selectedIds.size > 0 ? THEME.colors.blue : THEME.text.muted,
-            borderRadius: 9,
-            padding: '5px 12px',
+            borderRadius: 0,
+            padding: '0 16px',
             fontSize: 12,
             fontWeight: 500,
             cursor: 'pointer',
-            height: 36,
+            height: 40,
           }}
         >
           {selectedIds.size === filtered.length && filtered.length > 0 ? 'Deselect all' : 'Select all'}
@@ -485,18 +434,18 @@ export default function ExecutionsPage() {
             background: autoRefresh ? `${THEME.colors.emerald}14` : THEME.panel,
             border: `1px solid ${autoRefresh ? `${THEME.colors.emerald}40` : THEME.border}`,
             color: autoRefresh ? THEME.colors.emerald : THEME.text.muted,
-            borderRadius: 9,
-            padding: '5px 12px',
+            borderRadius: 0,
+            padding: '0 16px',
             fontSize: 12,
             fontWeight: 500,
             cursor: 'pointer',
-            height: 36,
+            height: 40,
             transition: 'all 0.15s ease',
           }}
         >
           <RefreshCw
             className={autoRefresh ? 'animate-spin' : ''}
-            style={{ width: 13, height: 13, animationDuration: '2s' }}
+            style={{ width: 16, height: 16, animationDuration: '2s' }}
           />
           Auto
         </button>
@@ -513,7 +462,7 @@ export default function ExecutionsPage() {
             padding: '10px 16px',
             background: THEME.panel,
             border: `1px solid ${THEME.colors.blue}40`,
-            borderRadius: 10,
+            borderRadius: 0,
             display: 'flex',
             alignItems: 'center',
             gap: 12,
@@ -531,7 +480,7 @@ export default function ExecutionsPage() {
               background: `${THEME.colors.blue}20`,
               color: THEME.colors.blue,
               border: `1px solid ${THEME.colors.blue}40`,
-              borderRadius: 6,
+              borderRadius: 0,
               fontSize: 12,
               fontWeight: 500,
               cursor: 'pointer',
@@ -546,7 +495,7 @@ export default function ExecutionsPage() {
               background: `${THEME.colors.red}20`,
               color: THEME.colors.red,
               border: `1px solid ${THEME.colors.red}40`,
-              borderRadius: 6,
+              borderRadius: 0,
               fontSize: 12,
               fontWeight: 500,
               cursor: 'pointer',
@@ -586,7 +535,7 @@ export default function ExecutionsPage() {
                 width: 56, height: 56,
                 background: THEME.panel,
                 border: `1px solid ${THEME.border}`,
-                borderRadius: 12,
+                borderRadius: 0,
               }}
               className="mx-auto mb-4 flex items-center justify-center"
             >
@@ -604,7 +553,7 @@ export default function ExecutionsPage() {
             style={{
               background: THEME.panel,
               border: `1px solid ${THEME.border}`,
-              borderRadius: 12,
+              borderRadius: 0,
               overflow: 'hidden',
             }}
           >
@@ -616,71 +565,50 @@ export default function ExecutionsPage() {
               return (
                 <div
                   key={entry.id}
-                  className="px-4 py-3 flex items-start gap-3"
+                  className="px-4 py-4 flex items-start gap-4"
                   style={{
                     borderBottom: i < dlqEntries.length - 1 ? `1px solid ${THEME.borderLight}` : 'none',
                   }}
                 >
-                  <div
-                    style={{
-                      width: 32, height: 32,
-                      background: `${THEME.colors.red}18`,
-                      border: `1px solid ${THEME.colors.red}30`,
-                      borderRadius: 6,
-                      flexShrink: 0,
-                    }}
-                    className="flex items-center justify-center"
-                  >
-                    <AlertCircle className="w-4 h-4" style={{ color: THEME.colors.red }} />
-                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span
                         style={{
-                          fontFamily: MONO, fontSize: 10.5,
-                          padding: '2px 6px',
-                          background: `${THEME.colors.red}14`,
-                          color: THEME.colors.red,
-                          border: `1px solid ${THEME.colors.red}30`,
-                          letterSpacing: '0.04em',
+                          fontSize: 12, lineHeight: '16px', padding: '2px 8px', borderRadius: 24,
+                          background: 'var(--tag-red-bg)', color: 'var(--tag-red-text)',
                         }}
                       >
-                        {entry.reason}
+                        {sentence(String(entry.reason || '').replace(/_/g, ' '))}
                       </span>
-                      <span style={{ fontSize: 13, fontWeight: 500, color: THEME.text.primary }}>
-                        {entry.node_id ? `node: ${entry.node_id}` : 'flow run'}
+                      <span style={{ fontSize: 14, fontWeight: 600, color: THEME.text.primary }}>
+                        {entry.node_id ? `Step ${entry.node_id}` : 'Flow run'}
                       </span>
                       {entry.node_type && (
                         <span
                           style={{
-                            fontFamily: MONO, fontSize: 10,
-                            color: THEME.text.muted,
-                            padding: '1px 5px',
-                            border: `1px solid ${THEME.border}`,
+                            fontSize: 12, lineHeight: '16px', padding: '2px 8px', borderRadius: 24,
+                            background: 'var(--tag-gray-bg)', color: 'var(--tag-gray-text)',
                           }}
                         >
                           {entry.node_type}
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: 12, color: THEME.text.secondary, marginBottom: 4 }}>
+                    <div style={{ fontSize: 14, color: THEME.text.primary, marginBottom: 4 }}>
                       {entry.error_message || '—'}
                     </div>
                     <div
-                      style={{
-                        fontFamily: MONO, fontSize: 10.5,
-                        color: THEME.text.muted, letterSpacing: '0.02em',
-                      }}
+                      style={{ fontSize: 12, color: THEME.text.secondary }}
                       className="flex items-center gap-3 flex-wrap"
                     >
                       <span>{sourceLabel}</span>
-                      <span>retries: {entry.retry_count}</span>
+                      <span>{entry.retry_count} retries</span>
                       <span>{relativeTime(entry.created_at)}</span>
                       <Link
                         href={`/p/${projectId}/executions/${entry.execution_id}`}
                         style={{ color: THEME.accent }}
                       >
-                        view execution →
+                        View run
                       </Link>
                     </div>
                   </div>
@@ -689,12 +617,12 @@ export default function ExecutionsPage() {
                       onClick={() => replayDLQ(entry.id)}
                       disabled={acting}
                       style={{
-                        background: THEME.accent, color: '#fff',
-                        fontSize: 12, fontWeight: 500,
-                        borderRadius: 2, padding: '6px 12px',
+                        background: 'transparent', color: 'var(--t-accent)',
+                        border: '1px solid var(--t-accent)',
+                        fontSize: 14, height: 32, padding: '0 12px',
                         opacity: acting ? 0.6 : 1,
                       }}
-                      className="flex items-center gap-1.5"
+                      className="flex items-center gap-2 hover:bg-[var(--t-panel-hover)]"
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
                       Replay
@@ -704,12 +632,12 @@ export default function ExecutionsPage() {
                       disabled={acting}
                       style={{
                         background: 'transparent',
-                        color: THEME.text.muted,
-                        fontSize: 12,
-                        border: `1px solid ${THEME.border}`,
-                        borderRadius: 2, padding: '6px 12px',
+                        color: 'var(--t-text)',
+                        fontSize: 14, height: 32, padding: '0 12px',
+                        border: 'none',
                         opacity: acting ? 0.6 : 1,
                       }}
+                      className="hover:bg-[var(--t-panel-hover)]"
                     >
                       Discard
                     </button>
@@ -727,7 +655,7 @@ export default function ExecutionsPage() {
               height: 56,
               background: THEME.panel,
               border: `1px solid ${THEME.border}`,
-              borderRadius: 12,
+              borderRadius: 0,
             }}
             className="mx-auto mb-4 flex items-center justify-center"
           >
@@ -751,30 +679,19 @@ export default function ExecutionsPage() {
             overflow: 'hidden',
           }}
         >
-          {/* Header row — mono uppercase columns */}
-          <div
-            className="flex items-center gap-3 px-4 py-2"
-            style={{
-              fontFamily: MONO, fontSize: 10, letterSpacing: '0.14em',
-              color: THEME.text.muted,
-              borderBottom: `1px solid ${THEME.border}`,
-              background: 'color-mix(in srgb, var(--t-bg) 40%, transparent)',
-            }}
-          >
-            <span style={{ width: 14 }} aria-hidden />
-            <span style={{ width: 14 }} aria-hidden />
-            <span style={{ width: 24 }} aria-hidden />
-            <span className="flex-1">TARGET</span>
-            <span style={{ width: 80, textAlign: 'right' }}>TRIGGER</span>
-            <span style={{ width: 70, textAlign: 'right' }}>STATUS</span>
-            <span style={{ width: 16 }} aria-hidden />
+          <div className="rl-row rl-th" style={{ ['--cols' as any]: '16px 16px minmax(0, 1fr) 112px 104px auto', ['--cols-sm' as any]: '16px 16px minmax(0, 1fr) 104px auto' }}>
+            <span aria-hidden />
+            <span aria-hidden />
+            <span>Run</span>
+            <span className="rl-opt">Trigger</span>
+            <span>Status</span>
+            <span aria-hidden />
           </div>
           {filtered.map((execution, i) => {
             const st = statusConfig[execution.status] || statusConfig.PENDING;
             const trigger = triggerConfig[execution.triggerType] || triggerConfig.MANUAL;
             const TriggerIcon = trigger.icon;
             const isExpanded = expandedId === execution.id;
-            const idx = String(i + 1).padStart(3, '0');
 
             return (
               <div
@@ -785,7 +702,8 @@ export default function ExecutionsPage() {
               >
                 {/* Row */}
                 <div
-                  className="flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors hover:bg-[var(--t-panel-hover)] group"
+                  className="rl-row cursor-pointer transition-colors hover:bg-[var(--t-panel-hover)] group"
+                  style={{ ['--cols' as any]: '16px 16px minmax(0, 1fr) 112px 104px auto', ['--cols-sm' as any]: '16px 16px minmax(0, 1fr) 104px auto', minHeight: 56 }}
                   onClick={() => setExpandedId(isExpanded ? null : execution.id)}
                 >
                   {/* Checkbox */}
@@ -808,15 +726,10 @@ export default function ExecutionsPage() {
                     <ChevronRight style={{ width: 12, height: 12, color: THEME.text.muted }} />
                   </div>
 
-                  {/* Row index as log-line id */}
-                  <span style={{ fontFamily: MONO, fontSize: 10, color: THEME.text.muted, width: 24, textAlign: 'right' }}>
-                    {idx}
-                  </span>
-
                   {/* Name + time — left column */}
                   <div className="flex-1 min-w-0">
                     <p
-                      style={{ fontSize: 13, fontWeight: 500, color: THEME.text.primary, letterSpacing: '-0.005em' }}
+                      style={{ fontSize: 14, fontWeight: 600, color: THEME.text.primary }}
                       className="truncate"
                     >
                       {queueNameFromSchedulerId(execution.schedulerId) ||
@@ -825,7 +738,7 @@ export default function ExecutionsPage() {
                         syntheticLabel(execution) ||
                         'Untitled run'}
                     </p>
-                    <p style={{ fontFamily: MONO, fontSize: 10.5, color: THEME.text.muted, marginTop: 2 }}>
+                    <p style={{ fontSize: 12, lineHeight: '16px', color: THEME.text.secondary, marginTop: 2 }}>
                       {relativeTime(execution.startedAt)}
                       {execution.durationMs !== undefined && execution.durationMs !== null
                         ? ` · ${formatDuration(execution.durationMs)}`
@@ -835,28 +748,21 @@ export default function ExecutionsPage() {
 
                   {/* Trigger tag — sharp, mono */}
                   <span
-                    className="flex items-center justify-end gap-1.5"
-                    style={{ width: 80, fontFamily: MONO, fontSize: 10, color: trigger.color, letterSpacing: '0.08em' }}
+                    className="rl-opt flex items-center gap-2"
+                    style={{ fontSize: 14, color: THEME.text.secondary }}
                   >
-                    <TriggerIcon style={{ width: 10, height: 10 }} />
-                    {execution.triggerType}
+                    <TriggerIcon style={{ width: 16, height: 16 }} />
+                    {execution.triggerType.charAt(0) + execution.triggerType.slice(1).toLowerCase()}
                   </span>
 
                   {/* Status dot + label — same pattern as other list pages */}
-                  <span
-                    className="flex items-center justify-end gap-1.5"
-                    style={{ width: 70, fontFamily: MONO, fontSize: 10.5, color: st.color, letterSpacing: '0.04em' }}
-                  >
-                    <span
-                      style={{
-                        width: 6, height: 6, borderRadius: 999,
-                        background: st.color,
-                        boxShadow: `0 0 0 3px color-mix(in srgb, ${st.color} 15%, transparent)`,
-                      }}
-                    />
-                    {st.label.toUpperCase()}
+                  <span>
+                    <Tag tone={execution.status === 'SUCCESS' ? 'green' : execution.status === 'FAILED' || execution.status === 'TIMEOUT' ? 'red' : execution.status === 'RUNNING' ? 'blue' : execution.status === 'CANCELLED' ? 'gray' : 'orange'}>
+                      {st.label}
+                    </Tag>
                   </span>
 
+                  <div className="flex items-center justify-end gap-1">
                   {/* Review-mode inline actions: replay and discard */}
                   {isReviewMode && (
                     <>
@@ -864,7 +770,7 @@ export default function ExecutionsPage() {
                         onClick={async (e) => {
                           e.stopPropagation();
                           if (!confirm(`Replay this execution? A new run will be triggered.`)) return;
-                          const r = await fetch('/runloop/api/executions/bulk-retry', {
+                          const r = await fetch(`${BASE_PATH}/api/executions/bulk-retry`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ ids: [execution.id] }),
@@ -874,7 +780,7 @@ export default function ExecutionsPage() {
                         title="Replay"
                         style={{
                           display: 'flex', alignItems: 'center', gap: 4,
-                          padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 500,
+                          padding: '3px 8px', borderRadius: 0, fontSize: 11, fontWeight: 500,
                           background: `${THEME.colors.blue}15`, color: THEME.colors.blue,
                           border: `1px solid ${THEME.colors.blue}40`, cursor: 'pointer',
                         }}
@@ -886,7 +792,7 @@ export default function ExecutionsPage() {
                         onClick={async (e) => {
                           e.stopPropagation();
                           if (!confirm(`Discard this failed execution?`)) return;
-                          const r = await fetch('/runloop/api/executions/bulk-delete', {
+                          const r = await fetch(`${BASE_PATH}/api/executions/bulk-delete`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ ids: [execution.id] }),
@@ -896,7 +802,7 @@ export default function ExecutionsPage() {
                         title="Discard"
                         style={{
                           display: 'flex', alignItems: 'center', gap: 4,
-                          padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 500,
+                          padding: '3px 8px', borderRadius: 0, fontSize: 11, fontWeight: 500,
                           background: `${THEME.colors.red}15`, color: THEME.colors.red,
                           border: `1px solid ${THEME.colors.red}40`, cursor: 'pointer',
                         }}
@@ -916,7 +822,7 @@ export default function ExecutionsPage() {
                       justifyContent: 'center',
                       width: 28,
                       height: 28,
-                      borderRadius: 6,
+                      borderRadius: 0,
                       border: `1px solid ${THEME.border}`,
                       color: THEME.text.muted,
                       transition: 'all 0.15s ease',
@@ -926,6 +832,7 @@ export default function ExecutionsPage() {
                   >
                     <Zap style={{ width: 12, height: 12 }} />
                   </Link>
+                  </div>
                 </div>
 
                 {/* Expanded detail */}
@@ -944,7 +851,7 @@ export default function ExecutionsPage() {
                         style={{
                           background: `${THEME.colors.red}0C`,
                           border: `1px solid ${THEME.colors.red}25`,
-                          borderRadius: 8,
+                          borderRadius: 0,
                           padding: '10px 14px',
                         }}
                       >
@@ -978,7 +885,7 @@ export default function ExecutionsPage() {
                         style={{
                           background: '#0D1117',
                           border: `1px solid ${THEME.border}`,
-                          borderRadius: 8,
+                          borderRadius: 0,
                           padding: '10px 14px',
                           maxHeight: 180,
                           overflow: 'auto',
@@ -1013,7 +920,7 @@ export default function ExecutionsPage() {
                         style={{
                           background: '#0D1117',
                           border: `1px solid ${THEME.border}`,
-                          borderRadius: 8,
+                          borderRadius: 0,
                           padding: '10px 14px',
                           maxHeight: 180,
                           overflow: 'auto',

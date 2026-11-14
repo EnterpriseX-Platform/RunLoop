@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { Project } from '@/types';
@@ -23,7 +24,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const fetchProjects = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/runloop/api/projects');
+      const res = await fetch(`${BASE_PATH}/api/projects`);
       if (res.ok) {
         const data = await res.json();
         const projectsList = data.projects || [];

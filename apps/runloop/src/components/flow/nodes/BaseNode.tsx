@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
+import { RL_NODE_ICONS } from '../../icons/RunLoopIcons';
 import {
   Play, Square, Globe, Database, Terminal, Code2, Hash,
   Slack, Mail, GitBranch, Clock, RotateCcw, Variable, Container,
@@ -70,10 +71,12 @@ const colorMap: Record<string, { hex: string; label: string }> = {
   ai:           { hex: '#8B5CF6', label: 'AI' },
 };
 
-const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
+const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
 
 interface BaseNodeProps extends NodeProps<BaseNodeData> {
   children?: React.ReactNode;
+  /** Names shown beside each output pin (branches). */
+  outputLabels?: string[];
   inputs?: number;
   outputs?: number;
 }
@@ -87,163 +90,178 @@ interface BaseNodeProps extends NodeProps<BaseNodeData> {
  * are tiny squares, not pale circles — visually closer to pin-out
  * diagrams than to a generic node-editor.
  */
-export function BaseNode({ data, selected, inputs = 1, outputs = 1 }: BaseNodeProps) {
-  const type = data.type.toLowerCase();
+// React Flow node type ('setVarNode') -> palette key ('set_variable').
+const NODE_TYPE_KEY: Record<string, string> = {
+  setvar: 'set_variable', webhook: 'webhook_out', waitwebhook: 'wait_webhook',
+};
+export function resolveKind(dataType: string | undefined, nodeType: string | undefined): string {
+  if (dataType) return dataType.toLowerCase();
+  const raw = (nodeType || '').replace(/Node$/, '').toLowerCase();
+  return NODE_TYPE_KEY[raw] || raw;
+}
+
+export function BaseNode({ data, type: nodeType, selected, inputs = 1, outputs = 1, outputLabels }: BaseNodeProps) {
+  const type = resolveKind(data.type, nodeType);
   const c = colorMap[type] || colorMap.http;
-  const Icon = iconMap[type] || Globe;
+  const Icon = (RL_NODE_ICONS[type] || iconMap[type] || Globe) as React.ElementType;
   const accent = c.hex;
 
   const isRunning = data.status === 'running';
   const isSuccess = data.status === 'success';
   const isError = data.status === 'error';
-  const statusColor = isRunning ? '#3B82F6' : isSuccess ? '#10B981' : isError ? '#EF4444' : null;
+  const isStart = type === 'start';
+  const isEnd = type === 'end';
+  const summary = data.description || summarize(type, data.config);
 
-  const SIZE = 76;
+  // Card: icon tile, small type label, name, one-line summary. Ports sit
+  // on the left/right edges as round pins; the selected card gets a 2px
+  // ink outline, a failing one a red outline.
+  const ring = isError
+    ? 'inset 0 0 0 2px var(--t-error)'
+    : selected
+      ? 'inset 0 0 0 2px var(--t-text)'
+      : 'none';
+
+  const tileStyle: React.CSSProperties = isStart
+    ? { background: 'var(--t-text)', color: 'var(--t-bg)' }
+    : isEnd
+      ? { background: 'transparent', color: 'var(--t-text-secondary)', boxShadow: 'inset 0 0 0 1.5px var(--t-border-strong)' }
+      : { background: `color-mix(in srgb, ${accent} 16%, transparent)`, color: accent };
 
   return (
-    <div className="relative" style={{ width: SIZE }}>
+    <div
+      className="relative group"
+      style={{
+        width: CARD_W,
+        minHeight: 70,
+        display: 'grid',
+        gridTemplateColumns: '36px minmax(0, 1fr)',
+        alignItems: 'center',
+        gap: 10,
+        padding: '10px 12px 10px 10px',
+        background: isEnd ? 'var(--t-input)' : 'var(--flow-node-bg)',
+        boxShadow: ring,
+        transition: 'box-shadow 0.12s',
+      }}
+    >
       <div
-        className="relative transition-all duration-150"
-        style={{
-          width: SIZE,
-          height: SIZE,
-          borderRadius: 2,
-          background: 'var(--t-panel)',
-          border: selected
-            ? `1px solid ${accent}`
-            : '1px solid var(--t-border)',
-          boxShadow: selected
-            ? `0 0 0 3px color-mix(in srgb, ${accent} 18%, transparent)`
-            : 'none',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
+        className="flex items-center justify-center"
+        style={{ width: 36, height: 36, ...tileStyle }}
       >
-        {/* Left accent bar — same motif as login's focused inputs and
-            sidebar's active nav item. Subtle unless selected. */}
-        <span
-          aria-hidden
-          style={{
-            position: 'absolute',
-            left: 0, top: 4, bottom: 4,
-            width: 2,
-            background: accent,
-            opacity: selected ? 1 : 0.55,
-            transition: 'opacity 0.15s',
-          }}
-        />
+        <Icon style={{ width: 20, height: 20 }} strokeWidth={1.7} />
+      </div>
 
-        <div
-          className="flex items-center justify-center"
+      <div className="min-w-0" style={{ display: 'grid', gap: 1 }}>
+        <small style={{ fontSize: 11.5, lineHeight: '15px', fontWeight: 600, color: 'var(--t-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+          {c.label}
+        </small>
+        <b className="truncate" style={{ fontSize: 14.5, lineHeight: '19px', fontWeight: 600, color: 'var(--t-text)' }}>
+          {data.label}
+        </b>
+        {summary && (
+          <span className="truncate" style={{ fontSize: 12.5, lineHeight: '16px', color: 'var(--t-text-secondary)' }}>
+            {summary}
+          </span>
+        )}
+      </div>
+
+      {(isSuccess || isRunning) && (
+        <span
+          aria-label={isSuccess ? 'Ran' : 'Running'}
+          className="absolute flex items-center justify-center"
           style={{
-            width: 40,
-            height: 40,
-            borderRadius: 2,
-            background: `color-mix(in srgb, ${accent} 16%, transparent)`,
-            border: `1px solid color-mix(in srgb, ${accent} 40%, transparent)`,
+            top: -8, left: -8, width: 18, height: 18, borderRadius: '50%',
+            background: isSuccess ? 'var(--t-success)' : 'var(--t-accent)',
+            color: '#fff', boxShadow: '0 0 0 2px var(--flow-canvas-bg)',
+            fontSize: 11, lineHeight: 1,
+            animation: isRunning ? 'pulse 1.5s ease-in-out infinite' : undefined,
           }}
         >
-          <Icon style={{ color: accent, width: 20, height: 20 }} strokeWidth={1.75} />
-        </div>
+          {isSuccess ? '✓' : ''}
+        </span>
+      )}
 
-        {statusColor && (
-          <span
-            className="absolute"
-            style={{
-              top: -4,
-              right: -4,
-              width: 10,
-              height: 10,
-              borderRadius: 2,
-              background: statusColor,
-              boxShadow: `0 0 0 3px color-mix(in srgb, ${statusColor} 20%, transparent)`,
-              animation: isRunning ? 'pulse 1.5s ease-in-out infinite' : undefined,
-            }}
-          />
-        )}
-
-        {inputs > 0 && (
-          <>
-            {inputs === 1 ? (
-              <Handle type="target" position={Position.Left} style={handleStyle('input')} />
-            ) : (
-              Array.from({ length: inputs }).map((_, i) => (
+      {inputs > 0 && (
+        inputs === 1 ? (
+          <Handle type="target" position={Position.Left} style={handleStyle('input')} />
+        ) : (
+          Array.from({ length: inputs }).map((_, i) => (
+            <Handle
+              key={`input-${i}`}
+              type="target"
+              position={Position.Left}
+              id={`input-${i}`}
+              style={{ ...handleStyle('input'), top: `${((i + 1) / (inputs + 1)) * 100}%` }}
+            />
+          ))
+        )
+      )}
+      {outputs > 0 && (
+        outputs === 1 ? (
+          <Handle type="source" position={Position.Right} style={handleStyle('output')} />
+        ) : (
+          Array.from({ length: outputs }).map((_, i) => {
+            const top = `${((i + 1) / (outputs + 1)) * 100}%`;
+            const label = outputLabels?.[i];
+            return (
+              <React.Fragment key={`output-${i}`}>
                 <Handle
-                  key={`input-${i}`}
-                  type="target"
-                  position={Position.Left}
-                  id={`input-${i}`}
-                  style={{ ...handleStyle('input'), top: `${((i + 1) / (inputs + 1)) * 100}%` }}
-                />
-              ))
-            )}
-          </>
-        )}
-        {outputs > 0 && (
-          <>
-            {outputs === 1 ? (
-              <Handle type="source" position={Position.Right} style={handleStyle('output')} />
-            ) : (
-              Array.from({ length: outputs }).map((_, i) => (
-                <Handle
-                  key={`output-${i}`}
                   type="source"
                   position={Position.Right}
                   id={`output-${i}`}
-                  style={{ ...handleStyle('output'), top: `${((i + 1) / (outputs + 1)) * 100}%` }}
+                  style={{ ...handleStyle('output'), top }}
                 />
-              ))
-            )}
-          </>
-        )}
-      </div>
-
-      {/* Label below the card, in mono — reads like a pin-out callout. */}
-      <div
-        className="absolute left-1/2 -translate-x-1/2 text-center"
-        style={{
-          top: SIZE + 6,
-          width: 148,
-          fontFamily: MONO,
-          fontSize: 11,
-          fontWeight: 500,
-          letterSpacing: '0.02em',
-          color: 'var(--t-text)',
-          lineHeight: 1.3,
-          pointerEvents: 'none',
-        }}
-      >
-        <div className="truncate">{data.label}</div>
-        {data.description && (
-          <div
-            className="truncate"
-            style={{
-              fontFamily: MONO,
-              fontSize: 9.5,
-              fontWeight: 400,
-              color: 'var(--t-text-muted)',
-              marginTop: 2,
-              letterSpacing: '0.04em',
-            }}
-          >
-            {data.description}
-          </div>
-        )}
-      </div>
+                {label && (
+                  <span
+                    className="absolute pointer-events-none whitespace-nowrap"
+                    style={{ left: 'calc(100% + 10px)', top, marginTop: -18, fontSize: 12.5, lineHeight: '16px', fontWeight: 600, color: 'var(--t-text-secondary)' }}
+                  >
+                    {label}
+                  </span>
+                )}
+              </React.Fragment>
+            );
+          })
+        )
+      )}
     </div>
   );
 }
 
+const CARD_W = 184;
+
+// One line that says what the step does, from its own settings.
+function summarize(type: string, config?: Record<string, any>): string {
+  if (!config) return '';
+  const pick = (...keys: string[]) => keys.map((k) => config[k]).find((v) => typeof v === 'string' && v.trim());
+  switch (type) {
+    case 'http':
+    case 'webhook_out': {
+      const url = pick('url');
+      return url ? `${(config.method || 'GET').toUpperCase()} ${url}` : '';
+    }
+    case 'database': return pick('query', 'operation') || '';
+    case 'shell': return pick('command', 'script') || '';
+    case 'python':
+    case 'nodejs': return pick('code', 'script') ? `${String(pick('code', 'script')).split('\n')[0]}` : '';
+    case 'slack': return [pick('channel'), pick('text', 'message')].filter(Boolean).join(' · ');
+    case 'email': return pick('to', 'subject') || '';
+    case 'delay': return config.duration ? `Wait ${config.duration}` : pick('until') || '';
+    case 'condition': return pick('expression', 'condition') || '';
+    case 'ai': return pick('model', 'prompt') || '';
+    default: return pick('name', 'message', 'text') || '';
+  }
+}
+
 function handleStyle(kind: 'input' | 'output'): React.CSSProperties {
   return {
-    width: 8,
-    height: 8,
-    borderRadius: 1,
-    [kind === 'input' ? 'left' : 'right']: -4,
-    background: 'var(--t-bg)',
-    border: '1px solid var(--t-text-muted)',
-    transition: 'all 0.15s ease',
+    width: 12,
+    height: 12,
+    borderRadius: '50%',
+    [kind === 'input' ? 'left' : 'right']: -6,
+    background: 'var(--flow-node-bg)',
+    border: '2px solid var(--t-text-secondary)',
+    transition: 'border-color 0.12s',
   } as React.CSSProperties;
 }
 
@@ -258,7 +276,7 @@ export function NodeStatusBadge({ status, retries }: { status: string; retries?:
   return (
     <div
       className="flex items-center gap-2"
-      style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.1em' }}
+      style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 0 }}
     >
       <span style={{ color }}>{label}</span>
       {retries && retries > 0 && (

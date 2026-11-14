@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useState, useEffect } from 'react';
 import { useProject } from '@/context/ProjectContext';
@@ -32,11 +33,11 @@ const THEME = {
   accentLight: 'var(--t-accent-light)',
   input: 'var(--t-input)',
   colors: {
-    blue: '#3B82F6',
-    emerald: '#10B981',
-    purple: '#8B5CF6',
-    amber: '#F59E0B',
-    red: '#EF4444',
+    blue: '#0f62fe',
+    emerald: '#24a148',
+    purple: '#8a3ffc',
+    amber: '#eb6200',
+    red: '#da1e28',
   },
 };
 
@@ -58,25 +59,25 @@ const ROLE_META: Record<
 > = {
   OWNER: {
     label: 'Owner',
-    color: '#8B5CF6',
+    color: '#8a3ffc',
     icon: ShieldCheck,
     description: 'Full control',
   },
   ADMIN: {
     label: 'Admin',
-    color: '#3B82F6',
+    color: '#0f62fe',
     icon: Shield,
     description: 'Manage project',
   },
   MEMBER: {
     label: 'Member',
-    color: '#10B981',
+    color: '#24a148',
     icon: UserIcon,
     description: 'Can edit',
   },
   VIEWER: {
     label: 'Viewer',
-    color: '#9CA3AF',
+    color: '#8d8d8d',
     icon: Eye,
     description: 'Read-only',
   },
@@ -109,7 +110,7 @@ export default function MembersPage() {
 
   const fetchCurrentUser = async () => {
     try {
-      const res = await fetch('/runloop/api/auth/me');
+      const res = await fetch(`${BASE_PATH}/api/auth/me`);
       if (res.ok) {
         const data = await res.json();
         setCurrentUserId(data.user?.id || data.user?.userId || null);
@@ -125,7 +126,7 @@ export default function MembersPage() {
       setLoading(true);
       setError(null);
       const res = await fetch(
-        `/runloop/api/projects/${selectedProject.id}/members`
+        `${BASE_PATH}/api/projects/${selectedProject.id}/members`
       );
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -146,7 +147,7 @@ export default function MembersPage() {
     if (!selectedProject) return { ok: false, error: 'No project selected' };
     try {
       const res = await fetch(
-        `/runloop/api/projects/${selectedProject.id}/members`,
+        `${BASE_PATH}/api/projects/${selectedProject.id}/members`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -170,7 +171,7 @@ export default function MembersPage() {
     if (newRole === member.role) return;
     try {
       const res = await fetch(
-        `/runloop/api/projects/${selectedProject.id}/members/${member.userId}`,
+        `${BASE_PATH}/api/projects/${selectedProject.id}/members/${member.userId}`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -199,7 +200,7 @@ export default function MembersPage() {
       return;
     try {
       const res = await fetch(
-        `/runloop/api/projects/${selectedProject.id}/members/${member.userId}`,
+        `${BASE_PATH}/api/projects/${selectedProject.id}/members/${member.userId}`,
         { method: 'DELETE' }
       );
       if (!res.ok) {
@@ -251,20 +252,18 @@ export default function MembersPage() {
     >
       {/* Header */}
       <header
-        className="sticky top-0 z-40 backdrop-blur-xl"
+        className=""
         style={{
           background: `${THEME.bg}cc`,
-          borderBottom: `1px solid ${THEME.border}`,
         }}
       >
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="pb-6">
           <div className="flex items-center justify-between">
             <div>
               <h1
-                className="text-2xl font-semibold tracking-tight"
-                style={{ color: THEME.text.primary }}
+                style={{ color: THEME.text.primary, fontSize: 28, lineHeight: '36px', fontWeight: 400 }}
               >
-                Team Members
+                Team members
               </h1>
               <p className="text-sm mt-0.5" style={{ color: THEME.text.secondary }}>
                 Manage who has access to{' '}
@@ -314,7 +313,7 @@ export default function MembersPage() {
       </header>
 
       {/* Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="">
         {!canManage && callerRole && (
           <div
             className="mb-6 px-4 py-3 rounded-lg flex items-start gap-3"
@@ -420,29 +419,29 @@ export default function MembersPage() {
             }}
           >
             <table className="w-full">
-              <thead style={{ background: THEME.bg }}>
+              <thead style={{ background: "var(--t-selected)" }}>
                 <tr>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                    style={{ color: THEME.text.secondary }}
+                    className="px-4 text-left"
+                    style={{ color: THEME.text.primary, height: 48, fontSize: 14, fontWeight: 600 }}
                   >
                     User
                   </th>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                    style={{ color: THEME.text.secondary }}
+                    className="px-4 text-left"
+                    style={{ color: THEME.text.primary, height: 48, fontSize: 14, fontWeight: 600 }}
                   >
                     Role
                   </th>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                    style={{ color: THEME.text.secondary }}
+                    className="px-4 text-left"
+                    style={{ color: THEME.text.primary, height: 48, fontSize: 14, fontWeight: 600 }}
                   >
                     Joined
                   </th>
                   <th
-                    className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider"
-                    style={{ color: THEME.text.secondary }}
+                    className="px-4 text-right"
+                    style={{ color: THEME.text.primary, height: 48, fontSize: 14, fontWeight: 600 }}
                   >
                     Actions
                   </th>
@@ -466,7 +465,7 @@ export default function MembersPage() {
                       key={member.id}
                       style={{ borderTop: `1px solid ${THEME.borderLight}` }}
                     >
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div
                             className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold"
@@ -488,11 +487,10 @@ export default function MembersPage() {
                               {member.name || member.email.split('@')[0]}
                               {isSelf && (
                                 <span
-                                  className="px-1.5 py-0.5 text-[10px] rounded font-medium uppercase tracking-wider"
                                   style={{
-                                    background: `${THEME.colors.blue}15`,
-                                    color: THEME.colors.blue,
-                                    border: `1px solid ${THEME.colors.blue}30`,
+                                    fontSize: 12, padding: '2px 8px', borderRadius: 24,
+                                    background: 'var(--tag-blue-bg)',
+                                    color: 'var(--tag-blue-text)',
                                   }}
                                 >
                                   You
@@ -509,7 +507,7 @@ export default function MembersPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         {canEditRole ? (
                           <div className="flex items-center gap-2">
                             <RoleIcon
@@ -554,7 +552,7 @@ export default function MembersPage() {
                       >
                         {formatDate(member.joinedAt)}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-2">
                           {canRemove ? (
                             <button

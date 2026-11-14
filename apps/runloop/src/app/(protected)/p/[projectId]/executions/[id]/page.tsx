@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
@@ -7,8 +8,7 @@ import { ArrowLeft, Loader2, CheckCircle2, XCircle, Clock, PlayCircle, Terminal,
 import type { Execution } from '@/types';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import {
-  ControlBreadcrumb, PageHeader, MonoTag, SharpButton, StatusDot, MONO,
-} from '@/components/ControlChrome';
+  ControlBreadcrumb, PageHeader, MonoTag, SharpButton, StatusDot, MONO, sentence } from '@/components/ControlChrome';
 import { AskAIButton } from '@/components/AskAIButton';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
@@ -22,7 +22,7 @@ const THEME = {
   accent: 'var(--t-accent)',
   accentLight: 'var(--t-accent-light)',
   input: 'var(--t-input)',
-  colors: { blue: '#3B82F6', emerald: '#10B981', purple: '#8B5CF6', amber: '#F59E0B', red: '#EF4444' }
+  colors: { blue: '#0f62fe', emerald: '#24a148', purple: '#8a3ffc', amber: '#eb6200', red: '#da1e28' }
 };
 
 export default function ExecutionDetailPage({ params }: { params: { id: string } }) {
@@ -40,7 +40,7 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
     const DELAY_MS = 400;
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       try {
-        const res = await fetch(`/runloop/api/executions/${params.id}`);
+        const res = await fetch(`${BASE_PATH}/api/executions/${params.id}`);
         if (res.ok) {
           const data = await res.json();
           if (data?.data) {
@@ -84,6 +84,19 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
       });
     },
   });
+
+  // The engine only streams changes from the moment we subscribe. A run that
+  // finished between the first fetch and the socket opening would otherwise
+  // stay "Running" forever, so re-read once on connect, and poll every 5s
+  // while the run is active and the socket is down.
+  useEffect(() => {
+    if (isActive && liveConnected) fetchExecution();
+  }, [isActive, liveConnected, fetchExecution]);
+  useEffect(() => {
+    if (!isActive || liveConnected) return;
+    const t = setInterval(fetchExecution, 5000);
+    return () => clearInterval(t);
+  }, [isActive, liveConnected, fetchExecution]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -144,10 +157,10 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
         <ArrowLeft className="w-3.5 h-3.5" /> Back to Executions
       </Link>
 
-      <div className="flex items-end justify-between mb-6 gap-4 flex-wrap">
+      <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <h1 style={{ fontSize: 24, fontWeight: 600, color: THEME.text.primary, letterSpacing: '-0.02em' }}>
+            <h1 style={{ fontSize: 24, fontWeight: 600, color: THEME.text.primary, letterSpacing: 0 }}>
               Execution {execution.id.slice(0, 8)}
             </h1>
             <MonoTag
@@ -158,12 +171,12 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
                 : 'warn'
               }
             >
-              {execution.status}
+              {sentence(execution.status)}
             </MonoTag>
             {isActive && liveConnected && (
               <span
                 className="flex items-center gap-1 text-xs"
-                style={{ color: THEME.colors.emerald, fontFamily: MONO, letterSpacing: '0.08em' }}
+                style={{ color: THEME.colors.emerald, fontFamily: MONO, letterSpacing: 0 }}
               >
                 <Radio className="w-3 h-3 animate-pulse" /> LIVE
               </span>
@@ -206,7 +219,7 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
             size="sm"
             onClick={async () => {
               if (!confirm('Cancel this running execution?')) return;
-              const res = await fetch(`/runloop/api/executions/${params.id}/cancel`, { method: 'POST' });
+              const res = await fetch(`${BASE_PATH}/api/executions/${params.id}/cancel`, { method: 'POST' });
               if (res.ok) fetchExecution();
               else alert('Cancel failed');
             }}
@@ -227,35 +240,19 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
         }}
         className="mb-5"
       >
-        {/* Corner ticks for schematic feel */}
-        <span style={{ position: 'absolute', top: -1, left: -1, width: 8, height: 1, background: THEME.accent }} />
-        <span style={{ position: 'absolute', top: -1, left: -1, width: 1, height: 8, background: THEME.accent }} />
-        <span style={{ position: 'absolute', top: -1, right: -1, width: 8, height: 1, background: THEME.accent }} />
-        <span style={{ position: 'absolute', top: -1, right: -1, width: 1, height: 8, background: THEME.accent }} />
-        <span style={{ position: 'absolute', bottom: -1, left: -1, width: 8, height: 1, background: THEME.accent }} />
-        <span style={{ position: 'absolute', bottom: -1, left: -1, width: 1, height: 8, background: THEME.accent }} />
-        <span style={{ position: 'absolute', bottom: -1, right: -1, width: 8, height: 1, background: THEME.accent }} />
-        <span style={{ position: 'absolute', bottom: -1, right: -1, width: 1, height: 8, background: THEME.accent }} />
 
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <p
-              style={{
-                fontFamily: MONO,
-                fontSize: 10,
-                letterSpacing: '0.14em',
-                color: THEME.text.muted,
-                textTransform: 'uppercase',
-              }}
+              style={{ fontSize: 12, color: THEME.text.secondary }}
             >
-              <span style={{ opacity: 0.5 }}>{'//'}</span> started
+              Started
             </p>
             <p
               style={{
-                fontFamily: MONO,
-                fontSize: 12.5,
+                fontSize: 14,
                 color: THEME.text.primary,
-                marginTop: 2,
+                marginTop: 4,
                 fontVariantNumeric: 'tabular-nums',
               }}
             >
@@ -279,22 +276,15 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
           </div>
           <div className="flex-1 text-right">
             <p
-              style={{
-                fontFamily: MONO,
-                fontSize: 10,
-                letterSpacing: '0.14em',
-                color: THEME.text.muted,
-                textTransform: 'uppercase',
-              }}
+              style={{ fontSize: 12, color: THEME.text.secondary }}
             >
-              <span style={{ opacity: 0.5 }}>{'//'}</span> completed
+              Completed
             </p>
             <p
               style={{
-                fontFamily: MONO,
-                fontSize: 12.5,
+                fontSize: 14,
                 color: THEME.text.primary,
-                marginTop: 2,
+                marginTop: 4,
                 fontVariantNumeric: 'tabular-nums',
               }}
             >
@@ -312,12 +302,11 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className="flex items-center gap-1.5"
+              className="flex items-center hover:text-[var(--t-text)]"
               style={{
-                fontFamily: MONO, fontSize: 11, fontWeight: 500,
-                letterSpacing: '0.1em', textTransform: 'uppercase',
-                color: active ? THEME.accent : THEME.text.muted,
-                padding: '10px 14px',
+                fontSize: 14, fontWeight: active ? 600 : 400,
+                color: active ? THEME.text.primary : THEME.text.secondary,
+                height: 48, padding: '0 16px',
                 background: 'transparent',
                 border: 'none',
                 borderBottom: `2px solid ${active ? THEME.accent : 'transparent'}`,
@@ -325,7 +314,6 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
                 cursor: 'pointer',
               }}
             >
-              <tab.icon className="w-3.5 h-3.5" />
               {tab.label}
             </button>
           );
@@ -340,7 +328,7 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
               Node execution breakdown
             </h3>
             {nodeRows.length === 0 ? (
-              <div className="text-center py-12" style={{ background: THEME.input, borderRadius: 8 }}>
+              <div className="text-center py-12" style={{ background: THEME.input, borderRadius: 0 }}>
                 <Boxes className="w-12 h-12 mx-auto mb-3" style={{ color: THEME.text.muted }} />
                 <p style={{ color: THEME.text.muted, fontSize: 13 }}>
                   {execution.status === 'RUNNING' ? 'Waiting for nodes to run…' : 'No per-node data recorded for this execution'}
@@ -354,7 +342,7 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
                     style={{
                       background: THEME.input,
                       border: `1px solid ${row.status === 'FAILED' ? THEME.colors.red + '60' : THEME.border}`,
-                      borderRadius: 8,
+                      borderRadius: 0,
                       padding: 12,
                     }}
                   >
@@ -368,7 +356,7 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
                           minWidth: 70, textAlign: 'center',
                         }}
                       >
-                        {row.status}
+                        {sentence(row.status)}
                       </span>
                       <span style={{ fontFamily: 'monospace', fontSize: 13, color: THEME.text.primary, flex: 1 }}>
                         {row.nodeId}
@@ -413,11 +401,11 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
               )}
             </div>
             {execution.logs ? (
-              <pre style={{ background: THEME.input, borderRadius: 8, padding: 16, overflow: 'auto', fontSize: 13, fontFamily: 'monospace', color: THEME.text.secondary, maxHeight: 384, whiteSpace: 'pre-wrap' }}>
+              <pre style={{ background: THEME.input, borderRadius: 0, padding: 16, overflow: 'auto', fontSize: 13, fontFamily: 'monospace', color: THEME.text.secondary, maxHeight: 384, whiteSpace: 'pre-wrap' }}>
                 {execution.logs}
               </pre>
             ) : (
-              <div className="text-center py-12" style={{ background: THEME.input, borderRadius: 8 }}>
+              <div className="text-center py-12" style={{ background: THEME.input, borderRadius: 0 }}>
                 <Terminal className="w-12 h-12 mx-auto mb-3" style={{ color: THEME.text.muted }} />
                 <p style={{ color: THEME.text.muted, fontSize: 13 }}>
                   {execution.status === 'RUNNING' ? 'Logs will appear here...' : 'No logs available'}
@@ -431,11 +419,11 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
           <div style={{ padding: 16 }}>
             <h3 style={{ fontSize: 13, fontWeight: 500, color: THEME.text.primary, marginBottom: 12 }}>Input Parameters</h3>
             {execution.input && Object.keys(execution.input).length > 0 ? (
-              <pre style={{ background: THEME.input, borderRadius: 8, padding: 16, overflow: 'auto', fontSize: 13, fontFamily: 'monospace', color: THEME.text.secondary }}>
+              <pre style={{ background: THEME.input, borderRadius: 0, padding: 16, overflow: 'auto', fontSize: 13, fontFamily: 'monospace', color: THEME.text.secondary }}>
                 {JSON.stringify(execution.input, null, 2)}
               </pre>
             ) : (
-              <div className="text-center py-12" style={{ background: THEME.input, borderRadius: 8 }}>
+              <div className="text-center py-12" style={{ background: THEME.input, borderRadius: 0 }}>
                 <FileJson className="w-12 h-12 mx-auto mb-3" style={{ color: THEME.text.muted }} />
                 <p style={{ color: THEME.text.muted, fontSize: 13 }}>No input data</p>
               </div>
@@ -447,11 +435,11 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
           <div style={{ padding: 16 }}>
             <h3 style={{ fontSize: 13, fontWeight: 500, color: THEME.text.primary, marginBottom: 12 }}>Output Data</h3>
             {execution.output && Object.keys(execution.output).length > 0 ? (
-              <pre style={{ background: THEME.input, borderRadius: 8, padding: 16, overflow: 'auto', fontSize: 13, fontFamily: 'monospace', color: THEME.text.secondary }}>
+              <pre style={{ background: THEME.input, borderRadius: 0, padding: 16, overflow: 'auto', fontSize: 13, fontFamily: 'monospace', color: THEME.text.secondary }}>
                 {JSON.stringify(execution.output, null, 2)}
               </pre>
             ) : execution.errorMessage ? (
-              <div style={{ background: `${THEME.colors.red}10`, border: `1px solid ${THEME.colors.red}30`, borderRadius: 8, padding: 16 }}>
+              <div style={{ background: `${THEME.colors.red}10`, border: `1px solid ${THEME.colors.red}30`, borderRadius: 0, padding: 16 }}>
                 <div className="flex items-center gap-2 mb-2">
                   <AlertCircle className="w-5 h-5" style={{ color: THEME.colors.red }} />
                   <span style={{ fontWeight: 500, color: THEME.colors.red, fontSize: 13 }}>Error</span>
@@ -461,7 +449,7 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
                 </pre>
               </div>
             ) : (
-              <div className="text-center py-12" style={{ background: THEME.input, borderRadius: 8 }}>
+              <div className="text-center py-12" style={{ background: THEME.input, borderRadius: 0 }}>
                 <FileJson className="w-12 h-12 mx-auto mb-3" style={{ color: THEME.text.muted }} />
                 <p style={{ color: THEME.text.muted, fontSize: 13 }}>
                   {execution.status === 'RUNNING' ? 'Waiting for output...' : 'No output data'}
@@ -473,7 +461,7 @@ export default function ExecutionDetailPage({ params }: { params: { id: string }
       </div>
 
       {/* Footer Info */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
           { label: 'Trigger Type', value: execution.triggerType },
           { label: 'Worker ID', value: execution.workerId || '-', mono: true },
@@ -532,9 +520,9 @@ function parseNodeLogs(logs: string, output: Record<string, unknown>): NodeRow[]
 
 function nodeStatusColor(status: string): string {
   switch (status.toUpperCase()) {
-    case 'SUCCESS': return '#10B981';
-    case 'FAILED': return '#EF4444';
-    case 'SKIPPED': return '#6B7280';
-    default: return '#3B82F6';
+    case 'SUCCESS': return '#24a148';
+    case 'FAILED': return '#da1e28';
+    case 'SKIPPED': return '#6f6f6f';
+    default: return '#0f62fe';
   }
 }

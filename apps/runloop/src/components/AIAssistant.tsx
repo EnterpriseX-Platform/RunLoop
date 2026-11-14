@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 // AIAssistant — small floating chat panel that proxies through
 // /api/ai/chat (which decrypts CLAUDE_API_KEY server-side and calls
@@ -34,7 +35,7 @@ const WELCOME_BULLETS = [
   'Build a flow from a description',
 ];
 
-const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
+const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -116,7 +117,7 @@ export function AIAssistant() {
         pageCtx.prompt || null,
       ].filter((s) => s !== null).join('\n');
 
-      const r = await fetch('/runloop/api/ai/chat', {
+      const r = await fetch(`${BASE_PATH}/api/ai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -175,13 +176,13 @@ export function AIAssistant() {
         onClick={() => setOpen(true)}
         aria-label="Open AI assistant"
         title="Ask AI"
-        className="fixed bottom-5 right-5 z-40 flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
+        className="fixed bottom-5 right-5 z-40 flex items-center justify-center hover:bg-[var(--t-accent-hover)] transition-colors"
         style={{
           background: 'var(--t-accent)',
           color: '#fff',
           width: 48,
           height: 48,
-          borderRadius: 999,
+          borderRadius: 0,
           display: open ? 'none' : 'flex',
         }}
       >
@@ -191,7 +192,7 @@ export function AIAssistant() {
       {/* Panel */}
       {open && (
         <div
-          className="fixed bottom-5 right-5 z-50 flex flex-col shadow-2xl"
+          className="fixed bottom-5 right-5 z-50 flex flex-col "
           style={{
             width: 380,
             maxWidth: 'calc(100vw - 24px)',
@@ -199,7 +200,7 @@ export function AIAssistant() {
             maxHeight: 'calc(100vh - 80px)',
             background: 'var(--t-panel)',
             border: '1px solid var(--t-border)',
-            borderRadius: 6,
+            borderRadius: 0,
           }}
         >
           {/* Header */}
@@ -289,8 +290,7 @@ export function AIAssistant() {
                   style={{
                     fontSize: 10,
                     fontWeight: 600,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
+                    letterSpacing: 0,
                     color: m.role === 'user' ? 'var(--t-accent)' : 'var(--t-text-muted)',
                     marginBottom: 3,
                   }}
@@ -301,7 +301,7 @@ export function AIAssistant() {
                       style={{
                         fontSize: 9, padding: '1px 6px',
                         background: 'var(--t-input)', borderRadius: 999,
-                        letterSpacing: '0.04em', textTransform: 'none',
+                        letterSpacing: 0, textTransform: 'none',
                         color: 'var(--t-text-secondary)', fontWeight: 500,
                       }}
                     >
@@ -312,7 +312,7 @@ export function AIAssistant() {
                 <div
                   style={{
                     fontSize: 13,
-                    color: m.error ? 'var(--t-error, #ef4444)' : 'var(--t-text)',
+                    color: m.error ? 'var(--t-error, #da1e28)' : 'var(--t-text)',
                     lineHeight: 1.55,
                     whiteSpace: 'pre-wrap',
                     wordBreak: 'break-word',

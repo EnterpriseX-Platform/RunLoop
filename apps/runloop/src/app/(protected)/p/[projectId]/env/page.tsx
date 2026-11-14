@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 // Project Env Vars page — plaintext per-project config, distinct from
 // the encrypted Secrets table. Reachable from Settings tab strip.
@@ -8,7 +9,7 @@ import { useParams } from 'next/navigation';
 import { Plus, Trash2, Loader2, Edit2, Save, X } from 'lucide-react';
 import { SharpButton } from '@/components/ControlChrome';
 
-const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
+const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
 
 interface EnvVar {
   id: string;
@@ -35,7 +36,7 @@ export default function EnvVarsPage() {
 
   const refresh = async () => {
     try {
-      const r = await fetch(`/runloop/api/env-vars?projectId=${encodeURIComponent(projectId)}`);
+      const r = await fetch(`${BASE_PATH}/api/env-vars?projectId=${encodeURIComponent(projectId)}`);
       if (!r.ok) throw new Error(String(r.status));
       const d = await r.json();
       setRows(d.data || []);
@@ -71,7 +72,7 @@ export default function EnvVarsPage() {
     if (!formName.trim()) return flash('name required');
     setBusy(true);
     try {
-      const res = await fetch('/runloop/api/env-vars', {
+      const res = await fetch(`${BASE_PATH}/api/env-vars`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -97,7 +98,7 @@ export default function EnvVarsPage() {
     if (!confirm(`Delete env var "${row.name}"?`)) return;
     setBusy(true);
     try {
-      const res = await fetch(`/runloop/api/env-vars/${row.id}`, { method: 'DELETE' });
+      const res = await fetch(`${BASE_PATH}/api/env-vars/${row.id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       flash('Deleted');
       refresh();
@@ -109,28 +110,28 @@ export default function EnvVarsPage() {
   };
 
   return (
-    <div className="p-6 max-w-[820px]">
+    <div className="">
       {toast && (
         <div
           className="fixed bottom-6 right-6 z-50 px-4 py-2"
           style={{
             background: 'var(--t-accent)', color: '#fff',
-            fontFamily: MONO, fontSize: 12, borderRadius: 4, letterSpacing: '0.04em',
+            fontFamily: MONO, fontSize: 12, borderRadius: 4, letterSpacing: 0,
           }}
         >
           {toast}
         </div>
       )}
 
-      <div className="flex items-end justify-between mb-6 gap-4">
+      <div className="flex items-start justify-between mb-6 gap-4">
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 600, color: 'var(--t-text)', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: 24, fontWeight: 600, color: 'var(--t-text)', letterSpacing: 0 }}>
             Environment Variables
           </h1>
           <p style={{ fontSize: 13, color: 'var(--t-text-muted)', marginTop: 6, lineHeight: 1.6 }}>
             Plaintext per-project config — API base URLs, region codes, feature flags. Reference inside flows as{' '}
             <code style={{ color: 'var(--t-accent)' }}>{'${{env.NAME}}'}</code>.
-            For passwords / API keys use <a href="/runloop/secrets" style={{ color: 'var(--t-accent)' }}>Secrets</a> instead (encrypted).
+            For passwords / API keys use <a href={`${BASE_PATH}/secrets`} style={{ color: 'var(--t-accent)' }}>Secrets</a> instead (encrypted).
           </p>
         </div>
         <SharpButton onClick={startNew} disabled={editingId !== null}>
@@ -275,7 +276,7 @@ export default function EnvVarsPage() {
                   onClick={() => remove(r)}
                   className="p-1.5 hover:opacity-70"
                   title="Delete"
-                  style={{ color: 'var(--t-error, #ef4444)' }}
+                  style={{ color: 'var(--t-error, #da1e28)' }}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>

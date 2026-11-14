@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ReactFlow, {
@@ -16,6 +17,7 @@ import ReactFlow, {
   NodeChange,
   ReactFlowProvider,
   useReactFlow,
+  useViewport,
   MarkerType,
   ConnectionLineType,
   Panel,
@@ -25,47 +27,48 @@ import {
   Play, Square, Globe, Database, Terminal, Code2, Hash,
   Container as Docker, Slack, Mail, GitBranch, Clock, RotateCcw, Variable,
   GitMerge, Split, FileText, PenLine, Workflow, Webhook, Hourglass, Inbox, BellRing, Sparkles,
-  Save, TestTube2, Wand2, Plus, Settings, X, AlertCircle, Search, ChevronDown,
+  Save, TestTube2, Wand2, Plus, Minus, Maximize, Settings, Trash2, X, AlertCircle, Search, ChevronDown,
 } from 'lucide-react';
 import { nodeTypes as importedNodeTypes } from './nodes';
+import { RL_NODE_ICONS } from '../icons/RunLoopIcons';
 import { propertiesComponents } from './properties';
 import { validateFlow, autoLayout, FlowValidationError } from '@/lib/flow-validator';
 
 // ---------- Node palette ----------
 const PALETTE = [
   { category: 'Flow Control', items: [
-    { type: 'startNode', label: 'Start', nodeType: 'start', icon: Play, color: '#10B981' },
-    { type: 'endNode', label: 'End', nodeType: 'end', icon: Square, color: '#EF4444' },
-    { type: 'conditionNode', label: 'Condition', nodeType: 'condition', icon: GitBranch, color: '#EC4899' },
-    { type: 'loopNode', label: 'Loop', nodeType: 'loop', icon: RotateCcw, color: '#6366F1' },
-    { type: 'delayNode', label: 'Delay', nodeType: 'delay', icon: Clock, color: '#6B7280' },
-    { type: 'transformNode', label: 'Transform', nodeType: 'transform', icon: Variable, color: '#14B8A6' },
-    { type: 'switchNode', label: 'Switch', nodeType: 'switch', icon: Split, color: '#D946EF' },
-    { type: 'mergeNode', label: 'Merge', nodeType: 'merge', icon: GitMerge, color: '#0891B2' },
+    { type: 'startNode', label: 'Start', nodeType: 'start', icon: RL_NODE_ICONS['start'] as any, color: '#10B981' },
+    { type: 'endNode', label: 'End', nodeType: 'end', icon: RL_NODE_ICONS['end'] as any, color: '#EF4444' },
+    { type: 'conditionNode', label: 'Condition', nodeType: 'condition', icon: RL_NODE_ICONS['condition'] as any, color: '#EC4899' },
+    { type: 'loopNode', label: 'Loop', nodeType: 'loop', icon: RL_NODE_ICONS['loop'] as any, color: '#6366F1' },
+    { type: 'delayNode', label: 'Delay', nodeType: 'delay', icon: RL_NODE_ICONS['delay'] as any, color: '#6B7280' },
+    { type: 'transformNode', label: 'Transform', nodeType: 'transform', icon: RL_NODE_ICONS['transform'] as any, color: '#14B8A6' },
+    { type: 'switchNode', label: 'Switch', nodeType: 'switch', icon: RL_NODE_ICONS['switch'] as any, color: '#D946EF' },
+    { type: 'mergeNode', label: 'Merge', nodeType: 'merge', icon: RL_NODE_ICONS['merge'] as any, color: '#0891B2' },
   ]},
   { category: 'Executors', items: [
-    { type: 'httpNode', label: 'HTTP', nodeType: 'http', icon: Globe, color: '#3B82F6' },
-    { type: 'databaseNode', label: 'Database', nodeType: 'database', icon: Database, color: '#06B6D4' },
-    { type: 'shellNode', label: 'Shell', nodeType: 'shell', icon: Terminal, color: '#F59E0B' },
-    { type: 'pythonNode', label: 'Python', nodeType: 'python', icon: Code2, color: '#EAB308' },
-    { type: 'nodejsNode', label: 'Node.js', nodeType: 'nodejs', icon: Hash, color: '#22C55E' },
-    { type: 'dockerNode', label: 'Docker', nodeType: 'docker', icon: Docker, color: '#0EA5E9' },
+    { type: 'httpNode', label: 'HTTP', nodeType: 'http', icon: RL_NODE_ICONS['http'] as any, color: '#3B82F6' },
+    { type: 'databaseNode', label: 'Database', nodeType: 'database', icon: RL_NODE_ICONS['database'] as any, color: '#06B6D4' },
+    { type: 'shellNode', label: 'Shell', nodeType: 'shell', icon: RL_NODE_ICONS['shell'] as any, color: '#F59E0B' },
+    { type: 'pythonNode', label: 'Python', nodeType: 'python', icon: RL_NODE_ICONS['python'] as any, color: '#EAB308' },
+    { type: 'nodejsNode', label: 'Node.js', nodeType: 'nodejs', icon: RL_NODE_ICONS['nodejs'] as any, color: '#22C55E' },
+    { type: 'dockerNode', label: 'Docker', nodeType: 'docker', icon: RL_NODE_ICONS['docker'] as any, color: '#0EA5E9' },
   ]},
   { category: 'AI', items: [
-    { type: 'aiNode', label: 'AI', nodeType: 'ai', icon: Sparkles, color: '#8B5CF6' },
+    { type: 'aiNode', label: 'AI', nodeType: 'ai', icon: RL_NODE_ICONS['ai'] as any, color: '#8B5CF6' },
   ]},
   { category: 'Notifications', items: [
-    { type: 'slackNode', label: 'Slack', nodeType: 'slack', icon: Slack, color: '#A855F7' },
-    { type: 'emailNode', label: 'Email', nodeType: 'email', icon: Mail, color: '#F97316' },
-    { type: 'webhookNode', label: 'Webhook', nodeType: 'webhook_out', icon: Webhook, color: '#F43F5E' },
+    { type: 'slackNode', label: 'Slack', nodeType: 'slack', icon: RL_NODE_ICONS['slack'] as any, color: '#A855F7' },
+    { type: 'emailNode', label: 'Email', nodeType: 'email', icon: RL_NODE_ICONS['email'] as any, color: '#F97316' },
+    { type: 'webhookNode', label: 'Webhook', nodeType: 'webhook_out', icon: RL_NODE_ICONS['webhook_out'] as any, color: '#F43F5E' },
   ]},
   { category: 'Utilities', items: [
-    { type: 'logNode', label: 'Log', nodeType: 'log', icon: FileText, color: '#78716C' },
-    { type: 'setVarNode', label: 'Set Variable', nodeType: 'set_variable', icon: PenLine, color: '#0D9488' },
-    { type: 'subflowNode', label: 'Sub-flow', nodeType: 'subflow', icon: Workflow, color: '#7C3AED' },
-    { type: 'waitWebhookNode', label: 'Wait Webhook', nodeType: 'wait_webhook', icon: Hourglass, color: '#FB923C' },
-    { type: 'enqueueNode', label: 'Enqueue', nodeType: 'enqueue', icon: Inbox, color: '#0EA5E9' },
-    { type: 'notifyNode', label: 'Notify (push)', nodeType: 'notify', icon: BellRing, color: '#F59E0B' },
+    { type: 'logNode', label: 'Log', nodeType: 'log', icon: RL_NODE_ICONS['log'] as any, color: '#78716C' },
+    { type: 'setVarNode', label: 'Set Variable', nodeType: 'set_variable', icon: RL_NODE_ICONS['set_variable'] as any, color: '#0D9488' },
+    { type: 'subflowNode', label: 'Sub-flow', nodeType: 'subflow', icon: RL_NODE_ICONS['subflow'] as any, color: '#7C3AED' },
+    { type: 'waitWebhookNode', label: 'Wait Webhook', nodeType: 'wait_webhook', icon: RL_NODE_ICONS['wait_webhook'] as any, color: '#FB923C' },
+    { type: 'enqueueNode', label: 'Enqueue', nodeType: 'enqueue', icon: RL_NODE_ICONS['enqueue'] as any, color: '#0EA5E9' },
+    { type: 'notifyNode', label: 'Notify (push)', nodeType: 'notify', icon: RL_NODE_ICONS['notify'] as any, color: '#F59E0B' },
   ]},
 ];
 
@@ -87,18 +90,20 @@ export interface FlowCanvasProps {
 // rather than soft, coloured by edge condition so the eye catches
 // failure branches immediately.
 const DEFAULT_EDGE_STYLE = {
-  style: { stroke: 'var(--t-text-muted)', strokeWidth: 1.75 },
-  markerEnd: { type: MarkerType.ArrowClosed, color: '#64748B', width: 18, height: 18 },
-  type: 'smoothstep' as const,
+  style: { stroke: 'var(--t-text-secondary)', strokeOpacity: 0.55, strokeWidth: 1.8 },
+  markerEnd: { type: MarkerType.ArrowClosed, color: '#8d8d8d', width: 16, height: 16 },
+  type: 'default' as const,
 };
 
+// Carbon support colours. Plain success edges stay neutral grey so only
+// the branches that differ draw the eye.
 const CONDITION_COLORS: Record<string, string> = {
-  ON_SUCCESS: '#10B981',
-  ON_FAILURE: '#EF4444',
-  ON_ALWAYS: '#6366F1',
+  ON_SUCCESS: '#8d8d8d',
+  ON_FAILURE: '#da1e28',
+  ON_ALWAYS: '#8a3ffc',
 };
 
-const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
+const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
 
 function styleForCondition(condition?: string) {
   const cond = condition ?? 'ON_SUCCESS';
@@ -107,17 +112,18 @@ function styleForCondition(condition?: string) {
   return {
     style: {
       stroke: color,
-      strokeWidth: 1.75,
+      strokeWidth: 1.8,
+      strokeOpacity: cond === 'ON_SUCCESS' ? 0.55 : 1,
       strokeDasharray: cond === 'ON_FAILURE' ? '5 3' : undefined,
     },
-    markerEnd: { type: MarkerType.ArrowClosed, color, width: 18, height: 18 },
-    type: 'smoothstep' as const,
+    markerEnd: { type: MarkerType.ArrowClosed, color, width: 16, height: 16 },
+    type: 'default' as const,
     animated: cond === 'ON_ALWAYS',
     label: isDefault ? undefined : cond === 'ON_FAILURE' ? 'on fail' : 'always',
-    labelStyle: { fill: color, fontSize: 10, fontWeight: 600, fontFamily: MONO, letterSpacing: '0.06em' },
-    labelBgStyle: { fill: 'var(--t-panel)', stroke: color, strokeWidth: 1 },
-    labelBgPadding: [6, 3] as [number, number],
-    labelBgBorderRadius: 2,
+    labelStyle: { fill: color, fontSize: 11.5, fontWeight: 600, fontFamily: MONO, paintOrder: 'stroke', stroke: 'var(--flow-canvas-bg)', strokeWidth: 5, strokeLinejoin: 'round' } as React.CSSProperties,
+    labelShowBg: false,
+    labelBgPadding: [4, 2] as [number, number],
+    labelBgBorderRadius: 0,
   };
 }
 
@@ -146,7 +152,7 @@ function InnerFlow({
   // toast should re-trigger a fetch.
   const [pluginCategory, setPluginCategory] = useState<{ category: string; items: any[] } | null>(null);
   useEffect(() => {
-    fetch('/runloop/api/plugins')
+    fetch(`${BASE_PATH}/api/plugins`)
       .then((r) => r.json())
       .then((d) => {
         const items = (d.data || [])
@@ -388,15 +394,17 @@ function InnerFlow({
         className="flex items-center justify-between px-4 py-2.5 border-b"
         style={{ borderColor: 'var(--t-border)', background: 'var(--t-panel)' }}
       >
-        <div className="flex items-center gap-3 flex-1">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
           <span
-            style={{ fontFamily: MONO, fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: '0.14em' }}
+            className="flex-shrink-0"
+            style={{ fontSize: 12, color: 'var(--t-text-secondary)' }}
           >
-            {'//'} FLOW
+            Flow
           </span>
           <input
             type="text"
-            placeholder="flow name…"
+            className="rl-bare"
+            placeholder="Flow name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={readOnly}
@@ -407,9 +415,10 @@ function InnerFlow({
               outline: 'none',
               fontFamily: MONO,
               fontSize: 14,
-              fontWeight: 500,
-              letterSpacing: '-0.005em',
+              fontWeight: 600,
               width: 260,
+              minWidth: 120,
+              flexShrink: 1,
             }}
           />
           <input
@@ -418,7 +427,11 @@ function InnerFlow({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={readOnly}
+            className="hidden xl:block rl-bare"
+            title={description}
             style={{
+              minWidth: 0,
+              textOverflow: 'ellipsis',
               background: 'transparent',
               color: 'var(--t-text-muted)',
               border: 'none',
@@ -426,39 +439,33 @@ function InnerFlow({
               fontSize: 12,
               fontFamily: MONO,
               flex: 1,
-              letterSpacing: '0.01em',
+              letterSpacing: 0,
             }}
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <span
-            style={{
-              fontFamily: MONO,
-              fontSize: 10,
-              color: 'var(--t-text-muted)',
-              letterSpacing: '0.08em',
-            }}
+            className="hidden lg:inline whitespace-nowrap"
+            style={{ fontSize: 12, color: 'var(--t-text-secondary)', fontVariantNumeric: 'tabular-nums' }}
           >
             {nodes.length} nodes · {edges.length} edges
           </span>
           <button
             onClick={handleAutoLayout}
-            className="flex items-center gap-1.5"
+            className="flex items-center gap-2 whitespace-nowrap hover:bg-[var(--t-panel-hover)]"
             style={{
-              padding: '6px 10px',
+              height: 32,
+              padding: '0 12px',
               background: 'transparent',
-              border: '1px solid var(--t-border)',
-              color: 'var(--t-text-secondary)',
-              fontFamily: MONO,
-              fontSize: 11,
-              letterSpacing: '0.08em',
-              borderRadius: 2,
-              textTransform: 'uppercase',
+              border: 'none',
+              color: 'var(--t-accent)',
+              fontSize: 14,
+              borderRadius: 0,
             }}
             title="Auto-layout"
           >
-            <Wand2 className="w-3.5 h-3.5" />
-            auto-layout
+            <Wand2 className="w-4 h-4" />
+            <span className="hidden lg:inline">Auto-layout</span>
           </button>
           {showTestButton && onTest && !readOnly && (
             <button
@@ -466,15 +473,13 @@ function InnerFlow({
               disabled={testing}
               className="flex items-center gap-1.5 disabled:opacity-50"
               style={{
-                padding: '6px 10px',
-                background: 'color-mix(in srgb, #10B981 12%, transparent)',
-                border: '1px solid color-mix(in srgb, #10B981 40%, transparent)',
-                color: '#10B981',
-                fontFamily: MONO,
-                fontSize: 11,
-                letterSpacing: '0.08em',
+                height: 32,
+                padding: '0 12px',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--t-accent)',
+                fontSize: 14,
                 borderRadius: 2,
-                textTransform: 'uppercase',
               }}
             >
               <TestTube2 className="w-3.5 h-3.5" />
@@ -487,21 +492,16 @@ function InnerFlow({
               disabled={saving}
               className="flex items-center gap-1.5 disabled:opacity-50"
               style={{
-                padding: '6px 12px',
+                height: 32,
+                padding: '0 16px 0 12px',
                 background: 'var(--t-accent)',
                 color: '#fff',
-                fontFamily: MONO,
-                fontSize: 11,
-                letterSpacing: '0.1em',
-                borderRadius: 2,
-                textTransform: 'uppercase',
-                fontWeight: 600,
+                fontSize: 14,
+                borderRadius: 0,
               }}
             >
-              <span style={{ opacity: 0.6 }}>$</span>
-              <Save className="w-3.5 h-3.5" />
-              {saving ? 'saving…' : saveLabel}
-              <span style={{ opacity: 0.7 }}>→</span>
+              <Save className="w-4 h-4" />
+              {saving ? 'Saving…' : saveLabel}
             </button>
           )}
         </div>
@@ -543,33 +543,29 @@ function InnerFlow({
                     fontFamily: MONO,
                     fontSize: 10,
                     color: 'var(--t-text-muted)',
-                    letterSpacing: '0.16em',
-                    textTransform: 'uppercase',
+                    letterSpacing: 0,
                   }}
                 >
-                  <span style={{ opacity: 0.5 }}>{'//'}</span> nodes
+                  Nodes
                 </p>
                 <span
                   style={{
-                    fontFamily: MONO,
-                    fontSize: 10,
-                    color: 'var(--t-text-muted)',
-                    background: 'var(--t-input)',
-                    border: '1px solid var(--t-border)',
-                    padding: '1px 5px',
-                    borderRadius: 2,
+                    color: 'var(--tag-gray-text)',
+                    background: 'var(--tag-gray-bg)',
+                    padding: '0 8px',
+                    borderRadius: 24,
+                    fontSize: 12,
                     fontVariantNumeric: 'tabular-nums',
                   }}
                 >
-                  {String(mergedPalette.reduce((n, c) => n + c.items.length, 0)).padStart(2, '0')}
+                  {mergedPalette.reduce((n, c) => n + c.items.length, 0)}
                 </span>
               </div>
               <div
                 className="relative flex items-center"
                 style={{
                   background: 'var(--t-input)',
-                  border: '1px solid var(--t-border)',
-                  borderRadius: 2,
+                  borderBottom: '1px solid var(--t-border-strong)',
                 }}
               >
                 <Search
@@ -580,7 +576,7 @@ function InnerFlow({
                   type="text"
                   value={paletteQuery}
                   onChange={(e) => setPaletteQuery(e.target.value)}
-                  placeholder="search nodes…"
+                  placeholder="Search nodes"
                   className="w-full bg-transparent pl-8 pr-7 py-1.5 outline-none"
                   style={{ color: 'var(--t-text)', fontFamily: MONO, fontSize: 11.5 }}
                 />
@@ -629,26 +625,23 @@ function InnerFlow({
                           style={{
                             fontFamily: MONO,
                             fontSize: 9.5,
-                            letterSpacing: '0.16em',
-                            textTransform: 'uppercase',
+                            letterSpacing: 0,
                           }}
                         >
-                          <span style={{ opacity: 0.5 }}>{'//'}</span> {category.category}
+                          {category.category}
                         </span>
                       </div>
                       <span
                         style={{
-                          fontFamily: MONO,
-                          fontSize: 9.5,
-                          color: 'var(--t-text-muted)',
-                          background: 'var(--t-input)',
-                          border: '1px solid var(--t-border)',
-                          padding: '1px 4px',
-                          borderRadius: 2,
+                          color: 'var(--tag-gray-text)',
+                          background: 'var(--tag-gray-bg)',
+                          padding: '0 8px',
+                          borderRadius: 24,
+                          fontSize: 12,
                           fontVariantNumeric: 'tabular-nums',
                         }}
                       >
-                        {String(category.items.length).padStart(2, '0')}
+                        {category.items.length}
                       </span>
                     </button>
                     {!isCollapsed && (
@@ -689,14 +682,12 @@ function InnerFlow({
                               <div
                                 className="flex items-center justify-center flex-shrink-0"
                                 style={{
-                                  width: 22,
-                                  height: 22,
-                                  borderRadius: 2,
-                                  background: `color-mix(in srgb, ${item.color} 14%, transparent)`,
-                                  border: `1px solid color-mix(in srgb, ${item.color} 36%, transparent)`,
+                                  width: 24,
+                                  height: 24,
+                                  background: `color-mix(in srgb, ${item.color} 16%, transparent)`,
                                 }}
                               >
-                                <Icon style={{ color: item.color, width: 12, height: 12 }} strokeWidth={1.75} />
+                                <Icon style={{ color: item.color, width: 14, height: 14 }} strokeWidth={1.75} />
                               </div>
                               <span
                                 className="truncate flex-1"
@@ -704,7 +695,7 @@ function InnerFlow({
                                   color: 'var(--t-text)',
                                   fontFamily: MONO,
                                   fontSize: 11,
-                                  letterSpacing: '0.02em',
+                                  letterSpacing: 0,
                                 }}
                               >
                                 {item.label}
@@ -715,8 +706,7 @@ function InnerFlow({
                                   color: item.color,
                                   fontFamily: MONO,
                                   fontSize: 9,
-                                  letterSpacing: '0.14em',
-                                  textTransform: 'uppercase',
+                                  letterSpacing: 0,
                                 }}
                               >
                                 drag
@@ -739,10 +729,10 @@ function InnerFlow({
                 color: 'var(--t-text-muted)',
                 fontFamily: MONO,
                 fontSize: 9.5,
-                letterSpacing: '0.1em',
+                letterSpacing: 0,
               }}
             >
-              <span style={{ opacity: 0.5 }}>{'//'}</span> drag a node to canvas
+              Drag a node onto the canvas
             </div>
           </div>
         )}
@@ -766,10 +756,10 @@ function InnerFlow({
             onPaneClick={onPaneClick}
             nodeTypes={importedNodeTypes}
             defaultEdgeOptions={DEFAULT_EDGE_STYLE}
-            connectionLineType={ConnectionLineType.SmoothStep}
-            connectionLineStyle={{ stroke: '#3B82F6', strokeWidth: 2.5, strokeDasharray: '6 4' }}
+            connectionLineType={ConnectionLineType.Bezier}
+            connectionLineStyle={{ stroke: 'var(--t-accent)', strokeWidth: 2 }}
             fitView
-            fitViewOptions={{ padding: 0.3, minZoom: 0.4, maxZoom: 0.85 }}
+            fitViewOptions={{ padding: 0.2, minZoom: 0.4, maxZoom: 1 }}
             snapToGrid
             snapGrid={[20, 20]}
             nodesDraggable={!readOnly}
@@ -781,27 +771,24 @@ function InnerFlow({
           >
             <Background
               variant={BackgroundVariant.Dots}
-              gap={28}
-              size={1}
-              color="color-mix(in srgb, var(--t-border) 80%, transparent)"
+              gap={20}
+              size={1.4}
+              color="var(--flow-canvas-dots)"
             />
-            <Controls
-              showInteractive={false}
-              style={{
-                background: 'var(--t-panel)',
-                border: '1px solid var(--t-border)',
-                borderRadius: 2,
-                overflow: 'hidden',
-              }}
-            />
+            <Panel position="bottom-left">
+              <ZoomBar />
+            </Panel>
             <MiniMap
               maskColor="color-mix(in srgb, var(--t-bg) 70%, transparent)"
               pannable
               zoomable
               style={{
+                width: 168,
+                height: 104,
                 background: 'var(--t-panel)',
-                border: '1px solid var(--t-border)',
-                borderRadius: 2,
+                border: 'none',
+                borderRadius: 0,
+                marginBottom: 76,
               }}
               nodeColor={(n) => {
                 const type = n.data?.type as string;
@@ -822,21 +809,10 @@ function InnerFlow({
                     borderRadius: 2,
                   }}
                 >
-                  {/* Schematic corner marks like login's form frame */}
-                  <span style={{ position: 'absolute', top: -1, left: -1, width: 10, height: 1, background: 'var(--t-accent)' }} />
-                  <span style={{ position: 'absolute', top: -1, left: -1, width: 1, height: 10, background: 'var(--t-accent)' }} />
-                  <span style={{ position: 'absolute', top: -1, right: -1, width: 10, height: 1, background: 'var(--t-accent)' }} />
-                  <span style={{ position: 'absolute', top: -1, right: -1, width: 1, height: 10, background: 'var(--t-accent)' }} />
-                  <span style={{ position: 'absolute', bottom: -1, left: -1, width: 10, height: 1, background: 'var(--t-accent)' }} />
-                  <span style={{ position: 'absolute', bottom: -1, left: -1, width: 1, height: 10, background: 'var(--t-accent)' }} />
-                  <span style={{ position: 'absolute', bottom: -1, right: -1, width: 10, height: 1, background: 'var(--t-accent)' }} />
-                  <span style={{ position: 'absolute', bottom: -1, right: -1, width: 1, height: 10, background: 'var(--t-accent)' }} />
                   <div
                     className="w-10 h-10 flex items-center justify-center"
                     style={{
-                      borderRadius: 2,
                       background: 'color-mix(in srgb, var(--t-accent) 14%, transparent)',
-                      border: '1px solid color-mix(in srgb, var(--t-accent) 36%, transparent)',
                     }}
                   >
                     <Plus className="w-5 h-5" style={{ color: 'var(--t-accent)' }} strokeWidth={2} />
@@ -846,7 +822,7 @@ function InnerFlow({
                       color: 'var(--t-text)',
                       fontFamily: MONO,
                       fontSize: 12,
-                      letterSpacing: '0.04em',
+                      letterSpacing: 0,
                     }}
                   >
                     drag nodes from the left to start building
@@ -865,94 +841,45 @@ function InnerFlow({
           <div
             className="flex-shrink-0 flex flex-col"
             style={{
-              width: 340,
+              width: 372,
               background: 'var(--t-panel)',
               borderLeft: '1px solid var(--t-border)',
             }}
           >
-            {/* Header: icon + colored dot + name + type badge + close */}
-            <div
-              className="px-4 pt-3.5 pb-3"
-              style={{ borderBottom: '1px solid var(--t-border)' }}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2.5 min-w-0">
+            {/* Header: icon tile, type label, step name, close; then tabs */}
+            <div style={{ borderBottom: '1px solid var(--t-border)' }}>
+              <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+                <div
+                  className="flex items-center justify-center flex-shrink-0"
+                  style={{
+                    width: 40,
+                    height: 40,
+                    background: selectedPaletteMeta
+                      ? `color-mix(in srgb, ${selectedPaletteMeta.color} 16%, transparent)`
+                      : 'var(--t-input)',
+                    color: selectedPaletteMeta ? selectedPaletteMeta.color : 'var(--t-text-secondary)',
+                  }}
+                >
                   {selectedNode && selectedPaletteMeta ? (
-                    <div
-                      className="flex items-center justify-center flex-shrink-0"
-                      style={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: 2,
-                        background: `color-mix(in srgb, ${selectedPaletteMeta.color} 14%, transparent)`,
-                        border: `1px solid color-mix(in srgb, ${selectedPaletteMeta.color} 40%, transparent)`,
-                      }}
-                    >
-                      <selectedPaletteMeta.icon
-                        style={{ color: selectedPaletteMeta.color, width: 16, height: 16 }}
-                        strokeWidth={1.75}
-                      />
-                    </div>
+                    <selectedPaletteMeta.icon style={{ width: 20, height: 20 }} strokeWidth={1.7} />
                   ) : (
-                    <div
-                      className="flex items-center justify-center flex-shrink-0"
-                      style={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: 2,
-                        background: 'var(--t-input)',
-                        border: '1px solid var(--t-border)',
-                      }}
-                    >
-                      <Settings className="w-4 h-4" style={{ color: 'var(--t-text-muted)' }} />
-                    </div>
+                    <Settings className="w-5 h-5" />
                   )}
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      {selectedPaletteMeta && (
-                        <span
-                          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                          style={{ background: selectedPaletteMeta.color }}
-                        />
-                      )}
-                      <div
-                        className="text-[13px] font-semibold truncate"
-                        style={{ color: 'var(--t-text)' }}
-                      >
-                        {editingEdge
-                          ? 'Edge'
-                          : selectedNode?.data?.config?.name ||
-                            selectedNode?.data?.label ||
-                            'Node'}
-                      </div>
-                    </div>
-                    {(selectedNode || editingEdge) && (
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span
-                          className="inline-block text-[9px] font-mono uppercase px-1.5 py-0.5 rounded"
-                          style={{
-                            background: selectedPaletteMeta
-                              ? selectedPaletteMeta.color + '18'
-                              : 'var(--t-input)',
-                            color: selectedPaletteMeta
-                              ? selectedPaletteMeta.color
-                              : 'var(--t-text-muted)',
-                            letterSpacing: '0.08em',
-                          }}
-                        >
-                          {editingEdge ? 'connection' : selectedNode?.data?.type || 'unknown'}
-                        </span>
-                        {selectedNode && (
-                          <span
-                            className="text-[10px] font-mono truncate"
-                            style={{ color: 'var(--t-text-muted)' }}
-                            title={selectedNode.id}
-                          >
-                            #{selectedNode.id.slice(-6)}
-                          </span>
-                        )}
-                      </div>
-                    )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div
+                    style={{ fontSize: 11, lineHeight: '15px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.02em', color: 'var(--t-text-secondary)' }}
+                  >
+                    {editingEdge ? 'Connection' : selectedPaletteMeta?.label || selectedNode?.data?.type || 'Step'}
+                  </div>
+                  <div
+                    className="truncate"
+                    style={{ fontSize: 18, lineHeight: '24px', fontWeight: 600, color: 'var(--t-text)' }}
+                    title={selectedNode?.id}
+                  >
+                    {editingEdge
+                      ? 'Edge'
+                      : selectedNode?.data?.config?.name || selectedNode?.data?.label || 'Node'}
                   </div>
                 </div>
                 <button
@@ -960,41 +887,43 @@ function InnerFlow({
                     setSelectedNodeId(null);
                     setEditingEdgeId(null);
                   }}
-                  className="flex-shrink-0 p-1 rounded-md hover:bg-[var(--t-input)]"
-                  style={{ color: 'var(--t-text-muted)' }}
+                  className="flex-shrink-0 flex items-center justify-center hover:bg-[var(--t-panel-hover)]"
+                  style={{ width: 32, height: 32, color: 'var(--t-text)' }}
                   title="Close"
+                  aria-label="Close"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* Segmented tabs — only for node properties */}
+              {/* Carbon tabs: text with a 2px underline on the open one */}
               {selectedNode && !editingEdge && PropertiesComponent && (
-                <div
-                  className="mt-3 p-0.5 rounded-lg flex"
-                  style={{ background: 'var(--t-input)', border: '1px solid var(--t-border)' }}
-                >
-                  {(['config', 'retry', 'errors'] as const).map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setPropsTab(t)}
-                      className="flex-1 text-[11px] font-semibold capitalize py-1.5 rounded-md transition-all"
-                      style={{
-                        background:
-                          propsTab === t
-                            ? 'var(--t-panel)'
-                            : 'transparent',
-                        color:
-                          propsTab === t ? 'var(--t-text)' : 'var(--t-text-muted)',
-                        boxShadow:
-                          propsTab === t
-                            ? '0 1px 2px rgba(0,0,0,0.08), 0 0 0 1px var(--t-border)'
-                            : 'none',
-                      }}
-                    >
-                      {t === 'errors' ? 'Errors' : t === 'retry' ? 'Retry' : 'Config'}
-                    </button>
-                  ))}
+                <div className="flex px-4" role="tablist">
+                  {(['config', 'retry', 'errors'] as const).map((t) => {
+                    const on = propsTab === t;
+                    return (
+                      <button
+                        key={t}
+                        role="tab"
+                        aria-selected={on}
+                        onClick={() => setPropsTab(t)}
+                        className="hover:text-[var(--t-text)]"
+                        style={{
+                          height: 40,
+                          padding: '0 16px 0 0',
+                          marginRight: 16,
+                          fontSize: 14,
+                          fontWeight: on ? 600 : 400,
+                          color: on ? 'var(--t-text)' : 'var(--t-text-secondary)',
+                          background: 'transparent',
+                          border: 'none',
+                          boxShadow: on ? 'inset 0 -2px 0 var(--t-accent)' : 'none',
+                        }}
+                      >
+                        {t === 'errors' ? 'On error' : t === 'retry' ? 'Retry' : 'Settings'}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1004,8 +933,8 @@ function InnerFlow({
                 <div className="p-4 space-y-4">
                   <div>
                     <label
-                      className="text-[11px] font-semibold uppercase block mb-2.5"
-                      style={{ color: 'var(--t-text-secondary)', letterSpacing: '0.1em' }}
+                      className="text-[11px] font-semibold  block mb-2.5"
+                      style={{ color: 'var(--t-text-secondary)', letterSpacing: 0 }}
                     >
                       Edge condition
                     </label>
@@ -1042,7 +971,7 @@ function InnerFlow({
                             </span>
                             {active && (
                               <span
-                                className="text-[9px] uppercase font-bold tracking-wider"
+                                className="text-[9px]  font-bold "
                                 style={{ color: c }}
                               >
                                 active
@@ -1128,26 +1057,17 @@ function InnerFlow({
             {/* Footer with delete action */}
             {selectedNode && !editingEdge && !readOnly && (
               <div
-                className="px-4 py-2.5 flex items-center justify-between"
+                className="px-2 py-2 flex items-center"
                 style={{ borderTop: '1px solid var(--t-border)' }}
               >
-                <span
-                  className="text-[10px] font-mono"
-                  style={{ color: 'var(--t-text-muted)' }}
-                >
-                  Del to remove · Esc to close
-                </span>
                 <button
                   onClick={deleteSelectedNode}
-                  className="text-[11px] font-semibold px-2.5 py-1 rounded-md transition-colors"
-                  style={{
-                    color: '#EF4444',
-                    background: '#EF444410',
-                    border: '1px solid #EF444430',
-                  }}
-                  title="Delete node (Del)"
+                  className="flex items-center gap-2 hover:bg-[var(--tag-red-bg)]"
+                  style={{ height: 32, padding: '0 12px', fontSize: 14, color: 'var(--t-error)', background: 'transparent', border: 'none' }}
+                  title="Delete step (Del)"
                 >
-                  Delete node
+                  <Trash2 className="w-4 h-4" />
+                  Delete step
                 </button>
               </div>
             )}
@@ -1169,6 +1089,36 @@ function InnerFlow({
  * - Auto-layout, MiniMap, snap-to-grid
  * - Keyboard shortcuts: Cmd/Ctrl+S save, Del/Backspace delete selected, Esc deselect
  */
+// Zoom bar: − 70% + and fit; the readout tells the user where they are.
+function ZoomBar() {
+  const rf = useReactFlow();
+  const { zoom } = useViewport();
+  const btn: React.CSSProperties = {
+    width: 32, height: 32, display: 'grid', placeItems: 'center',
+    background: 'transparent', color: 'var(--t-text)', border: 'none', cursor: 'pointer',
+  };
+  return (
+    <div
+      className="flex items-center"
+      style={{ background: 'var(--t-panel)' }}
+    >
+      <button style={btn} className="hover:bg-[var(--t-panel-hover)]" onClick={() => rf.zoomOut()} title="Zoom out" aria-label="Zoom out">
+        <Minus className="w-4 h-4" />
+      </button>
+      <span style={{ minWidth: 48, textAlign: 'center', fontSize: 12, fontVariantNumeric: 'tabular-nums', color: 'var(--t-text)' }}>
+        {Math.round(zoom * 100)}%
+      </span>
+      <button style={btn} className="hover:bg-[var(--t-panel-hover)]" onClick={() => rf.zoomIn()} title="Zoom in" aria-label="Zoom in">
+        <Plus className="w-4 h-4" />
+      </button>
+      <span aria-hidden style={{ width: 1, height: 20, background: 'var(--t-border)' }} />
+      <button style={btn} className="hover:bg-[var(--t-panel-hover)]" onClick={() => rf.fitView({ padding: 0.2 })} title="Fit to screen" aria-label="Fit to screen">
+        <Maximize className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
 export function FlowCanvas(props: FlowCanvasProps) {
   return (
     <ReactFlowProvider>

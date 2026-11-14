@@ -1,12 +1,13 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 import { BaseProperties, Section, TextField, NumberField } from './BaseProperties';
 import { BasePropertiesProps } from './BaseProperties';
 
 export function WaitWebhookNodeProperties({ config, onChange }: BasePropertiesProps) {
   const baseHint =
     typeof window !== 'undefined'
-      ? `${window.location.origin}/runloop/api/webhooks/wait/<correlationId>`
-      : '/runloop/api/webhooks/wait/<correlationId>';
+      ? `${window.location.origin}${BASE_PATH}/api/webhooks/wait/<correlationId>`
+      : `${BASE_PATH}/api/webhooks/wait/<correlationId>`;
   return (
     <BaseProperties config={config} onChange={onChange}>
       <Section title="Wait for Webhook">

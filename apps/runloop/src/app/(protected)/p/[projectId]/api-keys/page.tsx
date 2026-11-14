@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
@@ -32,11 +33,11 @@ const THEME = {
   accentLight: 'var(--t-accent-light)',
   input: 'var(--t-input)',
   colors: {
-    blue: '#3B82F6',
-    emerald: '#10B981',
-    purple: '#8B5CF6',
-    amber: '#F59E0B',
-    red: '#EF4444',
+    blue: '#0f62fe',
+    emerald: '#24a148',
+    purple: '#8a3ffc',
+    amber: '#eb6200',
+    red: '#da1e28',
   },
 };
 
@@ -113,7 +114,7 @@ export default function ApiKeysPage() {
       setLoading(true);
       setError(null);
 
-      const res = await fetch(`/runloop/api/api-keys?projectId=${projectId}`);
+      const res = await fetch(`${BASE_PATH}/api/api-keys?projectId=${projectId}`);
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || 'Failed to fetch API keys');
@@ -131,7 +132,7 @@ export default function ApiKeysPage() {
 
   const handleCreate = async (name: string, expiration: ExpirationOption) => {
     if (!projectId) return;
-    const res = await fetch('/runloop/api/api-keys', {
+    const res = await fetch(`${BASE_PATH}/api/api-keys`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -153,7 +154,7 @@ export default function ApiKeysPage() {
 
   const handleRevoke = async (id: string) => {
     try {
-      const res = await fetch(`/runloop/api/api-keys/${id}`, {
+      const res = await fetch(`${BASE_PATH}/api/api-keys/${id}`, {
         method: 'DELETE',
       });
       if (res.ok) {
@@ -201,10 +202,10 @@ export default function ApiKeysPage() {
     <div className="min-h-screen" style={{ background: THEME.bg, fontFamily: FONT }}>
       {/* Header */}
       <header
-        className="sticky top-0 z-40 backdrop-blur-xl"
-        style={{ background: `${THEME.bg}cc`, borderBottom: `1px solid ${THEME.border}` }}
+        className=""
+        
       >
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="pb-6">
           <div className="flex items-center justify-between">
             <div>
               <h1
@@ -259,7 +260,7 @@ export default function ApiKeysPage() {
       </header>
 
       {/* Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin" style={{ color: THEME.accent }} />
@@ -319,37 +320,37 @@ export default function ApiKeysPage() {
               <thead style={{ background: THEME.bg }}>
                 <tr>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium  "
                     style={{ color: THEME.text.secondary }}
                   >
                     Name
                   </th>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium  "
                     style={{ color: THEME.text.secondary }}
                   >
                     Prefix
                   </th>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium  "
                     style={{ color: THEME.text.secondary }}
                   >
                     Last Used
                   </th>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium  "
                     style={{ color: THEME.text.secondary }}
                   >
                     Created
                   </th>
                   <th
-                    className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium  "
                     style={{ color: THEME.text.secondary }}
                   >
                     Expires
                   </th>
                   <th
-                    className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-3 text-right text-xs font-medium  "
                     style={{ color: THEME.text.secondary }}
                   >
                     Actions
@@ -418,9 +419,9 @@ export default function ApiKeysPage() {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => setConfirmRevokeId(key.id)}
-                          className="p-2 rounded-lg transition-all"
+                          className="p-2 transition-colors hover:bg-[var(--tag-red-bg)]"
                           style={{
-                            background: THEME.bg,
+                            background: 'transparent',
                             color: THEME.colors.red,
                           }}
                           title="Revoke key"

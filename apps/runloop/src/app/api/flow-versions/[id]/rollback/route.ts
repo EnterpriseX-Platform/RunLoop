@@ -1,3 +1,4 @@
+import { ENGINE_BASE_PATH } from '@/lib/engine-path';
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth';
@@ -19,7 +20,7 @@ export async function POST(
     // Rollback requires going through the Go engine to update the flow so the
     // scheduler in-memory state stays consistent. Forward a PUT request.
     const engineURL = process.env.ENGINE_URL || 'http://localhost:8080';
-    const putRes = await fetch(`${engineURL}/rl/api/flows/${version.flowId}`, {
+    const putRes = await fetch(`${engineURL}${ENGINE_BASE_PATH}/api/flows/${version.flowId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

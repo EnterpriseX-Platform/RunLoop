@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useState, useEffect, useCallback } from 'react';
 import {
@@ -15,8 +16,8 @@ const T = {
   textSec: 'var(--t-text-secondary)',
   textMuted: 'var(--t-text-muted)',
   accent: 'var(--t-accent)',
-  red: '#EF4444',
-  green: '#10B981',
+  red: '#da1e28',
+  green: '#24a148',
 };
 
 interface Plugin {
@@ -52,7 +53,7 @@ export default function PluginsPage() {
 
   const fetchPlugins = useCallback(async () => {
     try {
-      const res = await fetch('/runloop/api/plugins');
+      const res = await fetch(`${BASE_PATH}/api/plugins`);
       const d = await res.json();
       setPlugins(d.data || []);
     } finally {
@@ -82,7 +83,7 @@ export default function PluginsPage() {
           throw new Error('Manifest JSON is invalid');
         }
       }
-      const res = await fetch('/runloop/api/plugins', {
+      const res = await fetch(`${BASE_PATH}/api/plugins`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -103,7 +104,7 @@ export default function PluginsPage() {
   }
 
   async function toggle(name: string, enabled: boolean) {
-    await fetch(`/runloop/api/plugins/${encodeURIComponent(name)}`, {
+    await fetch(`${BASE_PATH}/api/plugins/${encodeURIComponent(name)}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ enabled }),
@@ -113,12 +114,12 @@ export default function PluginsPage() {
 
   async function uninstall(name: string) {
     if (!confirm(`Uninstall plugin "${name}"? Flows using its nodes will fail at next execution.`)) return;
-    await fetch(`/runloop/api/plugins/${encodeURIComponent(name)}`, { method: 'DELETE' });
+    await fetch(`${BASE_PATH}/api/plugins/${encodeURIComponent(name)}`, { method: 'DELETE' });
     fetchPlugins();
     notify('Uninstalled');
   }
 
-  const MONO = "'IBM Plex Mono', ui-monospace, monospace";
+  const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
   const enabledCount = plugins.filter((p) => p.enabled).length;
 
   return (
@@ -132,9 +133,9 @@ export default function PluginsPage() {
         </div>
       )}
 
-      <div className="flex items-end justify-between mb-6 gap-4">
+      <div className="flex items-start justify-between mb-6 gap-4">
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>Plugins</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: 0 }}>Plugins</h1>
           <p style={{ fontSize: 13, color: T.textMuted, marginTop: 6 }}>
             Install third-party node types. Plugins run as HTTP handlers — they can be written in any language.
           </p>
@@ -143,7 +144,7 @@ export default function PluginsPage() {
           onClick={() => { setInstallOpen(true); setError(null); }}
           style={{
             background: T.accent, color: '#fff',
-            fontSize: 12, fontWeight: 500, letterSpacing: '0.02em',
+            fontSize: 12, fontWeight: 500, letterSpacing: 0,
             padding: '7px 14px', borderRadius: 2,
           }}
           className="flex items-center gap-1.5 hover:opacity-90 transition"
@@ -154,7 +155,7 @@ export default function PluginsPage() {
 
       {/* Install drawer */}
       {installOpen && (
-        <div className="mb-5 p-4" style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12 }}>
+        <div className="mb-5 p-4" style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 0 }}>
           <div className="flex items-center justify-between mb-3">
             <h3 style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Install a plugin</h3>
             <button onClick={() => setInstallOpen(false)} style={{ fontSize: 12, color: T.textMuted }}>Cancel</button>
@@ -163,7 +164,7 @@ export default function PluginsPage() {
             <button
               onClick={() => setInstallMode('url')}
               style={{
-                padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 500,
+                padding: '6px 12px', borderRadius: 0, fontSize: 12, fontWeight: 500,
                 background: installMode === 'url' ? T.accent : T.input,
                 color: installMode === 'url' ? '#fff' : T.textSec,
                 border: `1px solid ${installMode === 'url' ? T.accent : T.border}`,
@@ -175,7 +176,7 @@ export default function PluginsPage() {
             <button
               onClick={() => setInstallMode('json')}
               style={{
-                padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 500,
+                padding: '6px 12px', borderRadius: 0, fontSize: 12, fontWeight: 500,
                 background: installMode === 'json' ? T.accent : T.input,
                 color: installMode === 'json' ? '#fff' : T.textSec,
                 border: `1px solid ${installMode === 'json' ? T.accent : T.border}`,
@@ -191,7 +192,7 @@ export default function PluginsPage() {
               value={installUrl}
               onChange={(e) => setInstallUrl(e.target.value)}
               placeholder="https://plugins.example.com/stripe/manifest.json"
-              style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text, borderRadius: 8, padding: '10px 12px', fontSize: 13, width: '100%', outline: 'none' }}
+              style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text, borderRadius: 0, padding: '10px 12px', fontSize: 13, width: '100%', outline: 'none' }}
             />
           ) : (
             <textarea
@@ -200,7 +201,7 @@ export default function PluginsPage() {
               rows={10}
               spellCheck={false}
               placeholder={`{\n  "name": "stripe-charge",\n  "version": "1.0.0",\n  "displayName": "Stripe Charge",\n  "category": "Notifications",\n  "icon": "credit-card",\n  "color": "#635BFF",\n  "inputs": [\n    {"name": "amount", "type": "number", "required": true},\n    {"name": "customer", "type": "string", "required": true}\n  ],\n  "outputs": [{"name": "chargeId", "type": "string"}],\n  "handler": {\n    "kind": "http",\n    "url": "https://plugins.example.com/stripe/charge"\n  }\n}`}
-              style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text, borderRadius: 8, padding: 12, fontSize: 12, fontFamily: 'JetBrains Mono, monospace', width: '100%', outline: 'none', resize: 'vertical' }}
+              style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text, borderRadius: 0, padding: 12, fontSize: 12, fontFamily: 'JetBrains Mono, monospace', width: '100%', outline: 'none', resize: 'vertical' }}
             />
           )}
 
@@ -208,7 +209,7 @@ export default function PluginsPage() {
             value={installSecret}
             onChange={(e) => setInstallSecret(e.target.value)}
             placeholder="Auth secret (optional, sent as X-Plugin-Secret)"
-            style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text, borderRadius: 8, padding: '10px 12px', fontSize: 13, width: '100%', outline: 'none', marginTop: 8 }}
+            style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text, borderRadius: 0, padding: '10px 12px', fontSize: 13, width: '100%', outline: 'none', marginTop: 8 }}
           />
 
           {error && (
@@ -222,7 +223,7 @@ export default function PluginsPage() {
             <button
               onClick={install}
               disabled={installing}
-              style={{ background: T.accent, color: '#fff', borderRadius: 8, padding: '8px 18px', fontSize: 13, opacity: installing ? 0.7 : 1 }}
+              style={{ background: T.accent, color: '#fff', borderRadius: 0, padding: '8px 18px', fontSize: 13, opacity: installing ? 0.7 : 1 }}
               className="flex items-center gap-2"
             >
               {installing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
@@ -238,7 +239,7 @@ export default function PluginsPage() {
         </div>
       ) : plugins.length === 0 ? (
         <div className="text-center py-16">
-          <div style={{ width: 56, height: 56, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12 }}
+          <div style={{ width: 56, height: 56, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 0 }}
             className="mx-auto mb-4 flex items-center justify-center">
             <Blocks className="w-7 h-7" style={{ color: T.textMuted }} />
           </div>
@@ -250,15 +251,13 @@ export default function PluginsPage() {
       ) : (
         <div className="space-y-1.5">
           {plugins.map((p, i) => {
-            const color = p.manifest.color || '#6B7280';
-            const idx = String(i + 1).padStart(2, '0');
+            const color = p.manifest.color || '#6f6f6f';
             return (
               <div
                 key={p.name}
                 className="flex items-center gap-3 px-4 py-3 group"
                 style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 2 }}
               >
-                <span style={{ fontFamily: MONO, fontSize: 10, color: T.textMuted, width: 22, textAlign: 'right' }}>{idx}</span>
                 <div
                   className="flex items-center justify-center flex-shrink-0"
                   style={{ width: 34, height: 34, borderRadius: 2, background: `${color}18`, border: `1px solid ${color}40`, color }}
@@ -267,11 +266,11 @@ export default function PluginsPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span style={{ fontSize: 14, fontWeight: 500, color: T.text, letterSpacing: '-0.005em' }}>
+                    <span style={{ fontSize: 14, fontWeight: 500, color: T.text, letterSpacing: 0 }}>
                       {p.manifest.displayName || p.name}
                     </span>
                     <span style={{
-                      fontFamily: MONO, fontSize: 10, fontWeight: 500, letterSpacing: '0.06em',
+                      fontFamily: MONO, fontSize: 10, fontWeight: 500, letterSpacing: 0,
                       color: T.textSec, background: 'transparent',
                       padding: '1px 5px', borderRadius: 2,
                       border: `1px solid ${T.border}`,
@@ -282,14 +281,14 @@ export default function PluginsPage() {
                       <span style={{
                         fontFamily: MONO, fontSize: 10, fontWeight: 500, color: T.red,
                         background: 'transparent', padding: '1px 5px', borderRadius: 2,
-                        border: '1px solid color-mix(in srgb, #EF4444 40%, transparent)',
-                        letterSpacing: '0.08em',
+                        border: '1px solid color-mix(in srgb, #da1e28 40%, transparent)',
+                        letterSpacing: 0,
                       }}>
-                        DISABLED
+                        Disabled
                       </span>
                     )}
                   </div>
-                  <p style={{ fontFamily: MONO, fontSize: 10.5, color: T.textMuted, marginTop: 3, letterSpacing: '0.02em' }} className="truncate">
+                  <p style={{ fontFamily: MONO, fontSize: 10.5, color: T.textMuted, marginTop: 3, letterSpacing: 0 }} className="truncate">
                     {p.manifest.description || p.manifest.category || 'plugin'}
                     {p.manifest.handler?.url && <> · {p.manifest.handler.url}</>}
                   </p>

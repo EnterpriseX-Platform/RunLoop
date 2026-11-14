@@ -7,201 +7,179 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ==================== Orch.io Theme System ==================== */
-
+/* ==================== Carbon Design System (g10 light / g100 dark) ==================== */
 :root {
-  /* Thai first so Thai characters hit the Thai cut automatically, Sans
-     second for Latin — browser falls through per-glyph. */
-  --font-sans: 'IBM Plex Sans Thai', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-
-  /* Flow canvas design tokens — used by nodes/edges. Nodes render on top of
-     a paper-like light surface in both themes for maximum legibility, but
-     we expose CSS vars so the theme can adjust if needed. */
-  --flow-node-bg:             #FFFFFF;
-  --flow-node-border:         #E5E7EB;
-  --flow-node-border-subtle:  #F3F4F6;
-  --flow-node-text:           #111827;
-  --flow-node-text-muted:     #6B7280;
-  --flow-canvas-bg:           #F8FAFC;
-  --flow-canvas-dots:         #CBD5E1;
-
-  /* Default: Dark Theme (Orch.io) */
-  --t-bg: #0F1117;
-  --t-panel: #1A1D28;
-  --t-panel-hover: #1E2132;
-  --t-border: #232736;
-  --t-border-light: #1D2130;
-  --t-text: #E2E8F0;
-  --t-text-secondary: #8B92A5;
-  --t-text-muted: #5A6178;
-  --t-accent: #3B82F6;
-  --t-accent-hover: #2563EB;
-  --t-accent-light: #60A5FA;
-  --t-input: #151821;
-  --t-header: #12141D;
-  --t-sidebar: #0B0D14;
-  --t-card-hover: #252836;
-  --t-shadow: rgba(0,0,0,0.3);
-  --t-code-bg: #151821;
-}
-
-/* Dark theme: flow surface stays readable with high-contrast node cards */
-[data-theme="dark"] {
-  /* Flow canvas in dark mode: charcoal background, slightly darker node
-     surface so the colored accents pop. Still high-contrast for legibility. */
-  --flow-node-bg:             #1E2233;
-  --flow-node-border:         #2A3044;
-  --flow-node-border-subtle:  #252938;
-  --flow-node-text:           #F1F5F9;
-  --flow-node-text-muted:     #94A3B8;
-  --flow-canvas-bg:           #13151E;
-  --flow-canvas-dots:         #2A3044;
-
-  --t-bg: #0F1117;
-  --t-panel: #1A1D28;
-  --t-panel-hover: #1E2132;
-  --t-border: #232736;
-  --t-border-light: #1D2130;
-  --t-text: #E2E8F0;
-  --t-text-secondary: #8B92A5;
-  --t-text-muted: #5A6178;
-  --t-accent: #3B82F6;
-  --t-accent-hover: #2563EB;
-  --t-accent-light: #60A5FA;
-  --t-input: #151821;
-  --t-header: #12141D;
-  --t-sidebar: #0B0D14;
-  --t-card-hover: #252836;
-  --t-shadow: rgba(0,0,0,0.3);
-  --t-code-bg: #151821;
-
-  /* Legacy compat mapping */
-  --bg-primary: #0F1117;
-  --bg-secondary: #1A1D28;
-  --bg-tertiary: #1E2132;
-  --bg-elevated: #252836;
-  --bg-hover: #1E2132;
-
-  --border-color: #232736;
-  --border-hover: #2E3345;
-
-  --text-primary: #E2E8F0;
-  --text-secondary: #8B92A5;
-  --text-tertiary: #5A6178;
-  --text-muted: #3D4455;
-
-  --ocean-blue: #3B82F6;
-  --ocean-dark: #2563EB;
-  --ocean-light: #60A5FA;
-  --ocean-subtle: rgba(59, 130, 246, 0.15);
-
-  --warm-orange: #f97316;
-  --warm-dark: #ea580c;
-  --warm-light: #fb923c;
-  --warm-subtle: rgba(249, 115, 22, 0.12);
-
-  --success: #22c55e;
-  --success-subtle: rgba(34, 197, 94, 0.12);
-  --warning: #f59e0b;
-  --warning-subtle: rgba(245, 158, 11, 0.12);
-  --error: #ef4444;
-  --error-subtle: rgba(239, 68, 68, 0.12);
-  --rose: #f43f5e;
-  --rose-subtle: rgba(244, 63, 94, 0.12);
-
-  --card-bg: #1A1D28;
-  --card-border: #232736;
-  --card-hover-border: #2E3345;
-  --input-bg: #151821;
-  --input-border: #232736;
-  --sidebar-bg: #0B0D14;
-  --sidebar-border: #1D2130;
-  --sidebar-active-bg: rgba(59, 130, 246, 0.20);
-  --sidebar-active-text: #60A5FA;
-  --sidebar-text: #8B92A5;
-  --sidebar-text-hover: #E2E8F0;
-  --page-bg: #0F1117;
-  --header-bg: #12141D;
-  --badge-bg: #1A1D28;
-  --badge-text: #8B92A5;
+  --font-sans: 'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --t-bg: #f4f4f4;
+  --t-panel: #ffffff;
+  --t-panel-hover: #e8e8e8;
+  --t-border: #e0e0e0;
+  --t-border-light: #e0e0e0;
+  --t-text: #161616;
+  --t-text-secondary: #525252;
+  --t-text-muted: #6f6f6f;
+  --t-accent: #0f62fe;
+  --t-accent-hover: #0353e9;
+  --t-accent-light: #0f62fe;
+  --t-input: #f4f4f4;
+  --t-header: #ffffff;
+  --t-sidebar: #ffffff;
+  --t-card-hover: #e8e8e8;
+  --t-selected: #e0e0e0;
+  --t-border-strong: #8d8d8d;
+  --t-shell: #161616;
+  --t-shadow: rgba(0,0,0,0);
+  --t-code-bg: #f4f4f4;
+  --t-success: #24a148;
+  --t-error: #da1e28;
+  --t-warning: #f1c21b;
+  --tag-green-bg: #a7f0ba;
+  --tag-green-text: #0e6027;
+  --tag-red-bg: #ffd7d9;
+  --tag-red-text: #a2191f;
+  --tag-blue-bg: #d0e2ff;
+  --tag-blue-text: #0043ce;
+  --tag-orange-bg: #ffd8bd;
+  --tag-orange-text: #8a3800;
+  --tag-gray-bg: #e0e0e0;
+  --tag-gray-text: #161616;
+  --flow-node-bg: #ffffff;
+  --flow-node-border: #e0e0e0;
+  --flow-node-border-subtle: #f4f4f4;
+  --flow-node-text: #161616;
+  --flow-node-text-muted: #6f6f6f;
+  --flow-canvas-bg: #f4f4f4;
+  --flow-canvas-dots: #c6c6c6;
+  --bg-primary: var(--t-bg);
+  --bg-secondary: var(--t-panel);
+  --bg-tertiary: var(--t-panel-hover);
+  --bg-elevated: var(--t-panel);
+  --bg-hover: var(--t-panel-hover);
+  --border-color: var(--t-border);
+  --border-hover: var(--t-border-strong);
+  --text-primary: var(--t-text);
+  --text-secondary: var(--t-text-secondary);
+  --text-tertiary: var(--t-text-muted);
+  --text-muted: var(--t-text-muted);
+  --ocean-blue: var(--t-accent);
+  --ocean-dark: var(--t-accent-hover);
+  --ocean-light: var(--t-accent-light);
+  --ocean-subtle: var(--tag-blue-bg);
+  --warm-orange: #ff832b;
+  --warm-dark: #eb6200;
+  --warm-light: #ff832b;
+  --warm-subtle: var(--tag-orange-bg);
+  --success: var(--t-success);
+  --success-subtle: var(--tag-green-bg);
+  --warning: var(--t-warning);
+  --warning-subtle: var(--tag-orange-bg);
+  --error: var(--t-error);
+  --error-subtle: var(--tag-red-bg);
+  --rose: var(--t-error);
+  --rose-subtle: var(--tag-red-bg);
+  --card-bg: var(--t-panel);
+  --card-border: var(--t-border);
+  --card-hover-border: var(--t-border-strong);
+  --input-bg: var(--t-input);
+  --input-border: var(--t-border-strong);
+  --sidebar-bg: var(--t-sidebar);
+  --sidebar-border: var(--t-border);
+  --sidebar-active-bg: var(--t-selected);
+  --sidebar-active-text: var(--t-text);
+  --sidebar-text: var(--t-text-secondary);
+  --sidebar-text-hover: var(--t-text);
+  --page-bg: var(--t-bg);
+  --header-bg: var(--t-header);
+  --badge-bg: var(--tag-gray-bg);
+  --badge-text: var(--tag-gray-text);
   --scrollbar-track: transparent;
-  --scrollbar-thumb: #232736;
-  --scrollbar-thumb-hover: #2E3345;
+  --scrollbar-thumb: var(--t-border-strong);
+  --scrollbar-thumb-hover: var(--t-text-muted);
 }
-
-/* Light Theme Override (Orch.io) */
 [data-theme="light"] {
-  --t-bg: #EBEEF3;
-  --t-panel: #F5F6FA;
-  --t-panel-hover: #ECEEF4;
-  --t-border: #E8ECF2;
-  --t-border-light: #EFF2F7;
-  --t-text: #1A2030;
-  --t-text-secondary: #5A6578;
-  --t-text-muted: #8892A2;
-  --t-accent: #3B82F6;
-  --t-accent-hover: #2563EB;
-  --t-accent-light: #60A5FA;
-  --t-input: #E8EBF1;
-  --t-header: #F0F1F6;
-  --t-sidebar: #F0F1F6;
-  --t-card-hover: #E8EBF1;
-  --t-shadow: rgba(15,20,35,0.06);
-  --t-code-bg: #ECEEF4;
-
-  /* Legacy compat mapping */
-  --bg-primary: #EBEEF3;
-  --bg-secondary: #F5F6FA;
-  --bg-tertiary: #F0F1F6;
-  --bg-elevated: #ECEEF4;
-  --bg-hover: #E8EBF1;
-
-  --border-color: #E8ECF2;
-  --border-hover: #D0D5DE;
-
-  --text-primary: #1A2030;
-  --text-secondary: #5A6578;
-  --text-tertiary: #8892A2;
-  --text-muted: #B0B8C8;
-
-  --ocean-blue: #3B82F6;
-  --ocean-dark: #2563EB;
-  --ocean-light: #60A5FA;
-  --ocean-subtle: rgba(59, 130, 246, 0.1);
-
-  --warm-orange: #f97316;
-  --warm-dark: #ea580c;
-  --warm-light: #fb923c;
-  --warm-subtle: rgba(249, 115, 22, 0.08);
-
-  --success: #22c55e;
-  --success-subtle: rgba(34, 197, 94, 0.08);
-  --warning: #f59e0b;
-  --warning-subtle: rgba(245, 158, 11, 0.08);
-  --error: #ef4444;
-  --error-subtle: rgba(239, 68, 68, 0.08);
-  --rose: #f43f5e;
-  --rose-subtle: rgba(244, 63, 94, 0.08);
-
-  --card-bg: #F5F6FA;
-  --card-border: #E8ECF2;
-  --card-hover-border: #D0D5DE;
-  --input-bg: #E8EBF1;
-  --input-border: #E8ECF2;
-  --sidebar-bg: #F0F1F6;
-  --sidebar-border: #EFF2F7;
-  --sidebar-active-bg: rgba(59, 130, 246, 0.15);
-  --sidebar-active-text: #3B82F6;
-  --sidebar-text: #5A6178;
-  --sidebar-text-hover: #1A2030;
-  --page-bg: #EBEEF3;
-  --header-bg: #F0F1F6;
-  --badge-bg: #ECEEF4;
-  --badge-text: #5A6578;
-  --scrollbar-track: #ECEEF4;
-  --scrollbar-thumb: #D0D5DE;
-  --scrollbar-thumb-hover: #8892A2;
+  --t-bg: #f4f4f4;
+  --t-panel: #ffffff;
+  --t-panel-hover: #e8e8e8;
+  --t-border: #e0e0e0;
+  --t-border-light: #e0e0e0;
+  --t-text: #161616;
+  --t-text-secondary: #525252;
+  --t-text-muted: #6f6f6f;
+  --t-accent: #0f62fe;
+  --t-accent-hover: #0353e9;
+  --t-accent-light: #0f62fe;
+  --t-input: #f4f4f4;
+  --t-header: #ffffff;
+  --t-sidebar: #ffffff;
+  --t-card-hover: #e8e8e8;
+  --t-selected: #e0e0e0;
+  --t-border-strong: #8d8d8d;
+  --t-shell: #161616;
+  --t-shadow: rgba(0,0,0,0);
+  --t-code-bg: #f4f4f4;
+  --t-success: #24a148;
+  --t-error: #da1e28;
+  --t-warning: #f1c21b;
+  --tag-green-bg: #a7f0ba;
+  --tag-green-text: #0e6027;
+  --tag-red-bg: #ffd7d9;
+  --tag-red-text: #a2191f;
+  --tag-blue-bg: #d0e2ff;
+  --tag-blue-text: #0043ce;
+  --tag-orange-bg: #ffd8bd;
+  --tag-orange-text: #8a3800;
+  --tag-gray-bg: #e0e0e0;
+  --tag-gray-text: #161616;
+  --flow-node-bg: #ffffff;
+  --flow-node-border: #e0e0e0;
+  --flow-node-border-subtle: #f4f4f4;
+  --flow-node-text: #161616;
+  --flow-node-text-muted: #6f6f6f;
+  --flow-canvas-bg: #f4f4f4;
+  --flow-canvas-dots: #c6c6c6;
+}
+[data-theme="dark"] {
+  --t-bg: #161616;
+  --t-panel: #262626;
+  --t-panel-hover: #333333;
+  --t-border: #393939;
+  --t-border-light: #393939;
+  --t-text: #f4f4f4;
+  --t-text-secondary: #c6c6c6;
+  --t-text-muted: #a8a8a8;
+  --t-accent: #4589ff;
+  --t-accent-hover: #0f62fe;
+  --t-accent-light: #78a9ff;
+  --t-input: #393939;
+  --t-header: #161616;
+  --t-sidebar: #161616;
+  --t-card-hover: #333333;
+  --t-selected: #393939;
+  --t-border-strong: #6f6f6f;
+  --t-shell: #000000;
+  --t-shadow: rgba(0,0,0,0);
+  --t-code-bg: #262626;
+  --t-success: #42be65;
+  --t-error: #fa4d56;
+  --t-warning: #f1c21b;
+  --tag-green-bg: #044317;
+  --tag-green-text: #a7f0ba;
+  --tag-red-bg: #750e13;
+  --tag-red-text: #ffd7d9;
+  --tag-blue-bg: #002d9c;
+  --tag-blue-text: #d0e2ff;
+  --tag-orange-bg: #5e2900;
+  --tag-orange-text: #ffd8bd;
+  --tag-gray-bg: #393939;
+  --tag-gray-text: #f4f4f4;
+  --flow-node-bg: #262626;
+  --flow-node-border: #393939;
+  --flow-node-border-subtle: #333333;
+  --flow-node-text: #f4f4f4;
+  --flow-node-text-muted: #a8a8a8;
+  --flow-canvas-bg: #161616;
+  --flow-canvas-dots: #393939;
 }
 
 * {
@@ -240,7 +218,7 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: var(--t-border);
-  border-radius: 3px;
+  border-radius: 0;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -249,13 +227,13 @@ body {
 
 /* Selection & Focus */
 ::selection {
-  background: rgba(59, 130, 246, 0.15);
+  background: var(--tag-blue-bg);
   color: var(--t-text);
 }
 
 *:focus-visible {
   outline: 2px solid var(--t-accent);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 
 /* Spinner / Loading */
@@ -296,7 +274,7 @@ body {
   color: white;
   font-size: 0.875rem;
   font-weight: 500;
-  border-radius: 0.5rem;
+  border-radius: 0;
   border: none;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -325,7 +303,7 @@ body {
   color: var(--t-text);
   font-size: 0.875rem;
   font-weight: 500;
-  border-radius: 0.5rem;
+  border-radius: 0;
   border: 1px solid var(--t-border);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -347,7 +325,7 @@ body {
   color: white;
   font-size: 0.875rem;
   font-weight: 500;
-  border-radius: 0.5rem;
+  border-radius: 0;
   border: none;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -369,7 +347,7 @@ body {
 .card {
   background-color: var(--t-panel);
   border: 1px solid var(--t-border);
-  border-radius: 10px;
+  border-radius: 0;
   transition: border-color 0.15s ease;
 }
 
@@ -387,25 +365,13 @@ body {
   border-radius: 9999px;
 }
 
-.badge-success {
-  background-color: var(--success-subtle);
-  color: var(--success);
-}
+.badge-success { background-color: var(--tag-green-bg); color: var(--tag-green-text); }
 
-.badge-warning {
-  background-color: var(--warning-subtle);
-  color: var(--warning);
-}
+.badge-warning { background-color: var(--tag-orange-bg); color: var(--tag-orange-text); }
 
-.badge-error {
-  background-color: var(--error-subtle);
-  color: var(--error);
-}
+.badge-error { background-color: var(--tag-red-bg); color: var(--tag-red-text); }
 
-.badge-ocean {
-  background-color: var(--ocean-subtle);
-  color: var(--t-accent);
-}
+.badge-ocean { background-color: var(--tag-blue-bg); color: var(--tag-blue-text); }
 
 /* Grid Background */
 .bg-grid {
@@ -450,7 +416,7 @@ body {
   padding: 1rem;
   background-color: var(--t-panel);
   border: 1px solid var(--t-border);
-  border-radius: 0.75rem;
+  border-radius: 0;
   transition: all 0.15s ease;
 }
 
@@ -466,7 +432,7 @@ body {
   width: 2.5rem;
   height: 2.5rem;
   background-color: var(--ocean-subtle);
-  border-radius: 0.625rem;
+  border-radius: 0;
   color: var(--t-accent);
 }
 
@@ -477,7 +443,7 @@ body {
   width: 2.5rem;
   height: 2.5rem;
   background-color: var(--warm-subtle);
-  border-radius: 0.625rem;
+  border-radius: 0;
   color: var(--warm-orange);
 }
 
@@ -488,7 +454,7 @@ body {
   width: 2.5rem;
   height: 2.5rem;
   background-color: var(--success-subtle);
-  border-radius: 0.625rem;
+  border-radius: 0;
   color: var(--success);
 }
 
@@ -498,7 +464,7 @@ body {
   padding: 0.75rem 1rem;
   background-color: var(--t-input);
   border: 1px solid var(--t-border);
-  border-radius: 0.625rem;
+  border-radius: 0;
   color: var(--t-text);
   font-size: 0.9375rem;
   transition: all 0.15s ease;
@@ -507,7 +473,7 @@ body {
 .input-dark:focus {
   outline: none;
   border-color: var(--t-accent);
-  box-shadow: 0 0 0 3px var(--ocean-subtle);
+  box-shadow: inset 0 0 0 2px var(--t-accent);
 }
 
 .input-dark::placeholder {
@@ -523,3 +489,105 @@ body {
 [data-theme="light"] * {
   --tw-ring-color: var(--t-border);
 }
+
+/* Carbon: no elevation shadows, no glass blur on surfaces. */
+.glass { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--t-panel); }
+.bg-grid { display: none; }
+.text-gradient { background: none; -webkit-text-fill-color: currentColor; color: var(--t-text); }
+.sidebar-gradient { background: var(--t-accent); }
+.tabular-nums, table { font-variant-numeric: tabular-nums; }
+
+/* React Flow controls in Carbon colours (default is a white box in both themes). */
+.react-flow__controls { box-shadow: none !important; }
+.react-flow__controls-button {
+  background: var(--t-panel) !important;
+  border-bottom: 1px solid var(--t-border) !important;
+  color: var(--t-text) !important;
+  fill: var(--t-text) !important;
+  width: 32px; height: 32px;
+}
+.react-flow__controls-button:hover { background: var(--t-panel-hover) !important; }
+.react-flow__controls-button svg { fill: var(--t-text) !important; }
+
+/* Carbon: button labels never wrap; narrow layouts drop the label instead. */
+button, [role="button"] { white-space: nowrap; }
+
+/* Carbon data table row: proportional columns via --cols; columns marked
+   .rl-opt drop out below 1024px and the row switches to --cols-sm. */
+.rl-row {
+  display: grid;
+  grid-template-columns: var(--cols);
+  align-items: center;
+  column-gap: 16px;
+  padding: 0 16px;
+  min-height: 64px;
+}
+.rl-row + .rl-row { border-top: 1px solid var(--t-border); }
+.rl-th { min-height: 48px; background: var(--t-selected); font-size: 14px; font-weight: 600; color: var(--t-text); }
+.rl-th + .rl-row { border-top: none; }
+@media (max-width: 1023px) {
+  .rl-row { grid-template-columns: var(--cols-sm, var(--cols)); }
+  .rl-opt { display: none !important; }
+}
+
+/* Flow canvas: hover/selected edges darken like the reference editor. */
+.react-flow__edge:hover .react-flow__edge-path,
+.react-flow__edge.selected .react-flow__edge-path { stroke: var(--t-text) !important; stroke-opacity: 1 !important; stroke-width: 2.6 !important; }
+.react-flow__handle:hover, .react-flow__handle.connectingfrom, .react-flow__handle.connectingto { background: var(--t-text) !important; }
+.react-flow { background: var(--flow-canvas-bg); }
+
+/* Horizontal tab strips scroll without showing a scrollbar. */
+.rl-noscrollbar { scrollbar-width: none; }
+.rl-noscrollbar::-webkit-scrollbar { display: none; }
+
+/* ===== Carbon consistency layer (applies to every page in <main>) ===== */
+
+/* One page-title style everywhere: heading-04, no leading icon. */
+main h1 { font-size: 28px !important; line-height: 36px !important; font-weight: 400 !important; letter-spacing: 0 !important; }
+main h1 > svg { display: none !important; }
+
+/* Tiles sit on --t-bg with their own fill; Carbon does not outline them. */
+[style*="background: var(--t-panel)"][style*="border: 1px solid var(--t-border)"],
+[style*="background-color: var(--t-panel)"][style*="border: 1px solid var(--t-border)"] {
+  border-color: transparent !important;
+}
+
+/* Form fields: filled, square, a single bottom rule, 2px inset focus ring. */
+main :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]), select, textarea):not(.rl-bare) {
+  background-color: var(--t-input) !important;
+  border: none !important;
+  border-bottom: 1px solid var(--t-border-strong) !important;
+  border-radius: 0 !important;
+  box-shadow: none;
+  color: var(--t-text);
+}
+main :is(input, select):not([type="checkbox"]):not([type="radio"]):not(.rl-bare) { min-height: 40px; }
+main :is(input, select, textarea):not(.rl-bare):focus { outline: none !important; box-shadow: inset 0 0 0 2px var(--t-accent) !important; }
+main input[type="checkbox"], main input[type="radio"] { accent-color: var(--t-text); width: 16px; height: 16px; }
+
+/* Data tables: Carbon header (48px, layer-selected, 14px semibold), rows separated by one rule. */
+main table thead, main table thead tr { background: var(--t-selected) !important; }
+main table th { height: 48px; font-size: 14px !important; font-weight: 600 !important; color: var(--t-text) !important; text-transform: none !important; letter-spacing: 0 !important; }
+main table tbody tr + tr td { border-top: 1px solid var(--t-border); }
+main table td { font-size: 14px; }
+
+/* Shell header is always Carbon's dark header (g100 tokens), in both themes. */
+.rl-shell {
+  --t-text: #f4f4f4;
+  --t-text-secondary: #c6c6c6;
+  --t-text-muted: #a8a8a8;
+  --t-accent: #78a9ff;
+  --t-input: #262626;
+  --t-panel: #262626;
+  --t-panel-hover: #333333;
+  --t-border: #393939;
+  --t-border-light: #393939;
+  --t-border-strong: #6f6f6f;
+  --t-header: #161616;
+  color: #f4f4f4;
+}
+.rl-shell :is(input) { background-color: #262626 !important; border-bottom-color: #6f6f6f !important; color: #f4f4f4; }
+
+/* Floating menus (dropdowns, comboboxes, header menus) keep Carbon's
+   menu elevation so they read above the panel they open over. */
+.rl-menu { box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important; background: var(--t-panel-hover); }
