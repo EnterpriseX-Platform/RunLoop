@@ -430,7 +430,7 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
         <span
           className="flex-shrink-0"
           style={{
-            width: 8, height: 8,
+            width: 6, height: 6, borderRadius: 999,
             background: selectedProject?.color || 'var(--t-text-muted)',
           }}
         />
@@ -861,10 +861,6 @@ export function Layout({ children }: { children?: React.ReactNode }) {
             </Link>
             <span aria-hidden style={{ width: 1, height: 24, background: '#393939' }} />
             <ProjectSelector collapsed={false} />
-            <span aria-hidden className="hidden md:block" style={{ width: 1, height: 24, background: '#393939', marginRight: 16 }} />
-            <div className="hidden md:flex min-w-0">
-              <Breadcrumb />
-            </div>
           </div>
 
           <div className="flex items-center ml-auto h-full">
@@ -896,16 +892,6 @@ export function Layout({ children }: { children?: React.ReactNode }) {
                 <Search className="w-5 h-5" />
               </button>
             )}
-
-            <button
-              onClick={toggleTheme}
-              style={{ color: '#f4f4f4' }}
-              className="h-12 w-12 flex items-center justify-center transition-colors hover:bg-[#333333]"
-              title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-              aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-            >
-              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
 
             <div className="relative" ref={notificationsRef}>
               <button
@@ -1013,79 +999,33 @@ export function Layout({ children }: { children?: React.ReactNode }) {
 
               {showUserMenu && (
                 <div
-                  style={{ backgroundColor: 'var(--t-panel)', borderColor: 'var(--t-border)', borderRadius: 2 }}
-                  className="absolute right-0 top-full w-56 border py-2 rl-menu"
+                  style={{ backgroundColor: 'var(--t-panel)', borderColor: 'var(--t-border)' }}
+                  className="absolute right-0 top-full w-64 border rl-menu"
                 >
-                  <div className="px-3 py-2.5 border-b" style={{ borderColor: 'var(--t-border)' }}>
-                    <p
-                      className="font-medium"
-                      style={{ fontFamily: MONO, fontSize: 12, color: 'var(--t-text)', letterSpacing: 0 }}
-                    >
-                      {user?.name || user?.email || 'admin'}
+                  <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--t-border)' }}>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--t-text)' }} className="truncate">
+                      {user?.name || user?.email || 'Account'}
                     </p>
-                    <p
-                      className="mt-0.5"
-                      style={{
-                        fontFamily: MONO,
-                        fontSize: 10,
-                        color: 'var(--t-text-muted)',
-                        letterSpacing: 0,
-                      }}
-                    >
-                      {user?.email || '—'}
-                    </p>
+                    {user?.email && user?.name && (
+                      <p style={{ fontSize: 12, color: 'var(--t-text-secondary)', marginTop: 2 }} className="truncate">
+                        {user.email}
+                      </p>
+                    )}
                   </div>
                   <div className="py-1">
-                    <button
-                      style={{
-                        color: 'var(--t-text-secondary)',
-                        fontFamily: MONO,
-                        fontSize: 11,
-                        letterSpacing: 0,
-                      }}
-                      className="w-full px-3 py-2 text-left hover:text-[var(--t-text)] hover:bg-[var(--t-panel-hover)] flex items-center gap-2 "
-                    >
-                      <User className="w-3.5 h-3.5" />
-                      profile
+                    <button onClick={toggleTheme} className="w-full h-10 px-4 text-left flex items-center gap-3 transition-colors hover:bg-[var(--t-panel-hover)]" style={{ fontSize: 14, color: 'var(--t-text)' }}>
+                      {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                      {theme === 'dark' ? 'Light theme' : 'Dark theme'}
                     </button>
-                    <button
-                      onClick={() => router.push('/settings')}
-                      style={{
-                        color: 'var(--t-text-secondary)',
-                        fontFamily: MONO,
-                        fontSize: 11,
-                        letterSpacing: 0,
-                      }}
-                      className="w-full px-3 py-2 text-left hover:text-[var(--t-text)] hover:bg-[var(--t-panel-hover)] flex items-center gap-2 "
-                    >
-                      <Settings className="w-3.5 h-3.5" />
-                      settings
-                    </button>
-                    <button
-                      style={{
-                        color: 'var(--t-text-secondary)',
-                        fontFamily: MONO,
-                        fontSize: 11,
-                        letterSpacing: 0,
-                      }}
-                      className="w-full px-3 py-2 text-left hover:text-[var(--t-text)] hover:bg-[var(--t-panel-hover)] flex items-center gap-2 "
-                    >
-                      <HelpCircle className="w-3.5 h-3.5" />
-                      help &amp; support
+                    <button onClick={() => { setShowUserMenu(false); router.push(`${projectPrefix}/settings`); }} className="w-full h-10 px-4 text-left flex items-center gap-3 transition-colors hover:bg-[var(--t-panel-hover)]" style={{ fontSize: 14, color: 'var(--t-text)' }}>
+                      <Settings className="w-4 h-4" />
+                      Settings
                     </button>
                   </div>
-                  <div className="border-t py-1 mt-1" style={{ borderColor: 'var(--t-border)' }}>
-                    <button
-                      onClick={handleLogout}
-                      style={{
-                        fontFamily: MONO,
-                        fontSize: 11,
-                        letterSpacing: 0,
-                      }}
-                      className="w-full px-3 py-2 text-left text-red-400 hover:text-red-300 hover:bg-red-500/10 flex items-center gap-2 "
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                      sign out
+                  <div className="py-1" style={{ borderTop: '1px solid var(--t-border)' }}>
+                    <button onClick={handleLogout} className="w-full h-10 px-4 text-left flex items-center gap-3 transition-colors hover:bg-[var(--t-panel-hover)]" style={{ fontSize: 14, color: 'var(--t-text)' }}>
+                      <LogOut className="w-4 h-4" />
+                      Sign out
                     </button>
                   </div>
                 </div>
