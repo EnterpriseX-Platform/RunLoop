@@ -423,7 +423,7 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
           background: isOpen ? 'var(--t-panel-hover)' : 'transparent',
           height: 48,
           maxWidth: 280,
-          padding: '0 16px 0 32px',
+          padding: '0 16px',
         }}
         className="flex items-center gap-2 transition-colors hover:bg-[var(--t-panel-hover)]"
         title={selectedProject?.name || 'Select Project'}
@@ -431,7 +431,7 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
         <span
           className="flex-shrink-0"
           style={{
-            width: 6, height: 6, borderRadius: 999,
+            width: 10, height: 10,
             background: selectedProject?.color || 'var(--t-text-muted)',
           }}
         />
@@ -718,6 +718,8 @@ export function Layout({ children }: { children?: React.ReactNode }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const pageSeg = (pathname.replace(/^\/p\/[^/]+\/?/, '').replace(/^\//, '').split('/')[0]) || 'dashboard';
+  const currentPageTitle = breadcrumbMap[pageSeg] || (pageSeg.charAt(0).toUpperCase() + pageSeg.slice(1));
   const [counts, setCounts] = useState<Record<string, number>>({});
 
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -843,16 +845,9 @@ export function Layout({ children }: { children?: React.ReactNode }) {
           className="rl-shell fixed top-0 left-0 right-0 h-12 flex items-center z-50"
         >
           <div className="flex items-center min-w-0 h-full">
-            {/* Brand block is exactly as wide as the side nav (224px, or
-                content-wide when the nav is collapsed) so the project
-                switcher lines up with the page content. */}
-            <div
-              className="flex items-center h-full flex-shrink-0"
-              style={{ width: sidebarCollapsed ? 'auto' : 224 }}
-            >
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="h-12 w-12 flex items-center justify-center hover:bg-[#333333]"
+              className="h-12 w-12 flex items-center justify-center hover:bg-[#333333] flex-shrink-0"
               style={{ color: '#f4f4f4' }}
               title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -861,14 +856,18 @@ export function Layout({ children }: { children?: React.ReactNode }) {
             </button>
             <Link
               href={`${projectPrefix}/dashboard`}
-              className="flex items-center gap-2 h-full pr-4 pl-1 whitespace-nowrap"
-              style={{ color: '#f4f4f4', fontSize: 14 }}
+              className="flex items-center gap-2.5 h-full pl-2 pr-4 whitespace-nowrap"
+              style={{ color: '#f4f4f4', fontSize: 14, fontWeight: 600 }}
             >
               <LogoMark size={20} />
-              <span>Run<span style={{ fontWeight: 600 }}>Loop</span></span>
+              <span>RunLoop</span>
             </Link>
-            </div>
+            <span aria-hidden style={{ width: 1, height: 20, background: '#525252', flexShrink: 0 }} />
             <ProjectSelector collapsed={false} />
+            <span aria-hidden style={{ width: 1, height: 20, background: '#525252', flexShrink: 0 }} />
+            <span className="hidden sm:block truncate pl-4" style={{ fontSize: 14, fontWeight: 600, color: '#f4f4f4' }}>
+              {currentPageTitle}
+            </span>
           </div>
 
           <div className="flex items-center ml-auto h-full">
@@ -881,25 +880,15 @@ export function Layout({ children }: { children?: React.ReactNode }) {
 
             </div>
 
-            {/* Search: Carbon header search, an action that opens into a field */}
-            {searchOpen ? (
-              <div className="flex items-center h-12" style={{ width: 280, background: '#262626' }}>
-                <Search className="w-5 h-5 mx-3.5 flex-shrink-0" style={{ color: '#c6c6c6' }} />
-                <input
-                  autoFocus
-                  type="text"
-                  placeholder="Search"
-                  onKeyDown={(e) => { if (e.key === 'Escape') setSearchOpen(false); }}
-                  onBlur={() => setSearchOpen(false)}
-                  className="rl-bare flex-1 h-12 bg-transparent outline-none placeholder:text-[#a8a8a8]"
-                  style={{ fontSize: 14, color: '#f4f4f4', border: 'none', outline: 'none', boxShadow: 'none' }}
-                />
-              </div>
-            ) : (
-              <button onClick={() => setSearchOpen(true)} className="h-12 w-12 flex items-center justify-center transition-colors hover:bg-[#333333]" style={{ color: '#f4f4f4' }} title="Search" aria-label="Search">
-                <Search className="w-5 h-5" />
-              </button>
-            )}
+            <button
+              onClick={toggleTheme}
+              style={{ color: '#f4f4f4' }}
+              className="h-12 w-12 flex items-center justify-center transition-colors hover:bg-[#333333]"
+              title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+              aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+            >
+              <Sun className="w-5 h-5" />
+            </button>
 
             <div className="relative" ref={notificationsRef}>
               <button
@@ -910,7 +899,6 @@ export function Layout({ children }: { children?: React.ReactNode }) {
                 aria-label="Notifications"
               >
                 <Bell className="w-5 h-5" />
-                <span aria-hidden className="absolute" style={{ top: 13, right: 13, width: 8, height: 8, borderRadius: 999, background: '#fa4d56', boxShadow: '0 0 0 2px #161616' }} />
               </button>
 
               {showNotifications && (
@@ -999,7 +987,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
               >
                 <span
                   className="flex items-center justify-center"
-                  style={{ width: 24, height: 24, borderRadius: 999, background: '#0f62fe', color: '#fff', fontSize: 12, fontWeight: 600 }}
+                  style={{ width: 28, height: 28, borderRadius: 999, background: '#393939', color: '#f4f4f4', fontSize: 13, fontWeight: 600 }}
                 >
                   {(user?.name?.charAt(0) || user?.email?.charAt(0) || 'A').toUpperCase()}
                 </span>
@@ -1021,10 +1009,6 @@ export function Layout({ children }: { children?: React.ReactNode }) {
                     )}
                   </div>
                   <div className="py-1">
-                    <button onClick={toggleTheme} className="w-full h-10 px-4 text-left flex items-center gap-3 transition-colors hover:bg-[var(--t-panel-hover)]" style={{ fontSize: 14, color: 'var(--t-text)' }}>
-                      {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                      {theme === 'dark' ? 'Light theme' : 'Dark theme'}
-                    </button>
                     <button onClick={() => { setShowUserMenu(false); router.push(`${projectPrefix}/settings`); }} className="w-full h-10 px-4 text-left flex items-center gap-3 transition-colors hover:bg-[var(--t-panel-hover)]" style={{ fontSize: 14, color: 'var(--t-text)' }}>
                       <Settings className="w-4 h-4" />
                       Settings
