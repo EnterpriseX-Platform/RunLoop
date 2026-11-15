@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/runloop/runloop-engine/internal/safehttp"
 	"io"
 	"net/http"
 	"regexp"
@@ -787,11 +788,14 @@ func (fe *FlowExecutor) executeFlowShapeNode(
 // executeEnqueueNode pushes a job to a named queue from inside a flow.
 //
 // Required config:
-//   queue:   string — queue name (must exist in the same project)
-//   payload: map    — JSON object passed to the bound flow as input
+//
+//	queue:   string — queue name (must exist in the same project)
+//	payload: map    — JSON object passed to the bound flow as input
+//
 // Optional:
-//   idempotencyKey: string — dedupe key
-//   priority:       int    — backend-specific
+//
+//	idempotencyKey: string — dedupe key
+//	priority:       int    — backend-specific
 //
 // Returns immediately on enqueue (does NOT wait for the consumer flow to
 // finish). Output exposes jobId, duplicate, queue.
@@ -836,9 +840,12 @@ func (fe *FlowExecutor) executeEnqueueNode(
 // connected to /ws/channel/<name> receive the payload in real time.
 //
 // Required config:
-//   channel: string — channel name (project-scoped automatically)
+//
+//	channel: string — channel name (project-scoped automatically)
+//
 // Optional:
-//   payload: map    — JSON object delivered to subscribers
+//
+//	payload: map    — JSON object delivered to subscribers
 //
 // Returns immediately. Output exposes how many subscribers received the
 // message — 0 is not an error (channel may have no live subscribers).
@@ -878,12 +885,13 @@ func (fe *FlowExecutor) executeNotifyNode(
 }
 
 // executeTransform evaluates config.expression. Two modes:
-//   mode="json" (default if expression looks like a JSON literal) — parse
-//     as JSON after variable substitution. Good for shaping output.
-//   mode="expr" — evaluate with expr-lang. Env exposes `nodes` (a map of
-//     nodeId → {output, success, skipped}) and `vars` (the flat
-//     ${{nodeId.key}} variable map). Expression result is returned directly
-//     when it's an object, otherwise wrapped as {value: ...}.
+//
+//	mode="json" (default if expression looks like a JSON literal) — parse
+//	  as JSON after variable substitution. Good for shaping output.
+//	mode="expr" — evaluate with expr-lang. Env exposes `nodes` (a map of
+//	  nodeId → {output, success, skipped}) and `vars` (the flat
+//	  ${{nodeId.key}} variable map). Expression result is returned directly
+//	  when it's an object, otherwise wrapped as {value: ...}.
 func (fe *FlowExecutor) executeTransform(config models.JSONMap, flowCtx *FlowExecutionContext) (models.JSONMap, bool, error) {
 	source, _ := config["expression"].(string)
 	if source == "" {
@@ -1303,8 +1311,9 @@ func parseBodyFlowConfig(raw interface{}) (*models.FlowConfig, error) {
 }
 
 // evalCondition evaluates a simple comparison from config:
-//   operator: eq | neq | gt | lt | gte | lte | contains
-//   left, right: string values (already variable-substituted).
+//
+//	operator: eq | neq | gt | lt | gte | lte | contains
+//	left, right: string values (already variable-substituted).
 func evalCondition(config models.JSONMap) (bool, error) {
 	op, _ := config["operator"].(string)
 	if op == "" {
@@ -1689,10 +1698,10 @@ var varPattern = regexp.MustCompile(`\$\{\{([\w\.]+)\}\}`)
 // substituteString replaces every ${{...}} occurrence with the value found
 // at that path. The lookup walks two sources:
 //
-//   1. Node results: first segment is a node id, remaining segments are a
-//      path into that node's Output (e.g. ${{http.body.user.id}}).
-//   2. Flat variables: e.g. ${{loop.item.to}} where `loop.item` is stored
-//      directly in flowCtx.Variables as a map.
+//  1. Node results: first segment is a node id, remaining segments are a
+//     path into that node's Output (e.g. ${{http.body.user.id}}).
+//  2. Flat variables: e.g. ${{loop.item.to}} where `loop.item` is stored
+//     directly in flowCtx.Variables as a map.
 //
 // When the value is a primitive (string/number/bool) it's stringified with
 // %v; maps and arrays are JSON-marshaled so the result is valid JSON when
@@ -1992,8 +2001,8 @@ func (fe *FlowExecutor) executeLogNode(node *FlowNode, config models.JSONMap, ex
 // executeSetVarNode writes one or more variables into the flow context.
 // Two shapes supported:
 //
-//   { "name": "userId", "value": "abc" }             — single key
-//   { "variables": { "a": 1, "b": "hello" } }        — batch
+//	{ "name": "userId", "value": "abc" }             — single key
+//	{ "variables": { "a": 1, "b": "hello" } }        — batch
 //
 // The value goes into flowCtx.Variables *and* becomes the node's output, so
 // downstream nodes can read via ${{set.name}} or ${{set.variables.a}} too.
@@ -2114,7 +2123,7 @@ func (fe *FlowExecutor) executeOutboundWebhook(ctx context.Context, config model
 		}
 	}
 
-	client := &http.Client{Timeout: 30 * time.Second}
+	client := safehttp.NewClient(30*time.Second, true)
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, false, err
@@ -2160,7 +2169,6 @@ func (fe *FlowExecutor) executeWaitWebhookNode(ctx context.Context, config model
 	}
 	return out, true, nil
 }
-
 
 // findUnresolvedTemplates walks a JSONMap and returns the list of literal
 // "${{...}}" placeholders still present after substitution. Used by the
