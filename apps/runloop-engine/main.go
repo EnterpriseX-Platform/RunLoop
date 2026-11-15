@@ -23,6 +23,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/runloop/runloop-engine/internal/api"
+	"github.com/runloop/runloop-engine/internal/authz"
 	"github.com/runloop/runloop-engine/internal/cluster"
 	"github.com/runloop/runloop-engine/internal/config"
 	"github.com/runloop/runloop-engine/internal/db"
@@ -87,7 +88,7 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to create scheduler manager")
 	}
-	
+
 	// Set WebSocket hub
 	schedulerManager.SetHub(hub)
 
@@ -370,59 +371,71 @@ func setupRoutes(app *fiber.App, handler *api.Handler, webhookHandler *webhook.H
 	// Protected routes (require JWT)
 	apiGroup := app.Group(basePath+"/api", middleware.JWTMiddleware(cfg, database))
 
+	// Per-project (tenant) access guards. JWTMiddleware only authenticates;
+	// these bind each resource/listing to a project the caller may access.
+	pool := database.Pool
+	gSched := authz.Resource(pool, "schedulers", "id", "id")
+	gExec := authz.Resource(pool, "executions", "id", "id")
+	gDLQ := authz.Resource(pool, "dead_letter_queue", "id", "id")
+	gFlow := authz.Resource(pool, "flows", "id", "id")
+	gTask := authz.Resource(pool, "tasks", "id", "id")
+	gQueue := authz.Resource(pool, "job_queues", "name", "name")
+	gList := authz.QueryProject(pool)
+	gAdmin := authz.RequireAdmin()
+
 	// Schedulers
-	apiGroup.Get("/schedulers", handler.ListSchedulers)
-	apiGroup.Get("/schedulers/:id", handler.GetScheduler)
+	apiGroup.Get("/schedulers", gList, handler.ListSchedulers)
+	apiGroup.Get("/schedulers/:id", gSched, handler.GetScheduler)
 	apiGroup.Post("/schedulers", handler.CreateScheduler)
-	apiGroup.Put("/schedulers/:id", handler.UpdateScheduler)
-	apiGroup.Delete("/schedulers/:id", handler.DeleteScheduler)
-	apiGroup.Post("/schedulers/:id/trigger", handler.TriggerScheduler)
+	apiGroup.Put("/schedulers/:id", gSched, handler.UpdateScheduler)
+	apiGroup.Delete("/schedulers/:id", gSched, handler.DeleteScheduler)
+	apiGroup.Post("/schedulers/:id/trigger", gSched, handler.TriggerScheduler)
 
 	// Scheduler-Flow relationship
-	apiGroup.Get("/schedulers/:id/flows", handler.GetSchedulerFlows)
-	apiGroup.Post("/schedulers/:id/flows", handler.AttachFlows)
-	apiGroup.Delete("/schedulers/:id/flows/:flowId", handler.DetachFlow)
+	apiGroup.Get("/schedulers/:id/flows", gSched, handler.GetSchedulerFlows)
+	apiGroup.Post("/schedulers/:id/flows", gSched, handler.AttachFlows)
+	apiGroup.Delete("/schedulers/:id/flows/:flowId", gSched, handler.DetachFlow)
 
 	// Scheduler dependencies (Control-M style chaining)
-	apiGroup.Get("/schedulers/:id/dependencies", handler.ListDependencies)
-	apiGroup.Post("/schedulers/:id/dependencies", handler.AddDependency)
-	apiGroup.Delete("/schedulers/:id/dependencies/:depId", handler.RemoveDependency)
+	apiGroup.Get("/schedulers/:id/dependencies", gSched, handler.ListDependencies)
+	apiGroup.Post("/schedulers/:id/dependencies", gSched, handler.AddDependency)
+	apiGroup.Delete("/schedulers/:id/dependencies/:depId", gSched, handler.RemoveDependency)
 
 	// Executions
-	apiGroup.Get("/executions", handler.ListExecutions)
+	apiGroup.Get("/executions", gList, handler.ListExecutions)
 	apiGroup.Get("/executions/metrics", handler.GetExecutionMetrics)
-	apiGroup.Get("/executions/:id", handler.GetExecution)
-	apiGroup.Post("/executions/:id/replay", handler.ReplayExecution)
-	apiGroup.Post("/executions/:id/cancel", handler.CancelExecution)
+	apiGroup.Get("/executions/:id", gExec, handler.GetExecution)
+	apiGroup.Post("/executions/:id/replay", gExec, handler.ReplayExecution)
+	apiGroup.Post("/executions/:id/cancel", gExec, handler.CancelExecution)
 	apiGroup.Post("/executions/bulk-delete", handler.BulkDeleteExecutions)
 	apiGroup.Post("/executions/bulk-retry", handler.BulkRetryExecutions)
-	apiGroup.Get("/executions/:id/logs/realtime", handler.GetRealtimeLogs)
+	apiGroup.Get("/executions/:id/logs/realtime", gExec, handler.GetRealtimeLogs)
 
 	// Dead Letter Queue — failed executions parked here after exceeding
 	// retries / circuit-breaker / timeout. Operators can review, replay
 	// (re-enqueue or re-trigger scheduler), discard, or resolve.
-	apiGroup.Get("/dlq",                handler.ListDLQ)
-	apiGroup.Get("/dlq/stats",          handler.GetDLQStats) // before /:id
-	apiGroup.Get("/dlq/:id",            handler.GetDLQEntry)
-	apiGroup.Post("/dlq/:id/review",    handler.ReviewDLQ)
-	apiGroup.Post("/dlq/:id/replay",    handler.ReplayDLQ)
-	apiGroup.Post("/dlq/:id/discard",   handler.DiscardDLQ)
-	apiGroup.Post("/dlq/:id/resolve",   handler.ResolveDLQ)
+	apiGroup.Get("/dlq", gList, handler.ListDLQ)
+	apiGroup.Get("/dlq/stats", handler.GetDLQStats) // before /:id
+	apiGroup.Get("/dlq/:id", gDLQ, handler.GetDLQEntry)
+	apiGroup.Post("/dlq/:id/review", gDLQ, handler.ReviewDLQ)
+	apiGroup.Post("/dlq/:id/replay", gDLQ, handler.ReplayDLQ)
+	apiGroup.Post("/dlq/:id/discard", gDLQ, handler.DiscardDLQ)
+	apiGroup.Post("/dlq/:id/resolve", gDLQ, handler.ResolveDLQ)
 
 	// Flows
-	apiGroup.Get("/flows", handler.ListFlows)
-	apiGroup.Get("/flows/:id", handler.GetFlow)
+	apiGroup.Get("/flows", gList, handler.ListFlows)
+	apiGroup.Get("/flows/:id", gFlow, handler.GetFlow)
 	apiGroup.Post("/flows", handler.CreateFlow)
 	apiGroup.Post("/flows/test", handler.DryRunFlow) // Dry-run must be before /:id
-	apiGroup.Put("/flows/:id", handler.UpdateFlow)
-	apiGroup.Delete("/flows/:id", handler.DeleteFlow)
+	apiGroup.Put("/flows/:id", gFlow, handler.UpdateFlow)
+	apiGroup.Delete("/flows/:id", gFlow, handler.DeleteFlow)
 
 	// Tasks
-	apiGroup.Get("/tasks", handler.ListTasks)
-	apiGroup.Get("/tasks/:id", handler.GetTask)
+	apiGroup.Get("/tasks", gList, handler.ListTasks)
+	apiGroup.Get("/tasks/:id", gTask, handler.GetTask)
 	apiGroup.Post("/tasks", handler.CreateTask)
-	apiGroup.Put("/tasks/:id", handler.UpdateTask)
-	apiGroup.Delete("/tasks/:id", handler.DeleteTask)
+	apiGroup.Put("/tasks/:id", gTask, handler.UpdateTask)
+	apiGroup.Delete("/tasks/:id", gTask, handler.DeleteTask)
 
 	// Bulk operations
 	apiGroup.Post("/bulk", handler.BulkOperations)
@@ -437,29 +450,29 @@ func setupRoutes(app *fiber.App, handler *api.Handler, webhookHandler *webhook.H
 	app.Post(basePath+"/api/webhooks/wait/:id", executor.DefaultWaitRegistry().HTTPHandler)
 
 	// Persistent job queues (PG / Redis / RabbitMQ / Kafka)
-	apiGroup.Get("/queues", handler.ListQueues)
+	apiGroup.Get("/queues", gList, handler.ListQueues)
 	apiGroup.Post("/queues", handler.CreateQueue)
-	apiGroup.Get("/queues/:name", handler.GetQueue)
-	apiGroup.Patch("/queues/:name", handler.UpdateQueue)
-	apiGroup.Delete("/queues/:name", handler.DeleteQueue)
-	apiGroup.Post("/queues/:name/jobs", handler.EnqueueJob)
-	apiGroup.Get("/queues/:name/jobs", handler.ListJobs)
-	apiGroup.Get("/queues/:name/stats", handler.QueueStats)
-	apiGroup.Post("/queues/:name/jobs/:id/retry", handler.RetryJob)
-	apiGroup.Delete("/queues/:name/jobs/:id", handler.DeleteJob)
-	apiGroup.Post("/queues/:name/purge", handler.PurgeQueue)
+	apiGroup.Get("/queues/:name", gQueue, handler.GetQueue)
+	apiGroup.Patch("/queues/:name", gQueue, handler.UpdateQueue)
+	apiGroup.Delete("/queues/:name", gQueue, handler.DeleteQueue)
+	apiGroup.Post("/queues/:name/jobs", gQueue, handler.EnqueueJob)
+	apiGroup.Get("/queues/:name/jobs", gQueue, handler.ListJobs)
+	apiGroup.Get("/queues/:name/stats", gQueue, handler.QueueStats)
+	apiGroup.Post("/queues/:name/jobs/:id/retry", gQueue, handler.RetryJob)
+	apiGroup.Delete("/queues/:name/jobs/:id", gQueue, handler.DeleteJob)
+	apiGroup.Post("/queues/:name/purge", gQueue, handler.PurgeQueue)
 
 	// Plugins (SDK-style extension nodes)
 	apiGroup.Get("/plugins", handler.ListPlugins)
 	apiGroup.Post("/plugins", handler.InstallPlugin)
-	apiGroup.Patch("/plugins/:name", handler.SetPluginEnabled)
-	apiGroup.Delete("/plugins/:name", handler.UninstallPlugin)
-	apiGroup.Post("/plugins/:name/test", handler.TestPlugin)
+	apiGroup.Patch("/plugins/:name", gAdmin, handler.SetPluginEnabled)
+	apiGroup.Delete("/plugins/:name", gAdmin, handler.UninstallPlugin)
+	apiGroup.Post("/plugins/:name/test", gAdmin, handler.TestPlugin)
 
 	// Node templates (presets for existing node types)
 	apiGroup.Get("/node-templates", handler.ListTemplates)
 	apiGroup.Post("/node-templates", handler.CreateTemplate)
-	apiGroup.Delete("/node-templates/:id", handler.DeleteTemplate)
+	apiGroup.Delete("/node-templates/:id", gAdmin, handler.DeleteTemplate)
 
 	// Pub/sub notification channels (admin/test endpoints).
 	// Channel inspection: GET /api/channels — list active channels with
