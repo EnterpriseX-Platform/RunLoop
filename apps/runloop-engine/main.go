@@ -296,7 +296,7 @@ func setupRoutes(app *fiber.App, handler *api.Handler, webhookHandler *webhook.H
 
 	// Public routes
 	app.Get(basePath+"/health", handler.HealthCheck)
-	app.Get(basePath+"/stats", handler.GetStats)
+	app.Get(basePath+"/stats", middleware.JWTMiddleware(cfg, database), handler.GetStats)
 
 	// Public webhook endpoint (no auth required)
 	webhookHandler.RegisterRoutes(app, basePath)
@@ -342,7 +342,12 @@ func setupRoutes(app *fiber.App, handler *api.Handler, webhookHandler *webhook.H
 		c.Locals("allowed", true)
 		return c.Next()
 	})
-	app.Get(basePath+"/ws/executions/:id", websocket.New(ws.HandleWebSocket(hub)))
+	// Require auth and project access before streaming an execution; the
+	// session cookie rides the upgrade request, as it does for /ws/channel.
+	app.Get(basePath+"/ws/executions/:id",
+		middleware.JWTMiddleware(cfg, database),
+		authz.Resource(database.Pool, "executions", "id", "id"),
+		websocket.New(ws.HandleWebSocket(hub)))
 
 	// Project-scoped pub/sub channel websocket. Auth happens via the
 	// existing JWT middleware applied to the upgrade request — by the

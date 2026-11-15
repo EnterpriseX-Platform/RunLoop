@@ -53,8 +53,9 @@ const JWT_EXPIRES_IN = '7d';
 // request (see getCurrentUser below), not at module load — `next build`
 // imports every route module during page-data collection and would crash
 // if we threw here.
-export const SKIP_AUTH =
-  process.env.SKIP_AUTH === 'true' || process.env.NEXT_PUBLIC_SKIP_AUTH === 'true';
+// Server-only. A NEXT_PUBLIC_* alias would bake the flag into the client
+// bundle and let anyone read it, so auth is gated by SKIP_AUTH alone.
+export const SKIP_AUTH = process.env.SKIP_AUTH === 'true';
 
 export interface JWTPayload {
   userId: string;
