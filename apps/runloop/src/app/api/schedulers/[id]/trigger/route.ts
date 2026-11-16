@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 // POST /api/schedulers/[id]/trigger - Trigger a runloop manually
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const engineUrl = process.env.ENGINE_URL || 'http://localhost:8080';
@@ -16,7 +16,7 @@ export async function POST(
       // No body is fine for trigger
     }
     
-    const res = await fetch(`${engineUrl}${ENGINE_BASE_PATH}/api/schedulers/${params.id}/trigger`, {
+    const res = await fetch(`${engineUrl}${ENGINE_BASE_PATH}/api/schedulers/${(await params).id}/trigger`, {
       method: 'POST',
       headers: {
         'Authorization': request.headers.get('authorization') || '',

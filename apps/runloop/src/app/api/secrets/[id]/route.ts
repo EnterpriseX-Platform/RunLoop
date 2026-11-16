@@ -8,7 +8,7 @@ import { Prisma } from '@prisma/client';
 // GET /api/secrets/[id] - Get a specific secret
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await authenticateRequest(request);
@@ -21,7 +21,7 @@ export async function GET(
     const schedulerId = searchParams.get('schedulerId'); // For access validation
 
     const secret = await prisma.secret.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
     });
 
     if (!secret) {
@@ -64,7 +64,7 @@ export async function GET(
 
     // Update last used
     await prisma.secret.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: {
         lastUsedAt: new Date(),
         useCount: { increment: 1 },
@@ -125,7 +125,7 @@ export async function GET(
 // PUT /api/secrets/[id] - Update a secret
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await authenticateRequest(request);
@@ -147,7 +147,7 @@ export async function PUT(
     } = body;
 
     const secret = await prisma.secret.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
     });
 
     if (!secret) {
@@ -204,7 +204,7 @@ export async function PUT(
     }
 
     const updated = await prisma.secret.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: updateData,
     });
 
@@ -269,7 +269,7 @@ export async function PUT(
 // DELETE /api/secrets/[id] - Delete a specific secret
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await authenticateRequest(request);
@@ -278,7 +278,7 @@ export async function DELETE(
     }
 
     const secret = await prisma.secret.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
     });
 
     if (!secret) {
@@ -313,7 +313,7 @@ export async function DELETE(
     });
 
     await prisma.secret.delete({
-      where: { id: params.id },
+      where: { id: (await params).id },
     });
 
     // Audit log

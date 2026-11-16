@@ -4,12 +4,12 @@ import { NextRequest, NextResponse } from 'next/server';
 // GET /api/executions/[id] - Get execution details with logs
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const engineUrl = process.env.ENGINE_URL || 'http://localhost:8080';
     
-    const res = await fetch(`${engineUrl}${ENGINE_BASE_PATH}/api/executions/${params.id}`, {
+    const res = await fetch(`${engineUrl}${ENGINE_BASE_PATH}/api/executions/${(await params).id}`, {
       headers: {
         'Authorization': request.headers.get('authorization') || '',
         'Content-Type': 'application/json',

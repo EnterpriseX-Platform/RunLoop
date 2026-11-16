@@ -6,7 +6,7 @@ import { Prisma } from '@prisma/client';
 // GET /api/projects/[id]/members - List members for a project
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await authenticateRequest(request);
@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: auth.error }, { status: 401 });
     }
 
-    const projectId = params.id;
+    const projectId = (await params).id;
 
     // Verify caller is a member of this project
     const callerMembership = await prisma.projectMember.findFirst({
@@ -56,7 +56,7 @@ export async function GET(
 // POST /api/projects/[id]/members - Invite user by email
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await authenticateRequest(request);
@@ -64,7 +64,7 @@ export async function POST(
       return NextResponse.json({ error: auth.error }, { status: 401 });
     }
 
-    const projectId = params.id;
+    const projectId = (await params).id;
     const body = await request.json();
     const { email, role } = body as { email?: string; role?: 'ADMIN' | 'MEMBER' | 'VIEWER' };
 

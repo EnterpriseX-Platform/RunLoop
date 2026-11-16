@@ -5,7 +5,7 @@ import { authenticateRequest } from '@/lib/auth';
 // DELETE /api/api-keys/[id] - Revoke API key (soft delete)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await authenticateRequest(request);
@@ -13,7 +13,7 @@ export async function DELETE(
       return Response.json({ error: auth.error }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     if (!id) {
       return Response.json({ error: 'API key ID is required' }, { status: 400 });
     }

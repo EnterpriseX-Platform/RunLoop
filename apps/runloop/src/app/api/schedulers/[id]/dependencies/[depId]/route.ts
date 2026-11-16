@@ -4,11 +4,11 @@ import { NextRequest, NextResponse } from 'next/server';
 // DELETE /api/schedulers/[id]/dependencies/[depId]
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; depId: string } }
+  { params }: { params: Promise<{ id: string; depId: string }> }
 ) {
   try {
     const engineUrl = process.env.ENGINE_URL || 'http://localhost:8080';
-    const res = await fetch(`${engineUrl}${ENGINE_BASE_PATH}/api/schedulers/${params.id}/dependencies/${params.depId}`, {
+    const res = await fetch(`${engineUrl}${ENGINE_BASE_PATH}/api/schedulers/${(await params).id}/dependencies/${(await params).depId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': request.headers.get('authorization') || '',

@@ -23,10 +23,11 @@ const THEME = {
   colors: { blue: '#0f62fe', emerald: '#24a148', purple: '#8a3ffc', amber: '#eb6200', red: '#da1e28' }
 };
 
-export default function SchedulerDetailPage({ params }: { params: { id: string } }) {
+export default function SchedulerDetailPage() {
   const router = useRouter();
   const routeParams = useParams();
   const projectId = routeParams.projectId as string;
+  const params = { id: routeParams.id as string };
   const [scheduler, setScheduler] = useState<RunLoop | null>(null);
   const [executions, setExecutions] = useState<Execution[]>([]);
   const [isLoading, setIsLoading] = useState(true);

@@ -5,7 +5,7 @@ import { authenticateRequest } from '@/lib/auth';
 // PUT /api/projects/[id]/members/[userId] - Change role (OWNER only)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string; userId: string } }
+  { params }: { params: Promise<{ id: string; userId: string }> }
 ) {
   try {
     const auth = await authenticateRequest(request);
@@ -13,8 +13,8 @@ export async function PUT(
       return NextResponse.json({ error: auth.error }, { status: 401 });
     }
 
-    const projectId = params.id;
-    const targetUserId = params.userId;
+    const projectId = (await params).id;
+    const targetUserId = (await params).userId;
 
     const body = await request.json();
     const { role } = body as { role?: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER' };
@@ -79,7 +79,7 @@ export async function PUT(
 // DELETE /api/projects/[id]/members/[userId] - Remove a member (OWNER/ADMIN)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; userId: string } }
+  { params }: { params: Promise<{ id: string; userId: string }> }
 ) {
   try {
     const auth = await authenticateRequest(request);
@@ -87,8 +87,8 @@ export async function DELETE(
       return NextResponse.json({ error: auth.error }, { status: 401 });
     }
 
-    const projectId = params.id;
-    const targetUserId = params.userId;
+    const projectId = (await params).id;
+    const targetUserId = (await params).userId;
 
     // Caller must be OWNER or ADMIN
     const callerMembership = await prisma.projectMember.findFirst({

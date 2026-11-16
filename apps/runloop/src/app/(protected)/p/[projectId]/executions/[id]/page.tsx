@@ -25,8 +25,9 @@ const THEME = {
   colors: { blue: '#0f62fe', emerald: '#24a148', purple: '#8a3ffc', amber: '#eb6200', red: '#da1e28' }
 };
 
-export default function ExecutionDetailPage({ params }: { params: { id: string } }) {
+export default function ExecutionDetailPage() {
   const routeParams = useParams();
+  const params = { id: routeParams.id as string };
   const projectId = routeParams.projectId as string;
   const [execution, setExecution] = useState<Execution | null>(null);
   const [isLoading, setIsLoading] = useState(true);
