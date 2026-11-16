@@ -16,6 +16,19 @@ import {
   Check,
   ShieldAlert,
 } from 'lucide-react';
+import {
+  DataTable, Table, TableContainer, TableHead, TableRow, TableHeader, TableBody, TableCell, Button,
+} from '@carbon/react';
+import { TrashCan } from '@carbon/icons-react';
+
+const AK_HEADERS = [
+  { key: 'name', header: 'Name' },
+  { key: 'prefix', header: 'Prefix' },
+  { key: 'lastUsed', header: 'Last Used' },
+  { key: 'created', header: 'Created' },
+  { key: 'expires', header: 'Expires' },
+  { key: 'actions', header: '' },
+];
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const THEME = {
@@ -312,129 +325,49 @@ export default function ApiKeysPage() {
             </button>
           </div>
         ) : (
-          <div
-            className="rounded-xl overflow-hidden"
-            style={{ background: THEME.panel, border: `1px solid ${THEME.border}` }}
-          >
-            <table className="w-full">
-              <thead style={{ background: THEME.bg }}>
-                <tr>
-                  <th
-                    className="px-6 py-3 text-left text-xs font-medium  "
-                    style={{ color: THEME.text.secondary }}
-                  >
-                    Name
-                  </th>
-                  <th
-                    className="px-6 py-3 text-left text-xs font-medium  "
-                    style={{ color: THEME.text.secondary }}
-                  >
-                    Prefix
-                  </th>
-                  <th
-                    className="px-6 py-3 text-left text-xs font-medium  "
-                    style={{ color: THEME.text.secondary }}
-                  >
-                    Last Used
-                  </th>
-                  <th
-                    className="px-6 py-3 text-left text-xs font-medium  "
-                    style={{ color: THEME.text.secondary }}
-                  >
-                    Created
-                  </th>
-                  <th
-                    className="px-6 py-3 text-left text-xs font-medium  "
-                    style={{ color: THEME.text.secondary }}
-                  >
-                    Expires
-                  </th>
-                  <th
-                    className="px-6 py-3 text-right text-xs font-medium  "
-                    style={{ color: THEME.text.secondary }}
-                  >
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredKeys.map((key) => (
-                  <tr
-                    key={key.id}
-                    style={{ borderTop: `1px solid ${THEME.borderLight}` }}
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-8 h-8 rounded-lg flex items-center justify-center"
-                          style={{
-                            background: THEME.bg,
-                            border: `1px solid ${THEME.border}`,
-                          }}
-                        >
-                          <Key
-                            className="w-4 h-4"
-                            style={{ color: THEME.colors.emerald }}
-                          />
-                        </div>
-                        <span
-                          className="text-sm font-medium"
-                          style={{ color: THEME.text.primary }}
-                        >
-                          {key.name}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <code
-                        className="text-xs font-mono px-2 py-1 rounded"
-                        style={{
-                          background: THEME.bg,
-                          color: THEME.text.secondary,
-                          border: `1px solid ${THEME.border}`,
-                        }}
-                      >
-                        {key.prefix ? `${key.prefix}…` : '—'}
-                      </code>
-                    </td>
-                    <td
-                      className="px-6 py-4 text-sm"
-                      style={{ color: THEME.text.secondary }}
-                    >
-                      {formatRelativeTime(key.lastUsedAt)}
-                    </td>
-                    <td
-                      className="px-6 py-4 text-sm"
-                      style={{ color: THEME.text.secondary }}
-                    >
-                      {formatDate(key.createdAt)}
-                    </td>
-                    <td
-                      className="px-6 py-4 text-sm"
-                      style={{ color: THEME.text.secondary }}
-                    >
-                      {key.expiresAt ? formatDate(key.expiresAt) : 'Never'}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => setConfirmRevokeId(key.id)}
-                          className="p-2 transition-colors hover:bg-[var(--tag-red-bg)]"
-                          style={{
-                            background: 'transparent',
-                            color: THEME.colors.red,
-                          }}
-                          title="Revoke key"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable rows={filteredKeys.map((k) => ({ id: k.id }))} headers={AK_HEADERS} isSortable>
+            {({ rows: dtRows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => {
+              const kById = Object.fromEntries(filteredKeys.map((k) => [k.id, k]));
+              return (
+                <TableContainer {...getTableContainerProps()}>
+                  <Table {...getTableProps()} size="md" useZebraStyles={false}>
+                    <TableHead>
+                      <TableRow>
+                        {headers.map((header) => {
+                          const { key, ...rest } = getHeaderProps({ header });
+                          return <TableHeader key={header.key} {...rest}>{header.header}</TableHeader>;
+                        })}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {dtRows.map((row) => {
+                        const k = kById[row.id];
+                        const { key, ...rowProps } = getRowProps({ row });
+                        if (!k) return null;
+                        return (
+                          <TableRow key={row.id} {...rowProps}>
+                            <TableCell>
+                              <span className="flex items-center gap-2" style={{ fontWeight: 600, color: 'var(--cds-text-primary)' }}>
+                                <Key className="w-4 h-4" style={{ color: 'var(--cds-support-success)' }} />
+                                {k.name}
+                              </span>
+                            </TableCell>
+                            <TableCell><code style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--cds-text-secondary)' }}>{k.prefix ? `${k.prefix}…` : '—'}</code></TableCell>
+                            <TableCell style={{ color: 'var(--cds-text-secondary)' }}>{formatRelativeTime(k.lastUsedAt)}</TableCell>
+                            <TableCell style={{ color: 'var(--cds-text-secondary)' }}>{formatDate(k.createdAt)}</TableCell>
+                            <TableCell style={{ color: 'var(--cds-text-secondary)' }}>{k.expiresAt ? formatDate(k.expiresAt) : 'Never'}</TableCell>
+                            <TableCell>
+                              <Button kind="danger--ghost" size="sm" hasIconOnly renderIcon={TrashCan} iconDescription="Revoke key" onClick={() => setConfirmRevokeId(k.id)} />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              );
+            }}
+          </DataTable>
         )}
       </main>
 

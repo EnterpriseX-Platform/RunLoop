@@ -16,6 +16,17 @@ import {
   Eye,
   User as UserIcon,
 } from 'lucide-react';
+import {
+  DataTable, Table, TableContainer, TableHead, TableRow, TableHeader, TableBody, TableCell, Button, Tag, Select, SelectItem,
+} from '@carbon/react';
+import { TrashCan } from '@carbon/icons-react';
+
+const MB_HEADERS = [
+  { key: 'user', header: 'User' },
+  { key: 'role', header: 'Role' },
+  { key: 'joined', header: 'Joined' },
+  { key: 'actions', header: '' },
+];
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const THEME = {
@@ -411,177 +422,77 @@ export default function MembersPage() {
             )}
           </div>
         ) : (
-          <div
-            className="rounded-xl overflow-hidden"
-            style={{
-              background: THEME.panel,
-              border: `1px solid ${THEME.border}`,
-            }}
-          >
-            <table className="w-full">
-              <thead style={{ background: "var(--t-selected)" }}>
-                <tr>
-                  <th
-                    className="px-4 text-left"
-                    style={{ color: THEME.text.primary, height: 48, fontSize: 14, fontWeight: 600 }}
-                  >
-                    User
-                  </th>
-                  <th
-                    className="px-4 text-left"
-                    style={{ color: THEME.text.primary, height: 48, fontSize: 14, fontWeight: 600 }}
-                  >
-                    Role
-                  </th>
-                  <th
-                    className="px-4 text-left"
-                    style={{ color: THEME.text.primary, height: 48, fontSize: 14, fontWeight: 600 }}
-                  >
-                    Joined
-                  </th>
-                  <th
-                    className="px-4 text-right"
-                    style={{ color: THEME.text.primary, height: 48, fontSize: 14, fontWeight: 600 }}
-                  >
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {members.map((member) => {
-                  const isSelf = currentUserId === member.userId;
-                  const meta = ROLE_META[member.role];
-                  const RoleIcon = meta.icon;
-                  // Role select disabled for: self, non-owner callers
-                  const canEditRole = isOwner && !isSelf;
-                  // Remove disabled for: self, member is OWNER when caller is ADMIN
-                  const canRemove =
-                    canManage &&
-                    !isSelf &&
-                    !(member.role === 'OWNER' && callerRole === 'ADMIN');
-
-                  return (
-                    <tr
-                      key={member.id}
-                      style={{ borderTop: `1px solid ${THEME.borderLight}` }}
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold"
-                            style={{
-                              background: `${THEME.accent}20`,
-                              color: THEME.accent,
-                              border: `1px solid ${THEME.border}`,
-                            }}
-                          >
-                            {(member.name || member.email)
-                              .charAt(0)
-                              .toUpperCase()}
-                          </div>
-                          <div className="min-w-0">
-                            <div
-                              className="text-sm font-medium flex items-center gap-2"
-                              style={{ color: THEME.text.primary }}
-                            >
-                              {member.name || member.email.split('@')[0]}
-                              {isSelf && (
-                                <span
-                                  style={{
-                                    fontSize: 12, padding: '2px 8px', borderRadius: 24,
-                                    background: 'var(--tag-blue-bg)',
-                                    color: 'var(--tag-blue-text)',
-                                  }}
-                                >
-                                  You
+          <DataTable rows={members.map((m) => ({ id: m.id }))} headers={MB_HEADERS} isSortable>
+            {({ rows: dtRows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => {
+              const mById = Object.fromEntries(members.map((m) => [m.id, m]));
+              return (
+                <TableContainer {...getTableContainerProps()}>
+                  <Table {...getTableProps()} size="md" useZebraStyles={false}>
+                    <TableHead>
+                      <TableRow>
+                        {headers.map((header) => {
+                          const { key, ...rest } = getHeaderProps({ header });
+                          return <TableHeader key={header.key} {...rest}>{header.header}</TableHeader>;
+                        })}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {dtRows.map((row) => {
+                        const member = mById[row.id];
+                        const { key, ...rowProps } = getRowProps({ row });
+                        if (!member) return null;
+                        const isSelf = currentUserId === member.userId;
+                        const meta = ROLE_META[member.role];
+                        const RoleIcon = meta.icon;
+                        const canEditRole = isOwner && !isSelf;
+                        const canRemove = canManage && !isSelf && !(member.role === 'OWNER' && callerRole === 'ADMIN');
+                        return (
+                          <TableRow key={row.id} {...rowProps}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div style={{ width: 32, height: 32, display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 600, background: 'var(--cds-layer-accent-01)', color: 'var(--cds-text-primary)' }}>
+                                  {(member.name || member.email).charAt(0).toUpperCase()}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2" style={{ fontWeight: 600, color: 'var(--cds-text-primary)' }}>
+                                    {member.name || member.email.split('@')[0]}
+                                    {isSelf && <Tag type="blue" size="sm">You</Tag>}
+                                  </div>
+                                  <div className="rl-ellipsis flex items-center gap-1" style={{ fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+                                    <Mail className="w-3 h-3" /> {member.email}
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {canEditRole ? (
+                                <Select id={`role-${member.id}`} size="sm" labelText="" hideLabel defaultValue={member.role} onChange={(e) => handleChangeRole(member, e.target.value as Role)}>
+                                  <SelectItem value="OWNER" text="Owner" />
+                                  <SelectItem value="ADMIN" text="Admin" />
+                                  <SelectItem value="MEMBER" text="Member" />
+                                  <SelectItem value="VIEWER" text="Viewer" />
+                                </Select>
+                              ) : (
+                                <span className="flex items-center gap-1.5" style={{ color: meta.color }}>
+                                  <RoleIcon className="w-4 h-4" /> {meta.label}
                                 </span>
                               )}
-                            </div>
-                            <div
-                              className="text-xs flex items-center gap-1"
-                              style={{ color: THEME.text.secondary }}
-                            >
-                              <Mail className="w-3 h-3" />
-                              {member.email}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        {canEditRole ? (
-                          <div className="flex items-center gap-2">
-                            <RoleIcon
-                              className="w-4 h-4"
-                              style={{ color: meta.color }}
-                            />
-                            <select
-                              value={member.role}
-                              onChange={(e) =>
-                                handleChangeRole(member, e.target.value as Role)
-                              }
-                              className="px-2 py-1 rounded-md text-sm focus:outline-none"
-                              style={{
-                                background: THEME.input,
-                                border: `1px solid ${THEME.border}`,
-                                color: THEME.text.primary,
-                              }}
-                            >
-                              <option value="OWNER">Owner</option>
-                              <option value="ADMIN">Admin</option>
-                              <option value="MEMBER">Member</option>
-                              <option value="VIEWER">Viewer</option>
-                            </select>
-                          </div>
-                        ) : (
-                          <span
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-                            style={{
-                              background: `${meta.color}15`,
-                              color: meta.color,
-                              border: `1px solid ${meta.color}30`,
-                            }}
-                          >
-                            <RoleIcon className="w-3 h-3" />
-                            {meta.label}
-                          </span>
-                        )}
-                      </td>
-                      <td
-                        className="px-6 py-4 text-sm"
-                        style={{ color: THEME.text.secondary }}
-                      >
-                        {formatDate(member.joinedAt)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-2">
-                          {canRemove ? (
-                            <button
-                              onClick={() => handleRemove(member)}
-                              className="p-2 rounded-lg transition-all"
-                              style={{
-                                background: THEME.bg,
-                                color: THEME.colors.red,
-                              }}
-                              title="Remove member"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          ) : (
-                            <span
-                              className="text-xs"
-                              style={{ color: THEME.text.muted }}
-                            >
-                              —
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                            </TableCell>
+                            <TableCell style={{ color: 'var(--cds-text-secondary)' }}>{formatDate(member.joinedAt)}</TableCell>
+                            <TableCell>
+                              {canRemove
+                                ? <Button kind="danger--ghost" size="sm" hasIconOnly renderIcon={TrashCan} iconDescription="Remove member" onClick={() => handleRemove(member)} />
+                                : <span style={{ color: 'var(--cds-text-placeholder)' }}>—</span>}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              );
+            }}
+          </DataTable>
         )}
       </main>
 
