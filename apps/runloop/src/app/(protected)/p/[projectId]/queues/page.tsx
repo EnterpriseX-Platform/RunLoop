@@ -8,7 +8,21 @@ import {
   Plus, Inbox, AlertCircle, Loader2, ChevronRight,
   Database as DatabaseIcon, Radio, Rabbit, Waves,
 } from 'lucide-react';
-import { HeroHeader, MetricChip, SharpButton, Tag } from '@/components/ControlChrome';
+import { HeroHeader, MetricChip } from '@/components/ControlChrome';
+import { useRouter } from 'next/navigation';
+import {
+  DataTable, Table, TableContainer, TableHead, TableRow, TableHeader, TableBody, TableCell, Button, Tag,
+} from '@carbon/react';
+import { Add } from '@carbon/icons-react';
+
+const Q_HEADERS = [
+  { key: 'queue', header: 'Queue' },
+  { key: 'pending', header: 'Pending' },
+  { key: 'running', header: 'Running' },
+  { key: 'done', header: 'Done' },
+  { key: 'dlq', header: 'DLQ' },
+];
+const Q_COL_WIDTH: Record<string, string | undefined> = { queue: 'auto', pending: '96px', running: '96px', done: '96px', dlq: '96px' };
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const THEME = {
@@ -88,6 +102,7 @@ function alertsFor(q: QueueRow, s: Stats): { level: 'critical' | 'warn'; label: 
 
 export default function QueuesPage() {
   const params = useParams();
+  const router = useRouter();
   const projectId = params.projectId as string;
   const [queues, setQueues] = useState<QueueRow[]>([]);
   const [statsMap, setStatsMap] = useState<Record<string, Stats>>({});
@@ -151,7 +166,7 @@ export default function QueuesPage() {
           <AlertCircle className="w-10 h-10 mx-auto mb-3" style={{ color: THEME.colors.red }} />
           <h3 style={{ fontSize: 16, fontWeight: 600, color: THEME.text.primary }}>Failed to load queues</h3>
           <p style={{ fontSize: 13, color: THEME.text.muted, marginBottom: 12 }}>{error}</p>
-          <SharpButton onClick={fetchAll}>Try Again</SharpButton>
+          <Button kind="tertiary" size="sm" onClick={fetchAll}>Try Again</Button>
         </div>
       </div>
     );
@@ -168,6 +183,16 @@ export default function QueuesPage() {
     return n + (alertsFor(q, s).some((a) => a.level === 'critical') ? 1 : 0);
   }, 0);
 
+  const qById: Record<string, QueueRow> = Object.fromEntries(queues.map((q) => [q.name, q]));
+  const qRows = queues.map((q) => {
+    const s = statsMap[q.name] || { counts: {}, oldestPendingSec: 0 };
+    return {
+      id: q.name, queue: q.name,
+      pending: String(s.counts?.PENDING || 0), running: String(s.counts?.PROCESSING || 0),
+      done: String(s.counts?.COMPLETED || 0), dlq: String(s.counts?.DLQ || 0),
+    };
+  });
+
   return (
     <div style={{ fontFamily: FONT }}>
       <HeroHeader
@@ -182,80 +207,69 @@ export default function QueuesPage() {
           )}
         </>}
         right={
-          <SharpButton href={`/p/${projectId}/queues/new`}>
-            <Plus className="w-3.5 h-3.5" /> New Queue
-          </SharpButton>
+          <Button renderIcon={Add} size="md" onClick={() => router.push(`/p/${projectId}/queues/new`)}>
+            New Queue
+          </Button>
         }
       />
 
-      {queues.length === 0 ? (
-        <div className="text-center py-16">
-          <div
-            style={{ width: 56, height: 56, background: THEME.panel, border: `1px solid ${THEME.border}`, borderRadius: 0 }}
-            className="mx-auto mb-4 flex items-center justify-center"
-          >
-            <Inbox className="w-7 h-7" style={{ color: THEME.text.muted }} />
-          </div>
-          <h3 style={{ fontSize: 15, fontWeight: 600, color: THEME.text.primary, marginBottom: 4 }}>No queues yet</h3>
-          <p style={{ fontSize: 13, color: THEME.text.muted, marginBottom: 12 }}>
-            Create a queue to bind a flow to a durable job inbox
-          </p>
-          <SharpButton href={`/p/${projectId}/queues/new`}>
-            <Plus className="w-3.5 h-3.5" /> New Queue
-          </SharpButton>
-        </div>
-      ) : (
-        <div style={{ background: THEME.panel, overflow: 'hidden' }}>
-          <div className="rl-row rl-th" style={{ ['--cols' as any]: 'minmax(0, 1fr) 72px 72px 72px 72px', ['--cols-sm' as any]: 'minmax(0, 1fr) 72px 72px' }}>
-            <span>Queue</span>
-            <span style={{ textAlign: 'right' }}>Pending</span>
-            <span className="rl-opt" style={{ textAlign: 'right' }}>Running</span>
-            <span className="rl-opt" style={{ textAlign: 'right' }}>Done</span>
-            <span style={{ textAlign: 'right' }}>DLQ</span>
-          </div>
-          {queues.map((q) => {
-            const meta = BACKEND_META[q.backend] || BACKEND_META.postgres;
-            const s = statsMap[q.name] || { counts: {}, oldestPendingSec: 0 };
-            const pending = s.counts?.PENDING || 0;
-            const processing = s.counts?.PROCESSING || 0;
-            const completed = s.counts?.COMPLETED || 0;
-            const dlq = s.counts?.DLQ || 0;
-            const queueAlerts = alertsFor(q, s);
-            const num = (v: number, strong?: boolean, color?: string): React.CSSProperties => ({
-              textAlign: 'right', fontSize: 14, fontVariantNumeric: 'tabular-nums',
-              fontWeight: strong ? 600 : 400,
-              color: color || (v > 0 ? THEME.text.primary : THEME.text.secondary),
-            });
-            return (
-              <Link
-                key={q.name}
-                href={`/p/${projectId}/queues/${encodeURIComponent(q.name)}`}
-                className="rl-row transition-colors hover:bg-[var(--t-panel-hover)]"
-                style={{ ['--cols' as any]: 'minmax(0, 1fr) 72px 72px 72px 72px', ['--cols-sm' as any]: 'minmax(0, 1fr) 72px 72px' }}
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="truncate" style={{ fontSize: 14, fontWeight: 600, color: THEME.text.primary }} title={q.name}>{q.name}</span>
-                    {!q.enabled && <Tag tone="gray">Disabled</Tag>}
-                    {queueAlerts
-                      .filter((a) => a.label !== 'disabled')
-                      .map((a) => (
-                        <Tag key={a.label} tone={a.level === 'critical' ? 'red' : 'orange'}>{a.label}</Tag>
-                      ))}
-                  </div>
-                  <p className="truncate" style={{ fontSize: 12, lineHeight: '16px', color: THEME.text.secondary, marginTop: 2 }}>
-                    {meta.label} · concurrency {q.concurrency} · up to {q.maxAttempts} attempts
-                  </p>
-                </div>
-                <span style={num(pending)}>{pending}</span>
-                <span className="rl-opt" style={num(processing)}>{processing}</span>
-                <span className="rl-opt" style={num(completed)}>{completed}</span>
-                <span style={num(dlq, dlq > 0, dlq > 0 ? 'var(--t-error)' : undefined)}>{dlq}</span>
-              </Link>
-            );
-          })}
-        </div>
-      )}
+      <DataTable rows={qRows} headers={Q_HEADERS} isSortable>
+        {({ rows: dtRows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => (
+          <TableContainer {...getTableContainerProps()}>
+            <Table {...getTableProps()} size="md" useZebraStyles={false}>
+              <TableHead>
+                <TableRow>
+                  {headers.map((header) => {
+                    const { key, ...rest } = getHeaderProps({ header });
+                    return <TableHeader key={header.key} {...rest} style={{ width: Q_COL_WIDTH[header.key] }}>{header.header}</TableHeader>;
+                  })}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {dtRows.map((row) => {
+                  const q = qById[row.id];
+                  const { key, ...rowProps } = getRowProps({ row });
+                  if (!q) return null;
+                  const meta = BACKEND_META[q.backend] || BACKEND_META.postgres;
+                  const s = statsMap[q.name] || { counts: {}, oldestPendingSec: 0 };
+                  const pending = s.counts?.PENDING || 0;
+                  const processing = s.counts?.PROCESSING || 0;
+                  const completed = s.counts?.COMPLETED || 0;
+                  const dlq = s.counts?.DLQ || 0;
+                  const queueAlerts = alertsFor(q, s).filter((a) => a.label !== 'disabled');
+                  const num = (v: number, color?: string): React.CSSProperties => ({
+                    fontVariantNumeric: 'tabular-nums', color: color || (v > 0 ? 'var(--cds-text-primary)' : 'var(--cds-text-secondary)'),
+                  });
+                  return (
+                    <TableRow {...rowProps} onClick={() => router.push(`/p/${projectId}/queues/${encodeURIComponent(q.name)}`)} style={{ cursor: 'pointer' }}>
+                      <TableCell>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="rl-ellipsis" style={{ fontWeight: 600, color: 'var(--cds-text-primary)' }} title={q.name}>{q.name}</span>
+                          {!q.enabled && <Tag type="gray" size="sm">Disabled</Tag>}
+                          {queueAlerts.map((a) => <Tag key={a.label} type={a.level === 'critical' ? 'red' : 'warm-gray'} size="sm">{a.label}</Tag>)}
+                        </div>
+                        <div className="rl-ellipsis" style={{ fontSize: 12, color: 'var(--cds-text-secondary)', marginTop: 2 }}>
+                          {meta.label} · concurrency {q.concurrency} · up to {q.maxAttempts} attempts
+                        </div>
+                      </TableCell>
+                      <TableCell style={num(pending)}>{pending}</TableCell>
+                      <TableCell style={num(processing)}>{processing}</TableCell>
+                      <TableCell style={num(completed)}>{completed}</TableCell>
+                      <TableCell style={num(dlq, dlq > 0 ? 'var(--cds-text-error)' : undefined)}>{dlq}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+            {dtRows.length === 0 && (
+              <div className="text-center" style={{ padding: '48px 0' }}>
+                <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>No queues yet</h3>
+                <p style={{ fontSize: 13, color: 'var(--cds-text-secondary)' }}>Create a queue to bind a flow to a durable job inbox</p>
+              </div>
+            )}
+          </TableContainer>
+        )}
+      </DataTable>
     </div>
   );
 }
