@@ -5,7 +5,10 @@ import { NextResponse, type NextRequest } from 'next/server';
 // Same-origin cookies are NOT forwarded by Next.js's proxy to a
 // different upstream host, so we promote the cookie to a header here —
 // transparent to the browser, authoritative to the engine.
-export function middleware(request: NextRequest) {
+//
+// Next 16 renamed the `middleware` file convention to `proxy` (same
+// request/response API and matcher config).
+export function proxy(request: NextRequest) {
   const token = request.cookies.get('token')?.value;
   if (!token) return NextResponse.next();
 
