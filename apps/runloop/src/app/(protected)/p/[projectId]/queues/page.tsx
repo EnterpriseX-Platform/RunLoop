@@ -241,7 +241,7 @@ export default function QueuesPage() {
                     fontVariantNumeric: 'tabular-nums', color: color || (v > 0 ? 'var(--cds-text-primary)' : 'var(--cds-text-secondary)'),
                   });
                   return (
-                    <TableRow {...rowProps} onClick={() => router.push(`/p/${projectId}/queues/${encodeURIComponent(q.name)}`)} style={{ cursor: 'pointer' }}>
+                    <TableRow key={row.id} {...rowProps} onClick={() => router.push(`/p/${projectId}/queues/${encodeURIComponent(q.name)}`)} style={{ cursor: 'pointer' }}>
                       <TableCell>
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="rl-ellipsis" style={{ fontWeight: 600, color: 'var(--cds-text-primary)' }} title={q.name}>{q.name}</span>
