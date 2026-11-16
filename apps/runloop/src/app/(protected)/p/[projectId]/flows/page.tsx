@@ -43,6 +43,14 @@ const HEADERS = [
   { key: 'created', header: 'Created' },
 ];
 
+// Fixed widths keep the layout stable; the Flow column takes the rest.
+const COL_WIDTH: Record<string, string | undefined> = {
+  name: 'auto',
+  status: '128px',
+  type: '112px',
+  created: '128px',
+};
+
 export default function FlowsPage() {
   const params = useParams();
   const projectId = params.projectId as string;
@@ -163,13 +171,13 @@ export default function FlowsPage() {
                   />
                 </TableToolbarContent>
               </TableToolbar>
-              <Table {...getTableProps()} size="lg">
+              <Table {...getTableProps()} size="md" useZebraStyles={false}>
                 <TableHead>
                   <TableRow>
                     {headers.map((header) => {
                       const { key, ...rest } = getHeaderProps({ header });
                       return (
-                        <TableHeader key={header.key} {...rest}>
+                        <TableHeader key={header.key} {...rest} style={{ width: COL_WIDTH[header.key] }}>
                           {header.header}
                         </TableHeader>
                       );
@@ -191,8 +199,10 @@ export default function FlowsPage() {
                             const r = rows.find((x) => x.id === row.id);
                             return (
                               <TableCell key={cell.id}>
-                                <div style={{ fontWeight: 600 }}>{r?.name}</div>
-                                <div style={{ fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+                                <div className="rl-ellipsis" style={{ fontWeight: 600, color: 'var(--cds-text-primary)' }} title={r?.name}>
+                                  {r?.name}
+                                </div>
+                                <div className="rl-ellipsis" style={{ fontSize: 12, color: 'var(--cds-text-secondary)', marginTop: 2 }} title={r?.description}>
                                   {r?.description}
                                 </div>
                               </TableCell>
@@ -208,7 +218,14 @@ export default function FlowsPage() {
                               </TableCell>
                             );
                           }
-                          return <TableCell key={cell.id}>{cell.value}</TableCell>;
+                          if (cell.info.header === 'created') {
+                            return (
+                              <TableCell key={cell.id} style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--cds-text-secondary)' }}>
+                                {cell.value}
+                              </TableCell>
+                            );
+                          }
+                          return <TableCell key={cell.id} style={{ color: 'var(--cds-text-secondary)' }}>{cell.value}</TableCell>;
                         })}
                       </TableRow>
                     );
