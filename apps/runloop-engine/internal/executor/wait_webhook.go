@@ -2,14 +2,51 @@ package executor
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"io"
+	"os"
 	"sync"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog/log"
 )
+
+// waitSecret is the optional HMAC key for signing wait-webhook callbacks.
+// When unset, callbacks are accepted on correlation id alone (back-compat):
+// the id must then be unguessable. When set, every inbound callback must
+// carry a token = HMAC-SHA256(secret, correlationId), so knowing the id is
+// no longer enough to resume another tenant's flow.
+func waitSecret() string { return os.Getenv("WEBHOOK_WAIT_SECRET") }
+
+// WaitToken returns the signature a caller must present for correlationId,
+// or "" when signing is disabled (no secret configured).
+func WaitToken(correlationId string) string {
+	secret := waitSecret()
+	if secret == "" {
+		return ""
+	}
+	m := hmac.New(sha256.New, []byte(secret))
+	m.Write([]byte(correlationId))
+	return hex.EncodeToString(m.Sum(nil))
+}
+
+// validToken reports whether got is acceptable for correlationId. With no
+// secret configured it is always true; otherwise got must equal the expected
+// HMAC (compared in constant time).
+func validToken(correlationId, got string) bool {
+	want := WaitToken(correlationId)
+	if want == "" {
+		return true
+	}
+	if got == "" {
+		return false
+	}
+	return hmac.Equal([]byte(want), []byte(got))
+}
 
 // WebhookEvent carries the body posted to a WaitWebhook endpoint.
 type WebhookEvent struct {
@@ -110,6 +147,16 @@ func (r *WaitRegistry) HTTPHandler(c *fiber.Ctx) error {
 	id := c.Params("id")
 	if id == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "missing correlation id"})
+	}
+
+	// When signing is enabled, the callback must carry a valid token. Accept
+	// it from the ?token= query or the X-RunLoop-Signature header.
+	got := c.Query("token")
+	if got == "" {
+		got = c.Get("X-RunLoop-Signature")
+	}
+	if !validToken(id, got) {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid or missing signature"})
 	}
 
 	rawBody := c.Body()

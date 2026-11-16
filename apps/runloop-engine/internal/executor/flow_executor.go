@@ -2154,10 +2154,18 @@ func (fe *FlowExecutor) executeWaitWebhookNode(ctx context.Context, config model
 	timeoutSec := toInt(config["timeoutSec"], 300)
 	timeout := time.Duration(timeoutSec) * time.Second
 
+	// When signing is enabled, expose the token so the flow can hand the
+	// external system a signed callback URL (…/webhooks/wait/<cid>?token=<tok>).
+	callbackToken := WaitToken(cid)
+
 	ev, err := waitForWebhook(ctx, cid, timeout)
 	if err != nil {
 		if err == context.DeadlineExceeded {
-			return models.JSONMap{"correlationId": cid, "timedOut": true}, false, nil
+			out := models.JSONMap{"correlationId": cid, "timedOut": true}
+			if callbackToken != "" {
+				out["callbackToken"] = callbackToken
+			}
+			return out, false, nil
 		}
 		return nil, false, err
 	}
@@ -2166,6 +2174,9 @@ func (fe *FlowExecutor) executeWaitWebhookNode(ctx context.Context, config model
 		"body":          ev.Body,
 		"headers":       ev.Headers,
 		"raw":           ev.Raw,
+	}
+	if callbackToken != "" {
+		out["callbackToken"] = callbackToken
 	}
 	return out, true, nil
 }

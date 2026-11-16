@@ -8,6 +8,7 @@
 package authz
 
 import (
+	"encoding/json"
 	"errors"
 
 	"github.com/gofiber/fiber/v2"
@@ -91,6 +92,84 @@ func QueryProject(pool *pgxpool.Pool) fiber.Handler {
 		}
 		if !ok {
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
+		}
+		return c.Next()
+	}
+}
+
+// BodyProject guards a create route that carries its target project in the
+// request body (field, e.g. "projectId"). The body is re-decoded here — Fiber
+// buffers it, so the handler can still BodyParser it afterwards — and the
+// named project must be one the caller can access, closing the hole where a
+// caller POSTs a resource into another tenant's project.
+func BodyProject(pool *pgxpool.Pool, field string) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var body map[string]json.RawMessage
+		if err := json.Unmarshal(c.Body(), &body); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+		}
+		var pid string
+		if raw, ok := body[field]; ok {
+			_ = json.Unmarshal(raw, &pid)
+		}
+		if pid == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": field + " is required"})
+		}
+		ok, err := Accessible(c, pool, pid)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Access check failed"})
+		}
+		if !ok {
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
+		}
+		return c.Next()
+	}
+}
+
+// BodyIDs guards a bulk route that carries a list of resource ids in the body
+// (field, e.g. "ids"). Every referenced row's owning project is resolved in
+// one query and each must be accessible to the caller; a row that does not
+// exist is ignored (the handler reports it), but one row in another tenant's
+// project fails the whole request, so a caller cannot delete or retry rows
+// they can't see by mixing ids. table/idCol are fixed identifiers.
+func BodyIDs(pool *pgxpool.Pool, table, idCol, field string) fiber.Handler {
+	query := "SELECT DISTINCT project_id FROM " + table + " WHERE " + idCol + " = ANY($1)"
+	return func(c *fiber.Ctx) error {
+		var body map[string]json.RawMessage
+		if err := json.Unmarshal(c.Body(), &body); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+		}
+		var ids []string
+		if raw, ok := body[field]; ok {
+			_ = json.Unmarshal(raw, &ids)
+		}
+		if len(ids) == 0 {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": field + " array required"})
+		}
+		rows, err := pool.Query(c.Context(), query, ids)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Access check failed"})
+		}
+		defer rows.Close()
+		var projects []string
+		for rows.Next() {
+			var pid string
+			if err := rows.Scan(&pid); err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Access check failed"})
+			}
+			projects = append(projects, pid)
+		}
+		if err := rows.Err(); err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Access check failed"})
+		}
+		for _, pid := range projects {
+			ok, err := Accessible(c, pool, pid)
+			if err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Access check failed"})
+			}
+			if !ok {
+				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
+			}
 		}
 		return c.Next()
 	}

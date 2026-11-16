@@ -387,11 +387,17 @@ func setupRoutes(app *fiber.App, handler *api.Handler, webhookHandler *webhook.H
 	gQueue := authz.Resource(pool, "job_queues", "name", "name")
 	gList := authz.QueryProject(pool)
 	gAdmin := authz.RequireAdmin()
+	// Create routes carry the target project in the body; bulk routes carry a
+	// list of resource ids. Guard both so a caller cannot write into, or act
+	// on rows of, a project they do not belong to.
+	gBodyProject := authz.BodyProject(pool, "projectId")
+	gBulkExec := authz.BodyIDs(pool, "executions", "id", "ids")
+	gBulkSched := authz.BodyIDs(pool, "schedulers", "id", "scheduler_ids")
 
 	// Schedulers
 	apiGroup.Get("/schedulers", gList, handler.ListSchedulers)
 	apiGroup.Get("/schedulers/:id", gSched, handler.GetScheduler)
-	apiGroup.Post("/schedulers", handler.CreateScheduler)
+	apiGroup.Post("/schedulers", gBodyProject, handler.CreateScheduler)
 	apiGroup.Put("/schedulers/:id", gSched, handler.UpdateScheduler)
 	apiGroup.Delete("/schedulers/:id", gSched, handler.DeleteScheduler)
 	apiGroup.Post("/schedulers/:id/trigger", gSched, handler.TriggerScheduler)
@@ -412,8 +418,8 @@ func setupRoutes(app *fiber.App, handler *api.Handler, webhookHandler *webhook.H
 	apiGroup.Get("/executions/:id", gExec, handler.GetExecution)
 	apiGroup.Post("/executions/:id/replay", gExec, handler.ReplayExecution)
 	apiGroup.Post("/executions/:id/cancel", gExec, handler.CancelExecution)
-	apiGroup.Post("/executions/bulk-delete", handler.BulkDeleteExecutions)
-	apiGroup.Post("/executions/bulk-retry", handler.BulkRetryExecutions)
+	apiGroup.Post("/executions/bulk-delete", gBulkExec, handler.BulkDeleteExecutions)
+	apiGroup.Post("/executions/bulk-retry", gBulkExec, handler.BulkRetryExecutions)
 	apiGroup.Get("/executions/:id/logs/realtime", gExec, handler.GetRealtimeLogs)
 
 	// Dead Letter Queue — failed executions parked here after exceeding
@@ -430,7 +436,7 @@ func setupRoutes(app *fiber.App, handler *api.Handler, webhookHandler *webhook.H
 	// Flows
 	apiGroup.Get("/flows", gList, handler.ListFlows)
 	apiGroup.Get("/flows/:id", gFlow, handler.GetFlow)
-	apiGroup.Post("/flows", handler.CreateFlow)
+	apiGroup.Post("/flows", gBodyProject, handler.CreateFlow)
 	apiGroup.Post("/flows/test", handler.DryRunFlow) // Dry-run must be before /:id
 	apiGroup.Put("/flows/:id", gFlow, handler.UpdateFlow)
 	apiGroup.Delete("/flows/:id", gFlow, handler.DeleteFlow)
@@ -438,25 +444,26 @@ func setupRoutes(app *fiber.App, handler *api.Handler, webhookHandler *webhook.H
 	// Tasks
 	apiGroup.Get("/tasks", gList, handler.ListTasks)
 	apiGroup.Get("/tasks/:id", gTask, handler.GetTask)
-	apiGroup.Post("/tasks", handler.CreateTask)
+	apiGroup.Post("/tasks", gBodyProject, handler.CreateTask)
 	apiGroup.Put("/tasks/:id", gTask, handler.UpdateTask)
 	apiGroup.Delete("/tasks/:id", gTask, handler.DeleteTask)
 
 	// Bulk operations
-	apiGroup.Post("/bulk", handler.BulkOperations)
+	apiGroup.Post("/bulk", gBulkSched, handler.BulkOperations)
 
 	// Job templates
 	apiGroup.Get("/templates", handler.GetJobTemplates)
 
 	// Webhook wait endpoint — unblocks WAIT_WEBHOOK nodes by correlation id.
 	// Public (no JWT) because external systems (OAuth callbacks, payment
-	// providers) won't carry our credentials. Anyone who knows the id wins;
-	// flows should generate unguessable ids.
+	// providers) won't carry our credentials. Set WEBHOOK_WAIT_SECRET to
+	// require a signed ?token= (HMAC of the correlation id) on every callback;
+	// without it, resumption relies on the correlation id being unguessable.
 	app.Post(basePath+"/api/webhooks/wait/:id", executor.DefaultWaitRegistry().HTTPHandler)
 
 	// Persistent job queues (PG / Redis / RabbitMQ / Kafka)
 	apiGroup.Get("/queues", gList, handler.ListQueues)
-	apiGroup.Post("/queues", handler.CreateQueue)
+	apiGroup.Post("/queues", gBodyProject, handler.CreateQueue)
 	apiGroup.Get("/queues/:name", gQueue, handler.GetQueue)
 	apiGroup.Patch("/queues/:name", gQueue, handler.UpdateQueue)
 	apiGroup.Delete("/queues/:name", gQueue, handler.DeleteQueue)

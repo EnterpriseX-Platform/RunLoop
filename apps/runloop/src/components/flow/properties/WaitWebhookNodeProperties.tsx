@@ -33,7 +33,9 @@ export function WaitWebhookNodeProperties({ config, onChange }: BasePropertiesPr
           </code>
           <p className="text-xs mt-2" style={{ color: 'var(--t-text-muted)' }}>
             The request body lands in the node&apos;s output. Make the correlation id unguessable —
-            anyone with the URL can resume the flow.
+            anyone with the URL can resume the flow. When <code>WEBHOOK_WAIT_SECRET</code> is set on
+            the engine, callbacks must carry a signed <code>?token=</code> (exposed as the node&apos;s{' '}
+            <code>callbackToken</code> output) or they are rejected with 401.
           </p>
         </div>
       </Section>
