@@ -62,6 +62,13 @@ const securityHeaders = [
 const nextConfig = {
   output: 'standalone',
   basePath,
+  // Next 16's dev server rejects cross-origin requests (HMR/RSC) unless the
+  // origin is allow-listed. Only honoured by `next dev`; set via
+  // ALLOWED_DEV_ORIGINS (comma-separated) when the dev UI is reached through
+  // a proxy/preview host. No effect on production builds.
+  ...(process.env.ALLOWED_DEV_ORIGINS
+    ? { allowedDevOrigins: process.env.ALLOWED_DEV_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean) }
+    : {}),
   // Exposed to the browser so client code builds URLs from the configured
   // base path instead of a hard-coded '/runloop'.
   env: {
