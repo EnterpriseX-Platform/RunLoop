@@ -7,7 +7,8 @@ import { BASE_PATH } from '@/lib/base-path';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Plus, Trash2, Loader2, Edit2, Save, X } from 'lucide-react';
-import { SharpButton } from '@/components/ControlChrome';
+import { Button, TextInput, TextArea } from '@carbon/react';
+import { Add } from '@carbon/icons-react';
 
 const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
 
@@ -134,9 +135,7 @@ export default function EnvVarsPage() {
             For passwords / API keys use <a href={`${BASE_PATH}/secrets`} style={{ color: 'var(--t-accent)' }}>Secrets</a> instead (encrypted).
           </p>
         </div>
-        <SharpButton onClick={startNew} disabled={editingId !== null}>
-          <Plus className="w-3.5 h-3.5" /> New variable
-        </SharpButton>
+        <Button renderIcon={Add} size="md" onClick={startNew} disabled={editingId !== null}>New variable</Button>
       </div>
 
       {/* Inline editor for new / edit */}
@@ -157,66 +156,36 @@ export default function EnvVarsPage() {
               <X className="w-4 h-4" />
             </button>
           </div>
-          <div className="grid grid-cols-1 gap-3">
-            <div>
-              <label style={{ fontSize: 11, color: 'var(--t-text-muted)', display: 'block', marginBottom: 4 }}>
-                Name
-              </label>
-              <input
-                value={formName}
-                onChange={(e) => setFormName(e.target.value.toUpperCase())}
-                placeholder="API_BASE_URL"
-                disabled={editingId !== ''}
-                style={{
-                  width: '100%', background: 'var(--t-input)', border: '1px solid var(--t-border)',
-                  color: 'var(--t-text)', borderRadius: 2, padding: '8px 10px',
-                  fontFamily: MONO, fontSize: 12.5,
-                  opacity: editingId !== '' ? 0.6 : 1,
-                }}
-              />
-              <p style={{ fontSize: 10.5, color: 'var(--t-text-muted)', marginTop: 4 }}>
-                UPPER_SNAKE_CASE recommended. {'a-zA-Z0-9_'} only, max 64 chars. Name is immutable after create.
-              </p>
-            </div>
-            <div>
-              <label style={{ fontSize: 11, color: 'var(--t-text-muted)', display: 'block', marginBottom: 4 }}>
-                Value
-              </label>
-              <textarea
-                value={formValue}
-                onChange={(e) => setFormValue(e.target.value)}
-                rows={2}
-                placeholder="https://api.example.com/v1"
-                style={{
-                  width: '100%', background: 'var(--t-input)', border: '1px solid var(--t-border)',
-                  color: 'var(--t-text)', borderRadius: 2, padding: '8px 10px',
-                  fontFamily: MONO, fontSize: 12.5,
-                }}
-              />
-            </div>
-            <div>
-              <label style={{ fontSize: 11, color: 'var(--t-text-muted)', display: 'block', marginBottom: 4 }}>
-                Description (optional)
-              </label>
-              <input
-                value={formDesc}
-                onChange={(e) => setFormDesc(e.target.value)}
-                placeholder="What this is used for"
-                style={{
-                  width: '100%', background: 'var(--t-input)', border: '1px solid var(--t-border)',
-                  color: 'var(--t-text)', borderRadius: 2, padding: '8px 10px',
-                  fontSize: 12.5,
-                }}
-              />
-            </div>
+          <div className="grid grid-cols-1 gap-4">
+            <TextInput
+              id="env-name"
+              labelText="Name"
+              value={formName}
+              onChange={(e) => setFormName(e.target.value.toUpperCase())}
+              placeholder="API_BASE_URL"
+              disabled={editingId !== ''}
+              helperText="UPPER_SNAKE_CASE recommended. a-zA-Z0-9_ only, max 64 chars. Name is immutable after create."
+            />
+            <TextArea
+              id="env-value"
+              labelText="Value"
+              value={formValue}
+              onChange={(e) => setFormValue(e.target.value)}
+              rows={2}
+              placeholder="https://api.example.com/v1"
+            />
+            <TextInput
+              id="env-desc"
+              labelText="Description (optional)"
+              value={formDesc}
+              onChange={(e) => setFormDesc(e.target.value)}
+              placeholder="What this is used for"
+            />
             <div className="flex items-center gap-2">
-              <SharpButton onClick={save} disabled={busy}>
-                {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                Save
-              </SharpButton>
-              <SharpButton variant="ghost" size="sm" onClick={() => setEditingId(null)}>
-                Cancel
-              </SharpButton>
+              <Button size="md" onClick={save} disabled={busy}>
+                {busy ? 'Saving…' : 'Save'}
+              </Button>
+              <Button kind="ghost" size="md" onClick={() => setEditingId(null)}>Cancel</Button>
             </div>
           </div>
         </div>

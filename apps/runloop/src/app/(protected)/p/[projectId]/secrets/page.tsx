@@ -20,8 +20,21 @@ import {
   Loader2,
   X
 } from 'lucide-react';
+import { MONO } from '@/components/ControlChrome';
 import {
-  ControlBreadcrumb, PageHeader, SharpButton, StatusDot, MONO, ContentSwitcher, SearchField, Tag } from '@/components/ControlChrome';
+  DataTable, Table, TableContainer, TableHead, TableRow, TableHeader, TableBody, TableCell,
+  TableToolbar, TableToolbarContent, TableToolbarSearch, ContentSwitcher, Switch, Button, Tag,
+} from '@carbon/react';
+import { Add } from '@carbon/icons-react';
+
+const SEC_HEADERS = [
+  { key: 'name', header: 'Name' },
+  { key: 'category', header: 'Category' },
+  { key: 'uses', header: 'Uses' },
+  { key: 'lastUsed', header: 'Last used' },
+  { key: 'actions', header: '' },
+];
+const SEC_CAT_LABEL: Record<string, string> = { database: 'Database', cloud: 'Cloud', api: 'API', ssh: 'SSH', other: 'Other' };
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const THEME = {
@@ -216,19 +229,19 @@ export default function SecretsPage() {
                 Encrypted credentials and API keys. Reference inside flows as <code style={{fontFamily:MONO,fontSize:12}}>{'${{secrets.NAME}}'}</code>.
               </p>
             </div>
-            <SharpButton onClick={() => setShowCreateModal(true)}>
-              <Plus className="w-3.5 h-3.5" /> New Secret
-            </SharpButton>
+            <Button renderIcon={Add} size="md" onClick={() => setShowCreateModal(true)}>New Secret</Button>
           </div>
 
-          <div className="flex flex-col gap-4">
+          <div style={{ overflowX: 'auto' }}>
             <ContentSwitcher
-              options={['all', ...CATEGORIES.map((c) => c.value)] as string[]}
-              value={selectedCategory}
-              onChange={setSelectedCategory}
-              labels={Object.fromEntries([['all', 'All'], ...CATEGORIES.map((c) => [c.value, c.label])])}
-            />
-            <SearchField value={searchQuery} onChange={setSearchQuery} placeholder="Search secrets" />
+              selectedIndex={['all', ...CATEGORIES.map((c) => c.value)].indexOf(selectedCategory)}
+              onChange={({ name }) => setSelectedCategory((name as string) ?? 'all')}
+              style={{ maxWidth: 560 }}
+            >
+              {([['all', 'All'], ...CATEGORIES.map((c) => [c.value, c.label])] as [string, string][]).map(([v, l]) => (
+                <Switch key={v} name={v} text={l} />
+              ))}
+            </ContentSwitcher>
           </div>
         </div>
       </header>
@@ -269,24 +282,56 @@ export default function SecretsPage() {
             </button>
           </div>
         ) : (
-          <div style={{ background: THEME.panel }}>
-            <div className="rl-row rl-th" style={{ ['--cols' as any]: 'minmax(0, 1fr) 96px 72px 112px 200px', ['--cols-sm' as any]: 'minmax(0, 1fr) 200px' }}>
-              <span>Name</span>
-              <span className="rl-opt">Category</span>
-              <span className="rl-opt" style={{ textAlign: 'right' }}>Uses</span>
-              <span className="rl-opt">Last used</span>
-              <span aria-hidden />
-            </div>
-            {filteredSecrets.map((secret) => (
-              <SecretRow
-                key={secret.id}
-                secret={secret}
-                onEdit={() => setEditingSecret(secret)}
-                onViewAudit={() => { setSelectedSecret(secret); setShowAuditLog(true); }}
-                onDelete={() => handleDeleteSecret(secret.id)}
-              />
-            ))}
-          </div>
+          <DataTable rows={filteredSecrets.map((x) => ({ id: x.id }))} headers={SEC_HEADERS} isSortable>
+            {({ rows: dtRows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => {
+              const sById = Object.fromEntries(filteredSecrets.map((x) => [x.id, x]));
+              return (
+                <TableContainer {...getTableContainerProps()}>
+                  <TableToolbar>
+                    <TableToolbarContent>
+                      <TableToolbarSearch persistent placeholder="Search secrets" onChange={(e) => setSearchQuery(e && 'target' in e ? (e.target as HTMLInputElement).value : '')} />
+                    </TableToolbarContent>
+                  </TableToolbar>
+                  <Table {...getTableProps()} size="md" useZebraStyles={false}>
+                    <TableHead>
+                      <TableRow>
+                        {headers.map((header) => { const { key, ...rest } = getHeaderProps({ header }); return <TableHeader key={header.key} {...rest}>{header.header}</TableHeader>; })}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {dtRows.map((row) => {
+                        const secret = sById[row.id];
+                        const { key, ...rowProps } = getRowProps({ row });
+                        if (!secret) return null;
+                        return (
+                          <TableRow key={row.id} {...rowProps}>
+                            <TableCell>
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="rl-ellipsis" style={{ fontWeight: 600, fontFamily: MONO, color: 'var(--cds-text-primary)' }} title={secret.name}>{secret.name}</span>
+                                {secret.scope === 'GLOBAL' && <Tag type="blue" size="sm">Global</Tag>}
+                                {secret.accessLevel === 'RESTRICTED' && <Tag type="warm-gray" size="sm">Restricted</Tag>}
+                              </div>
+                              {secret.description && <div className="rl-ellipsis" style={{ fontSize: 12, color: 'var(--cds-text-secondary)', marginTop: 2 }}>{secret.description}</div>}
+                            </TableCell>
+                            <TableCell style={{ color: 'var(--cds-text-secondary)' }}>{SEC_CAT_LABEL[secret.category || 'other'] || 'Other'}</TableCell>
+                            <TableCell style={{ fontVariantNumeric: 'tabular-nums' }}>{secret.useCount}</TableCell>
+                            <TableCell style={{ color: 'var(--cds-text-secondary)' }}>{secret.lastUsedAt ? formatRelativeTime(secret.lastUsedAt) : '—'}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Button kind="ghost" size="sm" hasIconOnly renderIcon={History} iconDescription="Access log" onClick={() => { setSelectedSecret(secret); setShowAuditLog(true); }} />
+                                <Button kind="ghost" size="sm" hasIconOnly renderIcon={Edit2} iconDescription="Edit" onClick={() => setEditingSecret(secret)} />
+                                <Button kind="danger--ghost" size="sm" hasIconOnly renderIcon={Trash2} iconDescription="Delete" onClick={() => handleDeleteSecret(secret.id)} />
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              );
+            }}
+          </DataTable>
         )}
       </main>
 
@@ -317,91 +362,6 @@ export default function SecretsPage() {
     </div>
   );
 }
-
-function SecretRow({
-  secret,
-  onEdit,
-  onViewAudit,
-  onDelete
-}: {
-  secret: Secret;
-  onEdit: () => void;
-  onViewAudit: () => void;
-  onDelete: () => void;
-}) {
-  const [showValue, setShowValue] = useState(false);
-
-  const getCategoryColor = (category?: string) => {
-    const colors: Record<string, string> = {
-      database: '#1192e8',
-      cloud: '#0f62fe',
-      api: '#8a3ffc',
-      ssh: '#24a148',
-      other: '#8d8d8d',
-    };
-    return colors[category || 'other'];
-  };
-
-  const getCategoryLabel = (category?: string) => {
-    const labels: Record<string, string> = {
-      database: 'Database',
-      cloud: 'Cloud',
-      api: 'API',
-      ssh: 'SSH',
-      other: 'Other',
-    };
-    return labels[category || 'other'];
-  };
-
-  return (
-    <>
-      <div className="rl-row transition-colors hover:bg-[var(--t-panel-hover)]" style={{ ['--cols' as any]: 'minmax(0, 1fr) 96px 72px 112px 200px', ['--cols-sm' as any]: 'minmax(0, 1fr) 200px' }}>
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="truncate" style={{ fontSize: 14, fontWeight: 600, color: THEME.text.primary, fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }} title={secret.name}>
-              {secret.name}
-            </span>
-            {secret.scope === 'GLOBAL' && <Tag tone="blue">Global</Tag>}
-            {secret.accessLevel === 'RESTRICTED' && <Tag tone="orange">Restricted</Tag>}
-          </div>
-          {secret.description && (
-            <p className="truncate" style={{ fontSize: 12, lineHeight: '16px', color: THEME.text.secondary, marginTop: 2 }}>{secret.description}</p>
-          )}
-        </div>
-        <span className="rl-opt" style={{ fontSize: 14, color: THEME.text.secondary }}>{getCategoryLabel(secret.category)}</span>
-        <span className="rl-opt" style={{ fontSize: 14, textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: THEME.text.primary }}>{secret.useCount}</span>
-        <span className="rl-opt" style={{ fontSize: 14, color: THEME.text.secondary }}>{secret.lastUsedAt ? formatRelativeTime(secret.lastUsedAt) : '—'}</span>
-        <div className="flex items-center justify-end">
-          <button onClick={() => setShowValue(!showValue)} className="hover:bg-[var(--t-selected)]" style={iconBtn} title={showValue ? 'Hide value' : 'Show value'} aria-label={showValue ? 'Hide value' : 'Show value'}>
-            {showValue ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          </button>
-          <button className="hover:bg-[var(--t-selected)]" style={iconBtn} title="Copy reference" aria-label="Copy reference">
-            <Copy className="w-4 h-4" />
-          </button>
-          <button onClick={onViewAudit} className="hover:bg-[var(--t-selected)]" style={iconBtn} title="Access log" aria-label="Access log">
-            <History className="w-4 h-4" />
-          </button>
-          <button onClick={onEdit} className="hover:bg-[var(--t-selected)]" style={iconBtn} title="Edit" aria-label="Edit">
-            <Edit2 className="w-4 h-4" />
-          </button>
-          <button onClick={onDelete} className="hover:bg-[var(--tag-red-bg)]" style={{ ...iconBtn, color: 'var(--t-error)' }} title="Delete" aria-label="Delete">
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-      {showValue && (
-        <div className="flex items-center gap-3 px-4 pb-4" style={{ background: THEME.panel }}>
-          <span style={{ fontSize: 12, color: THEME.text.secondary }}>Value</span>
-          <code className="flex-1" style={{ padding: '8px 16px', fontSize: 14, background: 'var(--t-input)', color: THEME.text.secondary, fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>
-            ••••••••••••••••••••••••
-          </code>
-        </div>
-      )}
-    </>
-  );
-}
-
-const iconBtn: React.CSSProperties = { width: 32, height: 32, display: 'grid', placeItems: 'center', background: 'transparent', border: 'none', color: 'var(--t-text)' };
 
 function CreateSecretModal({ onClose, onSave }: { onClose: () => void; onSave: (data: any) => void }) {
   const [formData, setFormData] = useState({
