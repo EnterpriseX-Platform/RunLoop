@@ -5,9 +5,19 @@ import { engineWsUrl } from '@/lib/engine-ws';
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { BellRing, Send, Loader2, RefreshCcw, Wifi } from 'lucide-react';
-import { SharpButton } from '@/components/ControlChrome';
+import { Button, TextInput, TextArea, Tile } from '@carbon/react';
+import { Renew } from '@carbon/icons-react';
 
 const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
+
+function StatTile({ label, value }: { label: string; value: number }) {
+  return (
+    <Tile>
+      <div style={{ fontSize: 14, color: 'var(--cds-text-secondary)' }}>{label}</div>
+      <div style={{ fontSize: 32, fontWeight: 300, lineHeight: '40px', fontVariantNumeric: 'tabular-nums', color: 'var(--cds-text-primary)', marginTop: 8 }}>{value}</div>
+    </Tile>
+  );
+}
 
 interface ChannelRow {
   name: string;
@@ -141,37 +151,14 @@ export default function ChannelsPage() {
             Flow nodes publish, apps subscribe over WebSocket.
           </p>
         </div>
-        <SharpButton variant="ghost" onClick={refresh}>
-          <RefreshCcw className="w-3.5 h-3.5" /> Refresh
-        </SharpButton>
+        <Button kind="ghost" size="md" renderIcon={Renew} onClick={refresh}>Refresh</Button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <div className="p-4" style={{ background: 'var(--t-panel)' }}>
-          <div style={{ fontSize: 14, color: 'var(--t-text-secondary)'}}>
-            Active channels
-          </div>
-          <div style={{ fontSize: 32, fontWeight: 300, lineHeight: '40px', fontVariantNumeric: 'tabular-nums', color: 'var(--t-text)', marginTop: 8 }}>
-            {channels.length}
-          </div>
-        </div>
-        <div className="p-4" style={{ background: 'var(--t-panel)' }}>
-          <div style={{ fontSize: 14, color: 'var(--t-text-secondary)'}}>
-            Live subscribers
-          </div>
-          <div style={{ fontSize: 32, fontWeight: 300, lineHeight: '40px', fontVariantNumeric: 'tabular-nums', color: 'var(--t-text)', marginTop: 8 }}>
-            {channels.reduce((a, c) => a + c.subscribers, 0)}
-          </div>
-        </div>
-        <div className="p-4" style={{ background: 'var(--t-panel)' }}>
-          <div style={{ fontSize: 14, color: 'var(--t-text-secondary)'}}>
-            Lifetime publishes
-          </div>
-          <div style={{ fontSize: 32, fontWeight: 300, lineHeight: '40px', fontVariantNumeric: 'tabular-nums', color: 'var(--t-text)', marginTop: 8 }}>
-            {totalPub}
-          </div>
-        </div>
+        <StatTile label="Active channels" value={channels.length} />
+        <StatTile label="Live subscribers" value={channels.reduce((a, c) => a + c.subscribers, 0)} />
+        <StatTile label="Lifetime publishes" value={totalPub} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -220,32 +207,9 @@ export default function ChannelsPage() {
               <span style={{ fontSize: 16, fontWeight: 400, color: 'var(--t-text)' }}>Test publish</span>
             </div>
             <div className="p-4 space-y-3">
-              <input
-                placeholder="Channel name"
-                value={testChannel}
-                onChange={(e) => setTestChannel(e.target.value)}
-                style={{
-                  width: '100%', background: 'var(--t-input)', border: '1px solid var(--t-border)',
-                  color: 'var(--t-text)', borderRadius: 2, padding: '8px 12px',
-                  fontFamily: MONO, fontSize: 12,
-                }}
-              />
-              <textarea
-                placeholder='{"hello":"world"}'
-                value={testPayload}
-                onChange={(e) => setTestPayload(e.target.value)}
-                rows={4}
-                spellCheck={false}
-                style={{
-                  width: '100%', background: 'var(--t-input)', border: '1px solid var(--t-border)',
-                  color: 'var(--t-text)', borderRadius: 2, padding: 10,
-                  fontFamily: MONO, fontSize: 12,
-                }}
-              />
-              <SharpButton onClick={publish} disabled={busy === 'publish'}>
-                {busy === 'publish' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                Publish
-              </SharpButton>
+              <TextInput id="pub-channel" labelText="" hideLabel placeholder="Channel name" value={testChannel} onChange={(e) => setTestChannel(e.target.value)} />
+              <TextArea id="pub-payload" labelText="" hideLabel placeholder='{"hello":"world"}' value={testPayload} onChange={(e) => setTestPayload(e.target.value)} rows={4} />
+              <Button size="md" onClick={publish} disabled={busy === 'publish'}>{busy === 'publish' ? 'Publishing…' : 'Publish'}</Button>
             </div>
           </div>
 
@@ -266,21 +230,14 @@ export default function ChannelsPage() {
               </span>
             </div>
             <div className="p-4 space-y-3">
-              <div className="flex gap-2">
-                <input
-                  placeholder="Channel name"
-                  value={tapName}
-                  onChange={(e) => setTapName(e.target.value)}
-                  style={{
-                    flex: 1, background: 'var(--t-input)', border: '1px solid var(--t-border)',
-                    color: 'var(--t-text)', borderRadius: 2, padding: '8px 12px',
-                    fontFamily: MONO, fontSize: 12,
-                  }}
-                />
+              <div className="flex gap-2 items-end">
+                <div style={{ flex: 1 }}>
+                  <TextInput id="tap-channel" labelText="" hideLabel placeholder="Channel name" value={tapName} onChange={(e) => setTapName(e.target.value)} />
+                </div>
                 {tapStatus === 'open' || tapStatus === 'connecting' ? (
-                  <SharpButton variant="ghost" onClick={closeTap}>Disconnect</SharpButton>
+                  <Button kind="secondary" size="md" onClick={closeTap}>Disconnect</Button>
                 ) : (
-                  <SharpButton onClick={openTap}>Connect</SharpButton>
+                  <Button size="md" onClick={openTap}>Connect</Button>
                 )}
               </div>
               <div
