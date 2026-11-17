@@ -21,7 +21,9 @@ import {
   PlayCircle,
 } from 'lucide-react';
 import { useProject } from '@/context/ProjectContext';
-import { SharpButton } from '@/components/ControlChrome';
+import { useRouter } from 'next/navigation';
+import { Button, ClickableTile } from '@carbon/react';
+import { Add } from '@carbon/icons-react';
 import type { DashboardStats, Execution } from '@/types';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
@@ -68,6 +70,7 @@ function relativeTime(date: string) {
 
 export default function DashboardPage() {
   const params = useParams();
+  const router = useRouter();
   const projectId = params.projectId as string;
   const { selectedProject } = useProject();
   const [dashboardData, setDashboardData] = useState<DashboardStats | null>(null);
@@ -167,71 +170,24 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <SharpButton variant="ghost" href={`/p/${projectId}/flows/new`}>
-            <Plus className="w-3.5 h-3.5" /> New Flow
-          </SharpButton>
-          <SharpButton href={`/p/${projectId}/schedulers/new`}>
-            <Plus className="w-3.5 h-3.5" /> New Scheduler
-          </SharpButton>
+          <Button kind="ghost" size="md" renderIcon={Add} onClick={() => router.push(`/p/${projectId}/flows/new`)}>New Flow</Button>
+          <Button kind="primary" size="md" renderIcon={Add} onClick={() => router.push(`/p/${projectId}/schedulers/new`)}>New Scheduler</Button>
         </div>
       </div>
 
       {/* Instrument-panel tiles */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-        {stats.map((stat, idx) => (
-          <Link key={stat.label} href={stat.href} className="group block">
-            <div
-              style={{
-                background: THEME.panel,
-                border: `1px solid ${THEME.border}`,
-                borderRadius: 2,
-                padding: 16,
-                transition: 'background 0.1s ease',
-                position: 'relative',
-                overflow: 'hidden',
-              }}
-              className="hover:!bg-[var(--t-panel-hover)]"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <stat.icon className="w-3.5 h-3.5" style={{ color: stat.color }} />
-                  <span
-                    style={{
-                      fontSize: 14,
-                      color: THEME.text.secondary,
-                    }}
-                  >
-                    {stat.label}
-                  </span>
-                </div>
-              </div>
-
-              <p
-                style={{
-                  fontSize: 32,
-                  fontWeight: 300,
-                  fontVariantNumeric: 'tabular-nums',
-                  color: THEME.text.primary,
-                  lineHeight: '40px',
-                  marginBottom: 8,
-                  letterSpacing: 0,
-                }}
-              >
-                {isLoading ? <span style={{ opacity: 0.4 }}>–</span> : stat.value}
-              </p>
-
-              <div className="flex items-center justify-between">
-                <p
-                  style={{
-                    fontSize: 12,
-                    color: THEME.text.secondary,
-                  }}
-                >
-                  {stat.sub}
-                </p>
-              </div>
+        {stats.map((stat) => (
+          <ClickableTile key={stat.label} href={`${BASE_PATH}${stat.href}`} style={{ minHeight: 0 }}>
+            <div className="flex items-center gap-2 mb-3">
+              <stat.icon className="w-3.5 h-3.5" style={{ color: stat.color }} />
+              <span style={{ fontSize: 14, color: 'var(--cds-text-secondary)' }}>{stat.label}</span>
             </div>
-          </Link>
+            <p style={{ fontSize: 32, fontWeight: 300, fontVariantNumeric: 'tabular-nums', color: 'var(--cds-text-primary)', lineHeight: '40px', marginBottom: 8 }}>
+              {isLoading ? <span style={{ opacity: 0.4 }}>–</span> : stat.value}
+            </p>
+            <p style={{ fontSize: 12, color: 'var(--cds-text-secondary)' }}>{stat.sub}</p>
+          </ClickableTile>
         ))}
       </div>
 

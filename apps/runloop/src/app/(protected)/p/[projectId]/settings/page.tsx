@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useId } from 'react';
 import {
   Settings,
   Server,
@@ -24,8 +24,9 @@ import {
   Info,
 } from 'lucide-react';
 import {
-  ControlBreadcrumb, PageHeader, SharpButton, MONO,
+  ControlBreadcrumb, PageHeader, MONO,
 } from '@/components/ControlChrome';
+import { Button, Toggle as CarbonToggle } from '@carbon/react';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const THEME = {
@@ -219,22 +220,9 @@ function NumberInput({ value, onChange, min, max, suffix }: {
 }
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  const id = useId();
   return (
-    <button
-      onClick={() => onChange(!checked)}
-      style={{
-        width: 48, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
-        background: checked ? 'var(--t-success)' : 'var(--t-border-strong)',
-        position: 'relative', transition: 'background 0.2s', padding: 0,
-      }}
-    >
-      <div style={{
-        width: 18, height: 18, borderRadius: '50%', background: '#fff',
-        position: 'absolute', top: 3,
-        left: checked ? 27 : 3,
-        transition: 'left 0.2s',
-      }} />
-    </button>
+    <CarbonToggle id={id} labelText="" hideLabel size="sm" toggled={checked} onToggle={(v) => onChange(v)} />
   );
 }
 
@@ -266,24 +254,8 @@ function DangerButton({ icon: Icon, label, onClick }: {
   label: string;
   onClick: () => void;
 }) {
-  const [hovered, setHovered] = useState(false);
   return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 8,
-        padding: '10px 18px', borderRadius: 0, fontSize: 13, fontWeight: 500,
-        background: hovered ? `${THEME.colors.red}18` : 'transparent',
-        color: THEME.colors.red,
-        border: `1px solid ${hovered ? THEME.colors.red : THEME.border}`,
-        cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s',
-      }}
-    >
-      <Icon size={15} />
-      {label}
-    </button>
+    <Button kind="danger--tertiary" size="md" renderIcon={Icon} onClick={onClick}>{label}</Button>
   );
 }
 
@@ -349,10 +321,9 @@ export default function SettingsPage() {
             Manage your RunLoop platform configuration.
           </p>
         </div>
-        <SharpButton onClick={handleSave} disabled={saving}>
-          {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+        <Button size="md" onClick={handleSave} disabled={saving}>
           {saving ? 'Saving…' : 'Save Changes'}
-        </SharpButton>
+        </Button>
       </div>
 
       {/* General Settings */}
