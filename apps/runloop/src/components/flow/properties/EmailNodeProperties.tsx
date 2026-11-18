@@ -103,9 +103,9 @@ export function EmailNodeProperties({ config, onChange }: BasePropertiesProps) {
                   type="checkbox"
                   checked={config.html || false}
                   onChange={(e) => onChange({ ...config, html: e.target.checked })}
-                  className="rounded border-[#232326] bg-[#0a0a0b] text-[#0ea5e9]"
+                  className="rounded border-[var(--t-border-strong)] bg-[var(--t-input)] text-[var(--t-accent)]"
                 />
-                <span className="text-sm text-[#a1a1aa]">Send as HTML</span>
+                <span className="text-sm text-[var(--t-text-secondary)]">Send as HTML</span>
               </label>
             </>
           ) : (
@@ -116,8 +116,8 @@ export function EmailNodeProperties({ config, onChange }: BasePropertiesProps) {
                 onChange={(v) => onChange({ ...config, to: v })}
                 placeholder="admin@company.com"
               />
-              <div className="p-4 bg-[#1a1a1d] border border-[#232326] rounded-lg">
-                <p className="text-sm text-[#71717a]">
+              <div className="p-4 bg-[var(--t-input)] border border-[var(--t-border-strong)] rounded-lg">
+                <p className="text-sm text-[var(--t-text-secondary)]">
                   This will send a formatted execution report with status, logs, and details.
                 </p>
               </div>

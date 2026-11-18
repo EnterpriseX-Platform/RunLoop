@@ -8,7 +8,7 @@ import Link from 'next/link';
 // Each page that imports these gets a consistent breadcrumb, status dots,
 // and sharp-corner buttons without re-inventing the styles per file.
 
-export const MONO = "'IBM Plex Mono', ui-monospace, monospace";
+export const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
 
 // ─────────────────────────────────────────────────────────────────────────
 // ControlBreadcrumb — the `// CONTROL PLANE / X [NODE.Y]` strip that
@@ -24,24 +24,16 @@ export function ControlBreadcrumb({
   node: string;          // e.g. "NODE.FLOWS"
   right?: React.ReactNode;
 }) {
+  void path; void node;
+  if (!right) return null;
   return (
     <div
       className="flex items-center gap-2 mb-2"
-      style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.14em', color: 'var(--t-text-muted)' }}
+      style={{ fontSize: 12, color: 'var(--t-text-secondary)' }}
     >
-      <span>{'// CONTROL PLANE / '}{path.toUpperCase()}</span>
-      <span
-        className="px-1.5 py-0.5"
-        style={{
-          background: 'var(--t-input)',
-          border: '1px solid var(--t-border)',
-          color: 'var(--t-text-secondary)',
-          borderRadius: 2,
-        }}
-      >
-        {node.toUpperCase()}
-      </span>
-      {right && <span className="ml-auto flex items-center gap-1.5">{right}</span>}
+      {false && <span>
+</span>}
+      <span className="ml-auto flex items-center gap-1.5">{right}</span>
     </div>
   );
 }
@@ -70,65 +62,32 @@ export function PageHeader({
   return (
     <div className="flex items-end justify-between mb-6 gap-4">
       <div className="min-w-0 flex-1">
-        {/* Console prompt line — reads like a shell command being run. */}
-        <div
-          style={{
-            fontFamily: MONO,
-            fontSize: 10.5,
-            letterSpacing: '0.14em',
-            color: 'var(--t-text-muted)',
-            textTransform: 'uppercase',
-            marginBottom: 6,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-          }}
-        >
-          <span style={{ color: 'var(--t-accent)', opacity: 0.85 }}>{prompt}</span>
-          <span style={{ opacity: 0.5 }}>·</span>
-          <span>{title}</span>
-        </div>
         <h1
           style={{
-            fontFamily: MONO,
             fontSize: 28,
-            fontWeight: 500,
-            lineHeight: 1.1,
+            fontWeight: 400,
+            lineHeight: '36px',
             color: 'var(--t-text)',
-            letterSpacing: '-0.02em',
+            letterSpacing: 0,
             display: 'flex',
             alignItems: 'center',
             gap: 4,
           }}
         >
           {title}
-          {/* Blinking caret — same heartbeat motif as the login h1. */}
-          <span
-            aria-hidden
-            style={{
-              display: 'inline-block',
-              width: 11,
-              height: 22,
-              marginLeft: 2,
-              background: 'var(--t-accent)',
-              animation: 'rl-ph-blink 1.2s steps(2, end) infinite',
-            }}
-          />
         </h1>
         {subtitle && (
           <p
             style={{
-              fontFamily: MONO,
-              fontSize: 12,
-              color: 'var(--t-text-muted)',
-              marginTop: 10,
-              letterSpacing: '0.02em',
+              fontSize: 14,
+              color: 'var(--t-text-secondary)',
+              marginTop: 8,
+              letterSpacing: 0,
               display: 'flex',
               alignItems: 'center',
               gap: 8,
             }}
           >
-            <span style={{ opacity: 0.5 }}>{'//'}</span>
             {subtitle}
           </p>
         )}
@@ -139,7 +98,7 @@ export function PageHeader({
               fontFamily: MONO,
               fontSize: 11,
               color: 'var(--t-text-secondary)',
-              letterSpacing: '0.04em',
+              letterSpacing: 0,
             }}
           >
             {metrics}
@@ -174,13 +133,12 @@ export function MetricChip({
   const fg = accent || 'var(--t-text)';
   return (
     <span className="flex items-center gap-1.5">
-      <span style={{ color: 'var(--t-text-muted)', opacity: 0.75 }}>▸</span>
       <span
         style={{
           color: fg,
           fontWeight: 600,
           fontVariantNumeric: 'tabular-nums',
-          letterSpacing: '0.02em',
+          letterSpacing: 0,
         }}
       >
         {value}
@@ -188,9 +146,8 @@ export function MetricChip({
       <span
         style={{
           color: 'var(--t-text-muted)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em',
-          fontSize: 10,
+          letterSpacing: 0,
+          fontSize: 12,
         }}
       >
         {label}
@@ -226,12 +183,12 @@ export function HeroHeader({
   right?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-end justify-between mb-6 gap-4">
+    <div className="flex items-start justify-between mb-6 gap-4">
       <div className="min-w-0 flex-1">
         <h1
           style={{
-            fontSize: 24, fontWeight: 600, lineHeight: 1.2,
-            color: 'var(--t-text)', letterSpacing: '-0.02em',
+            fontSize: 28, fontWeight: 400, lineHeight: '36px',
+            color: 'var(--t-text)', letterSpacing: 0,
           }}
         >
           {title}
@@ -239,7 +196,7 @@ export function HeroHeader({
         {subtitle && (
           <p
             style={{
-              fontSize: 13, color: 'var(--t-text-muted)',
+              fontSize: 14, color: 'var(--t-text-secondary)',
               marginTop: 8, letterSpacing: 0,
               maxWidth: 640,
             }}
@@ -250,7 +207,7 @@ export function HeroHeader({
         {metrics && (
           <div
             className="flex items-center gap-3 mt-3 flex-wrap"
-            style={{ fontFamily: MONO, fontSize: 11, letterSpacing: '0.04em' }}
+            style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 0 }}
           >
             {metrics}
           </div>
@@ -288,9 +245,7 @@ export function StatusDot({
         height: size,
         borderRadius: 999,
         background: color,
-        boxShadow: soft
-          ? 'none'
-          : `0 0 0 3px color-mix(in srgb, ${color} 15%, transparent)`,
+        boxShadow: soft ? 'none' : 'none',
         display: 'inline-block',
       }}
     />
@@ -309,25 +264,26 @@ export function MonoTag({
   tone?: 'muted' | 'accent' | 'danger' | 'warn' | 'success';
 }) {
   const palette: Record<string, { fg: string; bg: string; border: string }> = {
-    muted:   { fg: 'var(--t-text-secondary)', bg: 'var(--t-input)', border: 'var(--t-border)' },
-    accent:  { fg: 'var(--t-accent)',         bg: 'color-mix(in srgb, var(--t-accent) 10%, transparent)', border: 'color-mix(in srgb, var(--t-accent) 30%, transparent)' },
-    danger:  { fg: '#EF4444', bg: 'color-mix(in srgb, #EF4444 10%, transparent)', border: 'color-mix(in srgb, #EF4444 30%, transparent)' },
-    warn:    { fg: '#F59E0B', bg: 'color-mix(in srgb, #F59E0B 10%, transparent)', border: 'color-mix(in srgb, #F59E0B 30%, transparent)' },
-    success: { fg: '#10B981', bg: 'color-mix(in srgb, #10B981 10%, transparent)', border: 'color-mix(in srgb, #10B981 30%, transparent)' },
+    muted:   { fg: 'var(--tag-gray-text)',   bg: 'var(--tag-gray-bg)',   border: 'transparent' },
+    accent:  { fg: 'var(--tag-blue-text)',   bg: 'var(--tag-blue-bg)',   border: 'transparent' },
+    danger:  { fg: 'var(--tag-red-text)',    bg: 'var(--tag-red-bg)',    border: 'transparent' },
+    warn:    { fg: 'var(--tag-orange-text)', bg: 'var(--tag-orange-bg)', border: 'transparent' },
+    success: { fg: 'var(--tag-green-text)',  bg: 'var(--tag-green-bg)',  border: 'transparent' },
   };
   const p = palette[tone];
   return (
     <span
       style={{
-        fontFamily: MONO,
-        fontSize: 10,
-        letterSpacing: '0.08em',
+        fontSize: 12,
+        lineHeight: '16px',
         color: p.fg,
         background: p.bg,
         border: `1px solid ${p.border}`,
-        padding: '2px 6px',
-        borderRadius: 2,
-        textTransform: 'uppercase',
+        padding: '4px 8px',
+        borderRadius: 24,
+        display: 'inline-flex',
+        alignItems: 'center',
+        whiteSpace: 'nowrap',
       }}
     >
       {children}
@@ -358,15 +314,15 @@ export function SharpButton({
   type?: 'button' | 'submit';
   className?: string;
 }) {
-  const paddings = size === 'sm' ? '5px 10px' : '7px 14px';
-  const fontSize = size === 'sm' ? 11 : 12;
+  const height = size === 'sm' ? 32 : 40;
   const base: React.CSSProperties = {
-    fontFamily: MONO,
-    fontSize,
-    fontWeight: 500,
-    letterSpacing: '0.04em',
-    padding: paddings,
-    borderRadius: 2,
+    fontSize: 14,
+    fontWeight: 400,
+    height,
+    padding: size === 'sm' ? '0 32px 0 12px' : '0 48px 0 16px',
+    borderRadius: 0,
+    border: '1px solid transparent',
+    justifyContent: 'space-between',
     display: 'inline-flex',
     alignItems: 'center',
     gap: 6,
@@ -378,8 +334,8 @@ export function SharpButton({
   };
   const styleByVariant: Record<string, React.CSSProperties> = {
     primary: { ...base, background: 'var(--t-accent)', color: '#fff' },
-    ghost:   { ...base, background: 'transparent', color: 'var(--t-text-secondary)', border: '1px solid var(--t-border)' },
-    danger:  { ...base, background: 'color-mix(in srgb, #EF4444 12%, transparent)', color: '#EF4444', border: '1px solid color-mix(in srgb, #EF4444 35%, transparent)' },
+    ghost:   { ...base, background: 'transparent', color: 'var(--t-accent)', border: '1px solid var(--t-accent)' },
+    danger:  { ...base, background: 'transparent', color: 'var(--t-error)', border: '1px solid transparent' },
   };
   const style = styleByVariant[variant];
   if (href) {
@@ -413,7 +369,9 @@ export function CornerTicks({
   size?: number;
   offset?: number;  // negative pulls ticks slightly outside the border
 }) {
-  const lineColor = color ?? 'var(--t-accent)';
+  void color; void size; void offset;
+  return null;
+  const lineColor = 'var(--t-accent)';
   const base: React.CSSProperties = {
     position: 'absolute',
     width: size,
@@ -466,7 +424,7 @@ export function SchematicPanel({
         position: ticked ? 'relative' : undefined,
         background: 'var(--t-panel)',
         border: '1px solid var(--t-border)',
-        borderRadius: 2,
+        borderRadius: 0,
         padding: padded ? 16 : 0,
       }}
     >
@@ -498,7 +456,7 @@ export function MonoNumber({
         fontFamily: MONO,
         fontSize: size,
         fontVariantNumeric: 'tabular-nums',
-        letterSpacing: '0.02em',
+        letterSpacing: 0,
         color: accent
           ? 'var(--t-accent)'
           : muted
@@ -527,24 +485,22 @@ export function SectionLabel({
     <div
       className={className}
       style={{
-        fontFamily: MONO,
-        fontSize: 10,
-        letterSpacing: '0.16em',
-        color: 'var(--t-text-muted)',
-        textTransform: 'uppercase',
+        fontSize: 14,
+        fontWeight: 600,
+        lineHeight: '18px',
+        color: 'var(--t-text)',
         display: 'flex',
         alignItems: 'center',
         gap: 6,
       }}
     >
-      <span style={{ opacity: 0.5 }}>{'//'}</span>
       {children}
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// TableHeaderRow — mono uppercase column labels with wide tracking.
+// TableHeaderRow — mono  column labels with wide tracking.
 // Pass a simple `cols` array so pages stay declarative.
 // ─────────────────────────────────────────────────────────────────────────
 export function TableHeaderRow({
@@ -556,12 +512,12 @@ export function TableHeaderRow({
     <div
       className="flex items-center gap-3 px-4 py-2"
       style={{
-        fontFamily: MONO,
-        fontSize: 10,
-        letterSpacing: '0.14em',
-        color: 'var(--t-text-muted)',
+        fontSize: 14,
+        fontWeight: 600,
+        minHeight: 48,
+        color: 'var(--t-text)',
         borderBottom: '1px solid var(--t-border)',
-        background: 'color-mix(in srgb, var(--t-bg) 40%, transparent)',
+        background: 'var(--t-selected)',
       }}
     >
       {cols.map((c, i) => (
@@ -573,9 +529,112 @@ export function TableHeaderRow({
             textAlign: c.align ?? 'left',
           }}
         >
-          {c.label.toUpperCase()}
+          {c.label}
         </span>
       ))}
     </div>
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Carbon list-page pieces shared by Flows / Schedulers / Queues / Projects.
+// ─────────────────────────────────────────────────────────────────────────
+export function ContentSwitcher<T extends string>({
+  options,
+  value,
+  onChange,
+  labels,
+}: {
+  options: readonly T[];
+  value: T;
+  onChange: (v: T) => void;
+  labels?: Partial<Record<T, string>>;
+}) {
+  return (
+    <div className="flex items-center" role="tablist" style={{ width: 'fit-content', boxShadow: 'inset 0 0 0 1px var(--t-border)' }}>
+      {options.map((o) => {
+        const on = value === o;
+        return (
+          <button
+            key={o}
+            role="tab"
+            aria-selected={on}
+            onClick={() => onChange(o)}
+            className={on ? '' : 'hover:bg-[var(--t-panel-hover)]'}
+            style={{
+              height: 32,
+              padding: '0 16px',
+              fontSize: 14,
+              border: 'none',
+              background: on ? 'var(--t-text)' : 'transparent',
+              color: on ? 'var(--t-bg)' : 'var(--t-text-secondary)',
+            }}
+          >
+            {labels?.[o] ?? o.charAt(0).toUpperCase() + o.slice(1)}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function SearchField({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <div className="relative">
+      <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+        className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--t-text-secondary)' }}>
+        <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+      </svg>
+      <input
+        type="text"
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full outline-none focus:shadow-[inset_0_0_0_2px_var(--t-accent)] placeholder:text-[var(--t-text-muted)]"
+        style={{
+          height: 40,
+          padding: '0 16px 0 44px',
+          fontSize: 14,
+          background: 'var(--t-panel)',
+          color: 'var(--t-text)',
+          border: 'none',
+          borderBottom: '1px solid var(--t-border-strong)',
+        }}
+      />
+    </div>
+  );
+}
+
+export type TagTone = 'green' | 'red' | 'blue' | 'orange' | 'gray';
+export function Tag({ tone = 'gray', children }: { tone?: TagTone; children: React.ReactNode }) {
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        fontSize: 12,
+        lineHeight: '16px',
+        padding: '4px 8px',
+        borderRadius: 24,
+        whiteSpace: 'nowrap',
+        background: `var(--tag-${tone}-bg)`,
+        color: `var(--tag-${tone}-text)`,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+export function sentence(s: string) {
+  const t = (s || '').toLowerCase();
+  return t.charAt(0).toUpperCase() + t.slice(1);
 }

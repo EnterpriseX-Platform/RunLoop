@@ -4,14 +4,14 @@ import { authenticateRequest } from '@/lib/auth';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await authenticateRequest(request);
     if (!auth.success) return Response.json({ error: auth.error }, { status: 401 });
     const body = await request.json();
     const updated = await prisma.notification.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: {
         ...(body.type !== undefined ? { type: body.type } : {}),
         ...(body.config !== undefined ? { config: body.config } : {}),
@@ -30,12 +30,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await authenticateRequest(request);
     if (!auth.success) return Response.json({ error: auth.error }, { status: 401 });
-    await prisma.notification.delete({ where: { id: params.id } });
+    await prisma.notification.delete({ where: { id: (await params).id } });
     return Response.json({ success: true });
   } catch (err) {
     console.error('DELETE notification error:', err);

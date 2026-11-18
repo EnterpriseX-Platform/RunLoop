@@ -1,12 +1,14 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { LogoMark } from './Logo';
+import { RLDashboard, RLFlows, RLScheduler, RLExecutions, RLQueue, RLChannel, RLDocs, RLSettings } from './icons/RunLoopIcons';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useProject } from '@/context/ProjectContext';
-import { ControlBackdrop } from './ControlBackdrop';
 import {
   LayoutDashboard,
   Workflow,
@@ -51,33 +53,33 @@ import {
 // count fetching) is preserved exactly — only the shell is new.
 
 const SANS = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
-const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
+const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
 
 /* ==================== Nav Config ==================== */
 
 interface NavItemType {
   name: string;
   href: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   countKey: string | null;
   projectScoped?: boolean;
 }
 
 const mainNavigation: NavItemType[] = [
-  { name: 'Dashboard',  href: '/dashboard',  icon: LayoutDashboard, countKey: null },
-  { name: 'Flows',      href: '/flows',      icon: Workflow,        countKey: 'flows' },
-  { name: 'Schedulers', href: '/schedulers', icon: Clock,           countKey: 'schedulers' },
-  { name: 'Executions', href: '/executions', icon: Activity,        countKey: null },
-  { name: 'Queues',     href: '/queues',     icon: Inbox,           countKey: null },
-  { name: 'Channels',   href: '/channels',   icon: BellRing,        countKey: null },
+  { name: 'Dashboard',  href: '/dashboard',  icon: RLDashboard, countKey: null },
+  { name: 'Flows',      href: '/flows',      icon: RLFlows,         countKey: 'flows' },
+  { name: 'Schedulers', href: '/schedulers', icon: RLScheduler,     countKey: 'schedulers' },
+  { name: 'Executions', href: '/executions', icon: RLExecutions,    countKey: null },
+  { name: 'Queues',     href: '/queues',     icon: RLQueue,         countKey: null },
+  { name: 'Channels',   href: '/channels',   icon: RLChannel,       countKey: null },
 ];
 
 // projectScoped:true → href is rewritten to /p/<currentProjectId>/<href>
 // at render time. Same pattern as the main nav so every link follows the
 // /p/<id>/* convention; non-scoped paths (eg /projects) don't need it.
 const systemNavigation: NavItemType[] = [
-  { name: 'API Docs', href: '/docs',     icon: BookOpen, countKey: null, projectScoped: true },
-  { name: 'Settings', href: '/settings', icon: Settings, countKey: null, projectScoped: true },
+  { name: 'API Docs', href: '/docs',     icon: RLDocs, countKey: null, projectScoped: true },
+  { name: 'Settings', href: '/settings', icon: RLSettings, countKey: null, projectScoped: true },
 ];
 
 /* ==================== Breadcrumb ==================== */
@@ -113,29 +115,20 @@ function Breadcrumb() {
 
   return (
     <nav
-      style={{ fontFamily: MONO, fontSize: 11, letterSpacing: '0.06em' }}
+      style={{ fontSize: 14 }}
       className="flex items-center gap-1.5 min-w-0"
     >
-      {/* Shell prompt — reinforces the "inside a running process" feel. */}
-      <span style={{ color: 'var(--t-accent)', opacity: 0.7 }}>{'>'}</span>
-      <Link
-        href={`${projectPrefix}/dashboard`}
-        style={{ color: 'var(--t-text-muted)' }}
-        className="hover:!text-[var(--t-accent)] transition-colors whitespace-nowrap"
-      >
-        ~
-      </Link>
       {segments.map((segment, index) => {
         const isLast = index === segments.length - 1;
         const href = `${projectPrefix}/` + segments.slice(0, index + 1).join('/');
-        const label = breadcrumbMap[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);
+        const label = breadcrumbMap[segment] || segment;
         return (
-          <div key={segment + index} className="flex items-center gap-1.5 min-w-0">
-            <span style={{ color: 'var(--t-border)' }}>/</span>
+          <div key={segment + index} className={`flex items-center gap-1.5 ${isLast ? 'min-w-0' : 'flex-shrink-0'}`}>
+            {index > 0 && <span style={{ color: 'var(--t-text-muted)' }}>/</span>}
             {isLast ? (
               <span
-                style={{ color: 'var(--t-text)', letterSpacing: '0.1em' }}
-                className="truncate max-w-[220px] uppercase"
+                style={{ color: 'var(--t-text)', fontWeight: 600 }}
+                className="truncate max-w-[220px] "
                 title={label}
               >
                 {label}
@@ -143,8 +136,8 @@ function Breadcrumb() {
             ) : (
               <Link
                 href={href}
-                style={{ color: 'var(--t-text-muted)' }}
-                className="hover:!text-[var(--t-accent)] transition-colors truncate max-w-[180px] uppercase"
+                style={{ color: 'var(--t-accent)' }}
+                className="hover:underline truncate max-w-[180px]\"
                 title={label}
               >
                 {label}
@@ -169,18 +162,16 @@ function NavItem({ item, collapsed, isActive, count }: {
     <Link
       href={item.href}
       style={{
-        fontFamily: MONO,
-        fontSize: 11.5,
-        letterSpacing: '0.14em',
+        fontSize: 14,
+        height: collapsed ? 40 : 32,
         color: isActive ? 'var(--t-text)' : 'var(--t-text-secondary)',
-        background: isActive ? 'color-mix(in srgb, var(--t-accent) 12%, transparent)' : 'transparent',
-        borderRadius: 2,
+        background: isActive ? 'var(--t-selected)' : 'transparent',
+        borderRadius: 0,
         position: 'relative',
-        textTransform: 'uppercase',
       }}
       className={[
-        'group flex items-center gap-3 py-2 transition-all duration-150',
-        collapsed ? 'justify-center px-2 mx-1' : 'px-3 mx-1',
+        'group flex items-center gap-3 transition-colors duration-100',
+        collapsed ? 'justify-center px-0' : 'px-4',
         !isActive && 'hover:text-[var(--t-text)] hover:bg-[var(--t-panel-hover)]',
       ].filter(Boolean).join(' ')}
       title={collapsed ? item.name : undefined}
@@ -191,8 +182,8 @@ function NavItem({ item, collapsed, isActive, count }: {
         aria-hidden
         style={{
           position: 'absolute',
-          left: 0, top: 4, bottom: 4,
-          width: 2,
+          left: 0, top: 0, bottom: 0,
+          width: 3,
           background: 'var(--t-accent)',
           transform: isActive ? 'scaleY(1)' : 'scaleY(0)',
           transformOrigin: 'center',
@@ -200,32 +191,29 @@ function NavItem({ item, collapsed, isActive, count }: {
         }}
       />
       <item.icon
-        className="w-3.5 h-3.5 flex-shrink-0"
-        style={{ color: isActive ? 'var(--t-accent)' : 'var(--t-text-muted)' }}
+        className="w-4 h-4 flex-shrink-0"
+        style={{ color: isActive ? 'var(--t-text)' : 'var(--t-text-secondary)' }}
       />
       {!collapsed && (
         <>
-          <span className="flex-1 truncate" style={{ fontWeight: isActive ? 600 : 500 }}>
+          <span className="flex-1 truncate" style={{ fontWeight: isActive ? 600 : 400 }}>
             {item.name}
           </span>
           {count !== undefined && count > 0 && (
             <span
               style={{
-                fontFamily: MONO,
-                fontSize: 9.5,
+                fontSize: 12,
                 fontVariantNumeric: 'tabular-nums',
-                padding: '1px 5px',
-                letterSpacing: '0.06em',
-                background: isActive
-                  ? 'color-mix(in srgb, var(--t-accent) 20%, transparent)'
-                  : 'var(--t-panel)',
-                color: isActive ? 'var(--t-accent)' : 'var(--t-text-muted)',
-                border: `1px solid ${isActive ? 'color-mix(in srgb, var(--t-accent) 32%, transparent)' : 'var(--t-border)'}`,
-                minWidth: 22,
+                padding: '0 8px',
+                lineHeight: '18px',
+                borderRadius: 24,
+                background: 'var(--tag-gray-bg)',
+                color: 'var(--tag-gray-text)',
+                minWidth: 24,
                 textAlign: 'center',
               }}
             >
-              {String(count).padStart(2, '0')}
+              {count}
             </span>
           )}
         </>
@@ -275,7 +263,7 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
     if (!newProjectName.trim() || isCreating) return;
     setIsCreating(true);
     try {
-      const res = await fetch('/runloop/api/projects', {
+      const res = await fetch(`${BASE_PATH}/api/projects`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newProjectName.trim() }),
@@ -283,7 +271,12 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
       if (res.ok) {
         const data = await res.json();
         await refreshProjects();
-        if (data.project) selectProject(data.project);
+        if (data.project) {
+          selectProject(data.project);
+          // The URL carries the project id; without moving there the
+          // project layout switches the selection straight back.
+          psRouter.push(`/p/${data.project.id}/dashboard`);
+        }
         setNewProjectName('');
         setShowCreateForm(false);
         setIsOpen(false);
@@ -309,41 +302,39 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
   const dropdownMenu = (positionClass: string) => (
     <div
       style={{ backgroundColor: 'var(--t-panel)', borderColor: 'var(--t-border)', borderRadius: 2 }}
-      className={`${positionClass} border shadow-xl py-1 z-50`}
+      className={`${positionClass} border py-1 z-50 rl-menu`}
     >
       <div className="max-h-48 overflow-auto py-0.5">
         <button
           onClick={() => handleSelect(null)}
-          className="w-full px-3 py-1.5 text-left flex items-center gap-2 transition-colors hover:bg-[var(--t-panel-hover)]"
+          className="w-full h-10 px-4 text-left flex items-center gap-3 transition-colors hover:bg-[var(--t-panel-hover)]"
           style={{
-            fontFamily: MONO,
-            fontSize: 11,
-            letterSpacing: '0.04em',
+            fontSize: 14,
+            letterSpacing: 0,
             color: !selectedProject ? 'var(--t-accent)' : 'var(--t-text-secondary)',
           }}
         >
-          <Layers className="w-3 h-3" style={{ color: 'var(--t-text-muted)' }} />
-          <span className="flex-1">all projects</span>
-          {!selectedProject && <Check className="w-3 h-3" style={{ color: 'var(--t-accent)' }} />}
+          <Layers className="w-4 h-4" style={{ color: 'var(--t-text-muted)' }} />
+          <span className="flex-1">All projects</span>
+          {!selectedProject && <Check className="w-4 h-4" style={{ color: 'var(--t-accent)' }} />}
         </button>
         {projects.map((project) => (
           <button
             key={project.id}
             onClick={() => handleSelect(project)}
-            className="w-full px-3 py-1.5 text-left flex items-center gap-2 transition-colors hover:bg-[var(--t-panel-hover)]"
+            className="w-full h-10 px-4 text-left flex items-center gap-3 transition-colors hover:bg-[var(--t-panel-hover)]"
             style={{
-              fontFamily: MONO,
-              fontSize: 11,
-              letterSpacing: '0.02em',
+              fontSize: 14,
+              letterSpacing: 0,
               color: selectedProject?.id === project.id ? 'var(--t-accent)' : 'var(--t-text-secondary)',
             }}
           >
             <div
-              className="w-2 h-2 flex-shrink-0"
+              className="w-3 h-3 flex-shrink-0"
               style={{ backgroundColor: project.color || 'var(--t-accent)' }}
             />
             <span className="flex-1 truncate">{project.name}</span>
-            {selectedProject?.id === project.id && <Check className="w-3 h-3" style={{ color: 'var(--t-accent)' }} />}
+            {selectedProject?.id === project.id && <Check className="w-4 h-4" style={{ color: 'var(--t-accent)' }} />}
           </button>
         ))}
       </div>
@@ -351,16 +342,15 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
         {!showCreateForm ? (
           <button
             onClick={() => setShowCreateForm(true)}
-            className="w-full px-3 py-1.5 text-left flex items-center gap-2 transition-colors hover:bg-[var(--t-panel-hover)]"
+            className="w-full h-10 px-4 text-left flex items-center gap-3 transition-colors hover:bg-[var(--t-panel-hover)]"
             style={{
-              fontFamily: MONO,
-              fontSize: 11,
-              letterSpacing: '0.06em',
+              fontSize: 14,
+              letterSpacing: 0,
               color: 'var(--t-accent)',
             }}
           >
-            <Plus className="w-3 h-3" />
-            new project
+            <Plus className="w-4 h-4" />
+            New project
           </button>
         ) : (
           <div className="px-2.5 py-2 space-y-1.5">
@@ -387,8 +377,8 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
               <button
                 onClick={handleCreateProject}
                 disabled={!newProjectName.trim() || isCreating}
-                style={{ fontFamily: MONO, letterSpacing: '0.08em', borderRadius: 2 }}
-                className="flex-1 h-6 text-[10px] font-medium bg-[var(--t-accent)] text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed uppercase transition-opacity"
+                style={{ fontFamily: MONO, letterSpacing: 0, borderRadius: 2 }}
+                className="flex-1 h-6 text-[10px] font-medium bg-[var(--t-accent)] text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed  transition-opacity"
               >
                 {isCreating ? '...' : 'create'}
               </button>
@@ -423,38 +413,42 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
   }
 
   return (
-    <div className="relative w-full" ref={dropdownRef}>
+    <div className="relative h-full" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
         style={{
-          borderRadius: 2,
-          border: '1px solid var(--t-border)',
-          background: 'var(--t-panel)',
+          border: 'none',
+          background: isOpen ? 'var(--t-panel-hover)' : 'transparent',
+          height: 48,
+          maxWidth: 280,
+          padding: '0 16px',
         }}
-        className="w-full flex items-center gap-2 px-2 py-1.5 transition-all hover:border-[var(--t-accent)]"
+        className="flex items-center gap-2 transition-colors hover:bg-[var(--t-panel-hover)]"
         title={selectedProject?.name || 'Select Project'}
       >
         <span
           className="flex-shrink-0"
           style={{
-            width: 8, height: 8,
+            width: 10, height: 10,
             background: selectedProject?.color || 'var(--t-text-muted)',
           }}
         />
         <span
           className="truncate flex-1 text-left"
           style={{
-            fontSize: 12.5,
-            fontWeight: 600,
+            fontSize: 14,
+            fontWeight: 400,
             color: 'var(--t-text)',
-            letterSpacing: '-0.005em',
+            letterSpacing: 0,
           }}
         >
           {selectedProject?.name || 'All projects'}
         </span>
-        <ChevronDown className="w-3 h-3 flex-shrink-0" style={{ color: 'var(--t-text-muted)' }} />
+        <ChevronDown className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--t-text-secondary)', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.1s' }} />
       </button>
-      {isOpen && dropdownMenu('absolute left-0 top-full mt-1 w-full')}
+      {isOpen && dropdownMenu('absolute left-0 top-full w-64')}
     </div>
   );
 }
@@ -567,7 +561,7 @@ function UtcClock() {
         fontSize: 10.5,
         fontVariantNumeric: 'tabular-nums',
         color: 'var(--t-text-secondary)',
-        letterSpacing: '0.04em',
+        letterSpacing: 0,
       }}
     >
       {t}
@@ -581,19 +575,18 @@ function UtcClock() {
 function EngineDot() {
   return (
     <span
-      className="flex items-center gap-1.5"
-      style={{ fontFamily: MONO, fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: '0.12em' }}
+      className="flex items-center gap-1.5 whitespace-nowrap"
+      title="Engine online"
+      style={{ fontSize: 12, color: 'var(--t-text-secondary)' }}
     >
       <span
         aria-hidden
         style={{
-          width: 6, height: 6, borderRadius: 999,
-          background: '#10B981',
-          boxShadow: '0 0 0 3px color-mix(in srgb, #10B981 18%, transparent)',
-          animation: 'rl-engine-pulse 2.4s ease-in-out infinite',
+          width: 8, height: 8, borderRadius: 999,
+          background: 'var(--t-success)',
         }}
       />
-      ENGINE
+      Engine online
     </span>
   );
 }
@@ -615,7 +608,7 @@ function CronTicker() {
   }, []);
   return (
     <div className="hidden lg:flex items-center gap-2" style={{ fontFamily: MONO, fontSize: 9.5 }}>
-      <span style={{ color: 'var(--t-text-muted)', letterSpacing: '0.12em' }}>CRON</span>
+      <span style={{ color: 'var(--t-text-muted)', letterSpacing: 0 }}>CRON</span>
       <span style={{ color: 'var(--t-text-muted)', opacity: 0.5 }}>*/2&nbsp;*&nbsp;*&nbsp;*&nbsp;*</span>
       <span
         style={{
@@ -628,7 +621,7 @@ function CronTicker() {
           color: flash ? 'var(--t-accent)' : 'var(--t-text-secondary)',
           background: flash ? 'color-mix(in srgb, var(--t-accent) 10%, transparent)' : 'transparent',
           transition: 'color 0.2s, background 0.2s',
-          letterSpacing: '0.05em',
+          letterSpacing: 0,
         }}
       >
         t={String(tick).padStart(4, '0')}
@@ -661,8 +654,8 @@ function SidebarFooter({ collapsed }: { collapsed: boolean }) {
           aria-hidden
           style={{
             width: 6, height: 6, borderRadius: 999,
-            background: '#10B981',
-            boxShadow: '0 0 0 3px color-mix(in srgb, #10B981 18%, transparent)',
+            background: '#24a148',
+            boxShadow: '0 0 0 3px color-mix(in srgb, #24a148 18%, transparent)',
             animation: 'rl-engine-pulse 2.4s ease-in-out infinite',
           }}
         />
@@ -676,7 +669,7 @@ function SidebarFooter({ collapsed }: { collapsed: boolean }) {
         borderTop: '1px solid var(--t-border-light)',
         fontFamily: MONO,
         fontSize: 9.5,
-        letterSpacing: '0.08em',
+        letterSpacing: 0,
       }}
     >
       <div className="flex items-center justify-between">
@@ -687,13 +680,13 @@ function SidebarFooter({ collapsed }: { collapsed: boolean }) {
           aria-hidden
           style={{
             width: 6, height: 6, borderRadius: 999,
-            background: '#10B981',
-            boxShadow: '0 0 0 3px color-mix(in srgb, #10B981 18%, transparent)',
+            background: '#24a148',
+            boxShadow: '0 0 0 3px color-mix(in srgb, #24a148 18%, transparent)',
             animation: 'rl-engine-pulse 2.4s ease-in-out infinite',
           }}
         />
         ENGINE
-        <span style={{ marginLeft: 'auto', color: '#10B981' }}>ONLINE</span>
+        <span style={{ marginLeft: 'auto', color: '#24a148' }}>ONLINE</span>
       </div>
       <div
         className="flex items-center gap-1.5"
@@ -724,6 +717,9 @@ export function Layout({ children }: { children?: React.ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const pageSeg = (pathname.replace(/^\/p\/[^/]+\/?/, '').replace(/^\//, '').split('/')[0]) || 'dashboard';
+  const currentPageTitle = breadcrumbMap[pageSeg] || (pageSeg.charAt(0).toUpperCase() + pageSeg.slice(1));
   const [counts, setCounts] = useState<Record<string, number>>({});
 
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -735,9 +731,9 @@ export function Layout({ children }: { children?: React.ReactNode }) {
         const pid = selectedProject?.id;
         const qs = pid ? `?projectId=${pid}` : '';
         const [projRes, schedRes, flowRes] = await Promise.allSettled([
-          fetch('/runloop/api/projects'),
-          fetch(`/runloop/api/schedulers${qs}`),
-          fetch(`/runloop/api/flows${qs}`),
+          fetch(`${BASE_PATH}/api/projects`),
+          fetch(`${BASE_PATH}/api/schedulers${qs}`),
+          fetch(`${BASE_PATH}/api/flows${qs}`),
         ]);
         const newCounts: Record<string, number> = {};
         if (projRes.status === 'fulfilled' && projRes.value.ok) {
@@ -774,80 +770,20 @@ export function Layout({ children }: { children?: React.ReactNode }) {
   const handleLogout = async () => { await logout(); };
 
   return (
-    <div className="min-h-screen flex" style={{ fontFamily: SANS, backgroundColor: 'var(--t-bg)' }}>
+    <div className="min-h-screen flex" style={{ fontFamily: SANS, backgroundColor: 'var(--t-bg)', paddingTop: 48 }}>
       {/* ===== Sidebar ===== */}
       <aside
         style={{ fontFamily: SANS, backgroundColor: 'var(--t-sidebar)', borderColor: 'var(--t-border-light)' }}
-        className={`fixed top-0 left-0 z-40 h-full border-r flex flex-col transition-all duration-200 ${
-          sidebarCollapsed ? 'w-16' : 'w-56'
+        className={`fixed top-12 bottom-0 left-0 z-40 border-r flex flex-col transition-all duration-200 ${
+          sidebarCollapsed ? 'w-12' : 'w-56'
         }`}
       >
-        {/* Brand */}
-        <div className={`flex items-center ${sidebarCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-4'}`}>
-          <SidebarMark />
-          {!sidebarCollapsed && (
-            <div className="flex items-center gap-2 ml-2.5 min-w-0 flex-1">
-              <span
-                style={{ color: 'var(--t-text)', letterSpacing: '-0.01em' }}
-                className="text-[15px] font-semibold leading-none"
-              >
-                RunLoop
-              </span>
-              <span
-                style={{
-                  fontFamily: MONO,
-                  fontSize: 8.5,
-                  letterSpacing: '0.1em',
-                  color: 'var(--t-accent)',
-                  borderColor: 'color-mix(in srgb, var(--t-accent) 35%, transparent)',
-                }}
-                className="px-1 py-[1px] border font-medium leading-none uppercase"
-              >
-                beta
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Project selector — now a prominent row under the brand */}
-        {!sidebarCollapsed && (
-          <div className="px-3 pb-2">
-            <p
-              className="pb-1"
-              style={{
-                fontFamily: MONO, fontSize: 9,
-                letterSpacing: '0.18em', textTransform: 'uppercase',
-                color: 'var(--t-text-muted)',
-              }}
-            >
-              project
-            </p>
-            <ProjectSelector collapsed={false} />
-          </div>
-        )}
-        {sidebarCollapsed && (
-          <div className="px-2 pb-2 flex justify-center">
-            <ProjectSelector collapsed={true} />
-          </div>
-        )}
-
-        <div className="mx-3 border-t" style={{ borderColor: 'var(--t-border-light)' }} />
-
         {/* Navigation */}
         <nav className="flex-1 pt-2 pb-3 overflow-y-auto">
           <div className="space-y-0.5">
             {!sidebarCollapsed && (
-              <p
-                className="px-4 pt-1 pb-1.5"
-                style={{
-                  color: 'var(--t-text-muted)',
-                  fontFamily: MONO,
-                  fontSize: 9.5,
-                  letterSpacing: '0.18em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                main menu
+              <p className="px-4 pt-3 pb-2" style={{ color: 'var(--t-text-secondary)', fontSize: 12, lineHeight: '16px' }}>
+                Workflows
               </p>
             )}
             {mainNavigation.map((item) => {
@@ -867,19 +803,11 @@ export function Layout({ children }: { children?: React.ReactNode }) {
             })}
           </div>
 
-          <div className="mt-3 space-y-0.5">
+          {sidebarCollapsed && <div aria-hidden style={{ height: 1, background: 'var(--t-border)', margin: '8px 12px' }} />}
+          <div className={sidebarCollapsed ? 'space-y-0.5' : 'mt-3 space-y-0.5'}>
             {!sidebarCollapsed && (
-              <p
-                className="px-4 pt-1 pb-1.5"
-                style={{
-                  color: 'var(--t-text-muted)',
-                  fontFamily: MONO,
-                  fontSize: 9.5,
-                  letterSpacing: '0.18em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                system
+              <p className="px-4 pt-3 pb-2" style={{ color: 'var(--t-text-secondary)', fontSize: 12, lineHeight: '16px' }}>
+                System
               </p>
             )}
             {systemNavigation.map((item) => {
@@ -898,128 +826,85 @@ export function Layout({ children }: { children?: React.ReactNode }) {
           </div>
         </nav>
 
-        <SidebarFooter collapsed={sidebarCollapsed} />
+
       </aside>
 
       {/* Sidebar spacer */}
-      <div className={`flex-shrink-0 transition-all duration-200 ${sidebarCollapsed ? 'w-16' : 'w-56'}`} />
+      <div className={`flex-shrink-0 transition-all duration-200 ${sidebarCollapsed ? 'w-12' : 'w-56'}`} />
 
       {/* ===== Main ===== */}
       <main className="flex-1 flex flex-col overflow-hidden relative" style={{ backgroundColor: 'var(--t-bg)' }}>
-        {/* Atmospheric backdrop — positioned within the main scroll
-            container so it scrolls with the grid, but content sits
-            above it via z-index. */}
-        <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }}>
-          <ControlBackdrop />
-        </div>
 
         {/* ===== Header (control strip) ===== */}
         <header
           style={{
             fontFamily: SANS,
-            backgroundColor: 'color-mix(in srgb, var(--t-header) 85%, transparent)',
-            borderColor: 'var(--t-border-light)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
+            backgroundColor: 'var(--t-shell)',
+            borderBottom: '1px solid #393939',
           }}
-          className="h-14 border-b flex items-center px-4 sticky top-0 z-30 transition-colors"
+          className="rl-shell fixed top-0 left-0 right-0 h-12 flex items-center z-50"
         >
-          <div className="flex items-center gap-4">
+          <div className="flex items-center min-w-0 h-full">
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              style={{ color: 'var(--t-text-muted)', borderRadius: 2 }}
-              className="h-8 w-8 flex items-center justify-center hover:text-[var(--t-accent)] transition-colors"
+              className="h-12 w-12 flex items-center justify-center hover:bg-[#333333] flex-shrink-0"
+              style={{ color: '#f4f4f4' }}
               title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
-              <Menu className="w-4 h-4" />
+              <Menu className="w-5 h-5" />
             </button>
-            <Breadcrumb />
+            <Link
+              href={`${projectPrefix}/dashboard`}
+              className="flex items-center gap-2.5 h-full pl-2 pr-4 whitespace-nowrap"
+              style={{ color: '#f4f4f4', fontSize: 14, fontWeight: 600 }}
+            >
+              <LogoMark size={20} />
+              <span>RunLoop</span>
+            </Link>
+            <span aria-hidden style={{ width: 1, height: 20, background: '#525252', flexShrink: 0 }} />
+            <ProjectSelector collapsed={false} />
+            <span aria-hidden style={{ width: 1, height: 20, background: '#525252', flexShrink: 0 }} />
+            <span className="hidden sm:block truncate pl-4" style={{ fontSize: 14, fontWeight: 600, color: '#f4f4f4' }}>
+              {currentPageTitle}
+            </span>
           </div>
 
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center ml-auto h-full">
             {/* Telemetry strip — sits right where eyes land after the breadcrumb */}
             <div
-              className="hidden md:flex items-center gap-3 pr-3 mr-1"
-              style={{ borderRight: '1px solid var(--t-border-light)', height: 24 }}
+              className="hidden xl:flex items-center gap-3 mr-2"
+              style={{ height: 24 }}
             >
               <EngineDot />
-              <UtcClock />
-              <CronTicker />
-            </div>
 
-            {/* Search */}
-            <div className="hidden sm:block w-44 md:w-56">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: 'var(--t-text-muted)' }} />
-                <input
-                  type="text"
-                  placeholder="search…"
-                  style={{
-                    backgroundColor: 'var(--t-input)',
-                    borderColor: 'var(--t-border)',
-                    color: 'var(--t-text)',
-                    fontFamily: MONO,
-                    fontSize: 11.5,
-                    letterSpacing: '0.02em',
-                    borderRadius: 2,
-                  }}
-                  className="w-full h-8 pl-8 pr-2 border placeholder:text-[var(--t-text-muted)] focus:outline-none focus:border-[var(--t-accent)] transition-all"
-                />
-                <span
-                  className="absolute right-2 top-1/2 -translate-y-1/2 hidden md:inline-block"
-                  style={{
-                    fontFamily: MONO, fontSize: 9, letterSpacing: '0.1em',
-                    color: 'var(--t-text-muted)', opacity: 0.6,
-                    border: '1px solid var(--t-border)', padding: '1px 4px',
-                  }}
-                  aria-hidden
-                >
-                  ⌘K
-                </span>
-              </div>
             </div>
-
-            {/* New flow shortcut */}
-            <button
-              onClick={() => router.push(`${projectPrefix}/flows/new`)}
-              style={{
-                background: 'var(--t-accent)',
-                color: '#fff',
-                fontSize: 12,
-                fontWeight: 500,
-                letterSpacing: '0.02em',
-                borderRadius: 2,
-                padding: '0 12px',
-              }}
-              className="h-8 flex items-center gap-1.5 hover:opacity-90 transition-opacity"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">New Flow</span>
-            </button>
 
             <button
               onClick={toggleTheme}
-              style={{ color: 'var(--t-text-muted)', borderRadius: 2 }}
-              className="h-8 w-8 flex items-center justify-center hover:text-[var(--t-accent)] transition-colors"
-              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              style={{ color: '#f4f4f4' }}
+              className="h-12 w-12 flex items-center justify-center transition-colors hover:bg-[#333333]"
+              title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+              aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
             >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              <Sun className="w-5 h-5" />
             </button>
 
             <div className="relative" ref={notificationsRef}>
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                style={{ color: 'var(--t-text-muted)', borderRadius: 2 }}
-                className="relative h-8 w-8 flex items-center justify-center hover:text-[var(--t-accent)] transition-colors"
+                style={{ color: '#f4f4f4', background: showNotifications ? '#333333' : undefined }}
+                className="relative h-12 w-12 flex items-center justify-center transition-colors hover:bg-[#333333]"
+                title="Notifications"
+                aria-label="Notifications"
               >
-                <Bell className="w-4 h-4" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-[var(--t-header)]" />
+                <Bell className="w-5 h-5" />
               </button>
 
               {showNotifications && (
                 <div
                   style={{ backgroundColor: 'var(--t-panel)', borderColor: 'var(--t-border)', borderRadius: 2 }}
-                  className="absolute right-0 top-full mt-2 w-72 border shadow-xl py-2"
+                  className="absolute right-0 top-full w-72 border py-2 rl-menu"
                 >
                   <div
                     className="px-3 py-2 border-b flex items-center justify-between"
@@ -1029,14 +914,14 @@ export function Layout({ children }: { children?: React.ReactNode }) {
                       style={{
                         fontFamily: MONO,
                         fontSize: 10,
-                        letterSpacing: '0.16em',
+                        letterSpacing: 0,
                         color: 'var(--t-text-muted)',
                       }}
                     >
-                      {'//'} NOTIFICATIONS
+                      Notifications
                     </span>
                     <button
-                      style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.04em' }}
+                      style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 0 }}
                       className="text-[var(--t-accent)] hover:opacity-80"
                     >
                       mark all read
@@ -1057,7 +942,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
                               fontFamily: MONO,
                               fontSize: 10,
                               color: 'var(--t-text-muted)',
-                              letterSpacing: '0.04em',
+                              letterSpacing: 0,
                             }}
                           >
                             2m ago
@@ -1070,7 +955,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
                       style={{ borderColor: 'var(--t-border)' }}
                     >
                       <div className="flex gap-2">
-                        <div className="w-1.5 h-1.5 bg-[#10B981] rounded-full mt-1.5 flex-shrink-0" />
+                        <div className="w-1.5 h-1.5 bg-[#24a148] rounded-full mt-1.5 flex-shrink-0" />
                         <div>
                           <p className="text-[12px]" style={{ color: 'var(--t-text)' }}>Flow executed successfully</p>
                           <p
@@ -1079,7 +964,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
                               fontFamily: MONO,
                               fontSize: 10,
                               color: 'var(--t-text-muted)',
-                              letterSpacing: '0.04em',
+                              letterSpacing: 0,
                             }}
                           >
                             15m ago
@@ -1095,98 +980,44 @@ export function Layout({ children }: { children?: React.ReactNode }) {
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                style={{ color: 'var(--t-text-muted)', borderRadius: 2 }}
-                className="flex items-center gap-2 h-8 px-2 hover:text-[var(--t-accent)] transition-colors"
+                style={{ color: '#f4f4f4', background: showUserMenu ? '#333333' : undefined }}
+                className="h-12 w-12 flex items-center justify-center transition-colors hover:bg-[#333333]"
+                title={user?.name || user?.email || 'Account'}
+                aria-label="Account"
               >
-                <div
-                  style={{
-                    backgroundColor: 'var(--t-panel)',
-                    borderColor: 'var(--t-border)',
-                    fontFamily: MONO,
-                    borderRadius: 2,
-                  }}
-                  className="w-7 h-7 border flex items-center justify-center text-[var(--t-accent)] text-xs font-medium uppercase"
+                <span
+                  className="flex items-center justify-center"
+                  style={{ width: 28, height: 28, borderRadius: 999, background: '#393939', color: '#f4f4f4', fontSize: 13, fontWeight: 600 }}
                 >
-                  {user?.name?.charAt(0) || user?.email?.charAt(0) || 'A'}
-                </div>
-                <ChevronDown className={`w-4 h-4 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
+                  {(user?.name?.charAt(0) || user?.email?.charAt(0) || 'A').toUpperCase()}
+                </span>
               </button>
 
               {showUserMenu && (
                 <div
-                  style={{ backgroundColor: 'var(--t-panel)', borderColor: 'var(--t-border)', borderRadius: 2 }}
-                  className="absolute right-0 top-full mt-2 w-56 border shadow-xl py-2"
+                  style={{ backgroundColor: 'var(--t-panel)', borderColor: 'var(--t-border)' }}
+                  className="absolute right-0 top-full w-64 border rl-menu"
                 >
-                  <div className="px-3 py-2.5 border-b" style={{ borderColor: 'var(--t-border)' }}>
-                    <p
-                      className="font-medium"
-                      style={{ fontFamily: MONO, fontSize: 12, color: 'var(--t-text)', letterSpacing: '0.02em' }}
-                    >
-                      {user?.name || user?.email || 'admin'}
+                  <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--t-border)' }}>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--t-text)' }} className="truncate">
+                      {user?.name || user?.email || 'Account'}
                     </p>
-                    <p
-                      className="mt-0.5"
-                      style={{
-                        fontFamily: MONO,
-                        fontSize: 10,
-                        color: 'var(--t-text-muted)',
-                        letterSpacing: '0.02em',
-                      }}
-                    >
-                      {user?.email || '—'}
-                    </p>
+                    {user?.email && user?.name && (
+                      <p style={{ fontSize: 12, color: 'var(--t-text-secondary)', marginTop: 2 }} className="truncate">
+                        {user.email}
+                      </p>
+                    )}
                   </div>
                   <div className="py-1">
-                    <button
-                      style={{
-                        color: 'var(--t-text-secondary)',
-                        fontFamily: MONO,
-                        fontSize: 11,
-                        letterSpacing: '0.1em',
-                      }}
-                      className="w-full px-3 py-2 text-left hover:text-[var(--t-text)] hover:bg-[var(--t-panel-hover)] flex items-center gap-2 uppercase"
-                    >
-                      <User className="w-3.5 h-3.5" />
-                      profile
-                    </button>
-                    <button
-                      onClick={() => router.push('/settings')}
-                      style={{
-                        color: 'var(--t-text-secondary)',
-                        fontFamily: MONO,
-                        fontSize: 11,
-                        letterSpacing: '0.1em',
-                      }}
-                      className="w-full px-3 py-2 text-left hover:text-[var(--t-text)] hover:bg-[var(--t-panel-hover)] flex items-center gap-2 uppercase"
-                    >
-                      <Settings className="w-3.5 h-3.5" />
-                      settings
-                    </button>
-                    <button
-                      style={{
-                        color: 'var(--t-text-secondary)',
-                        fontFamily: MONO,
-                        fontSize: 11,
-                        letterSpacing: '0.1em',
-                      }}
-                      className="w-full px-3 py-2 text-left hover:text-[var(--t-text)] hover:bg-[var(--t-panel-hover)] flex items-center gap-2 uppercase"
-                    >
-                      <HelpCircle className="w-3.5 h-3.5" />
-                      help &amp; support
+                    <button onClick={() => { setShowUserMenu(false); router.push(`${projectPrefix}/settings`); }} className="w-full h-10 px-4 text-left flex items-center gap-3 transition-colors hover:bg-[var(--t-panel-hover)]" style={{ fontSize: 14, color: 'var(--t-text)' }}>
+                      <Settings className="w-4 h-4" />
+                      Settings
                     </button>
                   </div>
-                  <div className="border-t py-1 mt-1" style={{ borderColor: 'var(--t-border)' }}>
-                    <button
-                      onClick={handleLogout}
-                      style={{
-                        fontFamily: MONO,
-                        fontSize: 11,
-                        letterSpacing: '0.1em',
-                      }}
-                      className="w-full px-3 py-2 text-left text-red-400 hover:text-red-300 hover:bg-red-500/10 flex items-center gap-2 uppercase"
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                      sign out
+                  <div className="py-1" style={{ borderTop: '1px solid var(--t-border)' }}>
+                    <button onClick={handleLogout} className="w-full h-10 px-4 text-left flex items-center gap-3 transition-colors hover:bg-[var(--t-panel-hover)]" style={{ fontSize: 14, color: 'var(--t-text)' }}>
+                      <LogOut className="w-4 h-4" />
+                      Sign out
                     </button>
                   </div>
                 </div>
@@ -1196,7 +1027,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
         </header>
 
         {/* Page content — sits above the backdrop via z-index */}
-        <div className="flex-1 overflow-auto p-4 relative" style={{ zIndex: 1 }}>
+        <div className="flex-1 overflow-auto px-8 pt-6 pb-8 relative">
           {children}
         </div>
       </main>
@@ -1204,8 +1035,8 @@ export function Layout({ children }: { children?: React.ReactNode }) {
       {/* Global keyframes */}
       <style jsx global>{`
         @keyframes rl-engine-pulse {
-          0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, #10B981 18%, transparent); }
-          50%      { box-shadow: 0 0 0 5px color-mix(in srgb, #10B981 8%, transparent); }
+          0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, #24a148 18%, transparent); }
+          50%      { box-shadow: 0 0 0 5px color-mix(in srgb, #24a148 8%, transparent); }
         }
       `}</style>
     </div>

@@ -10,7 +10,7 @@ export function EmailNode(props: NodeProps<BaseNodeData>) {
     <BaseNode {...props} inputs={1} outputs={1}>
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-[#f97316] uppercase">{action}</span>
+          <span className="text-xs font-medium text-[#f97316] ">{action}</span>
         </div>
         {to && (
           <div className="flex items-center gap-2">

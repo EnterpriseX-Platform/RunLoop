@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
+import '../styles/carbon.scss';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { ProjectProvider } from '@/context/ProjectContext';

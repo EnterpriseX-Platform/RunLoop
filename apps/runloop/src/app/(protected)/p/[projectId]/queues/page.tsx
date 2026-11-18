@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
@@ -7,7 +8,21 @@ import {
   Plus, Inbox, AlertCircle, Loader2, ChevronRight,
   Database as DatabaseIcon, Radio, Rabbit, Waves,
 } from 'lucide-react';
-import { HeroHeader, MetricChip, SharpButton } from '@/components/ControlChrome';
+import { HeroHeader, MetricChip } from '@/components/ControlChrome';
+import { useRouter } from 'next/navigation';
+import {
+  DataTable, Table, TableContainer, TableHead, TableRow, TableHeader, TableBody, TableCell, Button, Tag,
+} from '@carbon/react';
+import { Add } from '@carbon/icons-react';
+
+const Q_HEADERS = [
+  { key: 'queue', header: 'Queue' },
+  { key: 'pending', header: 'Pending' },
+  { key: 'running', header: 'Running' },
+  { key: 'done', header: 'Done' },
+  { key: 'dlq', header: 'DLQ' },
+];
+const Q_COL_WIDTH: Record<string, string | undefined> = { queue: 'auto', pending: '96px', running: '96px', done: '96px', dlq: '96px' };
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const THEME = {
@@ -23,8 +38,8 @@ const THEME = {
   accent: 'var(--t-accent)',
   input: 'var(--t-input)',
   colors: {
-    blue: '#3B82F6', emerald: '#10B981', purple: '#8B5CF6',
-    amber: '#F59E0B', red: '#EF4444', cyan: '#06B6D4',
+    blue: '#0f62fe', emerald: '#24a148', purple: '#8a3ffc',
+    amber: '#eb6200', red: '#da1e28', cyan: '#1192e8',
   },
 };
 
@@ -87,6 +102,7 @@ function alertsFor(q: QueueRow, s: Stats): { level: 'critical' | 'warn'; label: 
 
 export default function QueuesPage() {
   const params = useParams();
+  const router = useRouter();
   const projectId = params.projectId as string;
   const [queues, setQueues] = useState<QueueRow[]>([]);
   const [statsMap, setStatsMap] = useState<Record<string, Stats>>({});
@@ -100,7 +116,7 @@ export default function QueuesPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`/runloop/api/queues?projectId=${projectId}`);
+      const res = await fetch(`${BASE_PATH}/api/queues?projectId=${projectId}`);
       if (!res.ok) throw new Error('failed to fetch queues');
       const d = await res.json();
       const rows: QueueRow[] = d.data || [];
@@ -109,7 +125,7 @@ export default function QueuesPage() {
       const stats = await Promise.all(
         rows.map(async (q) => {
           try {
-            const r = await fetch(`/runloop/api/queues/${encodeURIComponent(q.name)}/stats`);
+            const r = await fetch(`${BASE_PATH}/api/queues/${encodeURIComponent(q.name)}/stats`);
             const j = await r.json();
             return [q.name, j.data] as [string, Stats];
           } catch {
@@ -150,13 +166,13 @@ export default function QueuesPage() {
           <AlertCircle className="w-10 h-10 mx-auto mb-3" style={{ color: THEME.colors.red }} />
           <h3 style={{ fontSize: 16, fontWeight: 600, color: THEME.text.primary }}>Failed to load queues</h3>
           <p style={{ fontSize: 13, color: THEME.text.muted, marginBottom: 12 }}>{error}</p>
-          <SharpButton onClick={fetchAll}>Try Again</SharpButton>
+          <Button kind="tertiary" size="sm" onClick={fetchAll}>Try Again</Button>
         </div>
       </div>
     );
   }
 
-  const MONO = "'IBM Plex Mono', ui-monospace, monospace";
+  const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
   const totalPending = queues.reduce((n, q) => n + (statsMap[q.name]?.counts?.PENDING || 0), 0);
   const totalDlq = queues.reduce((n, q) => n + (statsMap[q.name]?.counts?.DLQ || 0), 0);
   // How many queues currently have at least one critical alert? Drives
@@ -167,145 +183,93 @@ export default function QueuesPage() {
     return n + (alertsFor(q, s).some((a) => a.level === 'critical') ? 1 : 0);
   }, 0);
 
+  const qById: Record<string, QueueRow> = Object.fromEntries(queues.map((q) => [q.name, q]));
+  const qRows = queues.map((q) => {
+    const s = statsMap[q.name] || { counts: {}, oldestPendingSec: 0 };
+    return {
+      id: q.name, queue: q.name,
+      pending: String(s.counts?.PENDING || 0), running: String(s.counts?.PROCESSING || 0),
+      done: String(s.counts?.COMPLETED || 0), dlq: String(s.counts?.DLQ || 0),
+    };
+  });
+
   return (
     <div style={{ fontFamily: FONT }}>
       <HeroHeader
         title="Queues"
         subtitle="Producers push jobs, workers pull and run the bound flow."
         metrics={<>
-          <MetricChip label="queues"  value={String(queues.length).padStart(2, '0')} />
-          <MetricChip label="pending" value={String(totalPending).padStart(3, '0')} accent={totalPending > 0 ? '#F59E0B' : undefined} />
-          {totalDlq > 0 && <MetricChip label="dlq" value={String(totalDlq).padStart(2, '0')} accent="#EF4444" />}
+          <MetricChip label="queues"  value={String(queues.length)} />
+          <MetricChip label="pending" value={String(totalPending)} />
+          {totalDlq > 0 && <MetricChip label="dlq" value={String(totalDlq)} />}
           {criticalQueueCount > 0 && (
-            <MetricChip label="alerts" value={String(criticalQueueCount).padStart(2, '0')} accent="#EF4444" />
+            <MetricChip label="alerts" value={String(criticalQueueCount)} />
           )}
         </>}
         right={
-          <SharpButton href={`/p/${projectId}/queues/new`}>
-            <Plus className="w-3.5 h-3.5" /> New Queue
-          </SharpButton>
+          <Button renderIcon={Add} size="md" onClick={() => router.push(`/p/${projectId}/queues/new`)}>
+            New Queue
+          </Button>
         }
       />
 
-      {queues.length === 0 ? (
-        <div className="text-center py-16">
-          <div
-            style={{ width: 56, height: 56, background: THEME.panel, border: `1px solid ${THEME.border}`, borderRadius: 12 }}
-            className="mx-auto mb-4 flex items-center justify-center"
-          >
-            <Inbox className="w-7 h-7" style={{ color: THEME.text.muted }} />
-          </div>
-          <h3 style={{ fontSize: 15, fontWeight: 600, color: THEME.text.primary, marginBottom: 4 }}>No queues yet</h3>
-          <p style={{ fontSize: 13, color: THEME.text.muted, marginBottom: 12 }}>
-            Create a queue to bind a flow to a durable job inbox
-          </p>
-          <SharpButton href={`/p/${projectId}/queues/new`}>
-            <Plus className="w-3.5 h-3.5" /> New Queue
-          </SharpButton>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {queues.map((q) => {
-            const meta = BACKEND_META[q.backend] || BACKEND_META.postgres;
-            const Icon = meta.icon;
-            const s = statsMap[q.name] || { counts: {}, oldestPendingSec: 0 };
-            const pending = s.counts?.PENDING || 0;
-            const processing = s.counts?.PROCESSING || 0;
-            const completed = s.counts?.COMPLETED || 0;
-            const dlq = s.counts?.DLQ || 0;
-            const queueAlerts = alertsFor(q, s);
-            const hasCritical = queueAlerts.some((a) => a.level === 'critical');
-
-            return (
-              <Link
-                key={q.name}
-                href={`/p/${projectId}/queues/${encodeURIComponent(q.name)}`}
-                style={{
-                  background: THEME.panel,
-                  border: `1px solid ${hasCritical ? 'color-mix(in srgb, #EF4444 45%, transparent)' : THEME.border}`,
-                  borderRadius: 2,
-                  // Critical queues get a thin red rail on the left so
-                  // they're impossible to miss in a list of 30.
-                  boxShadow: hasCritical ? 'inset 3px 0 0 #EF4444' : 'none',
-                }}
-                className="flex items-center gap-4 px-4 py-3 hover:bg-[var(--t-panel-hover)] transition group"
-              >
-                <div
-                  style={{
-                    width: 32, height: 32, borderRadius: 2,
-                    background: `${meta.color}18`,
-                    border: `1px solid ${meta.color}40`,
-                    color: meta.color,
-                  }}
-                  className="flex items-center justify-center flex-shrink-0"
-                >
-                  <Icon className="w-4 h-4" style={{ width: 16, height: 16 }} />
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span style={{ fontSize: 14, fontWeight: 500, color: THEME.text.primary, letterSpacing: '-0.005em' }}>{q.name}</span>
-                    <span
-                      style={{
-                        fontFamily: MONO, fontSize: 9.5, fontWeight: 500, letterSpacing: '0.08em',
-                        color: meta.color, background: 'transparent',
-                        padding: '1px 5px', borderRadius: 2, textTransform: 'uppercase',
-                        border: `1px solid ${meta.color}40`,
-                      }}
-                    >
-                      {meta.label}
-                    </span>
-                    {!q.enabled && (
-                      <span style={{
-                        fontFamily: MONO, fontSize: 9.5, fontWeight: 500, color: '#EF4444',
-                        background: 'transparent', padding: '1px 5px', borderRadius: 2,
-                        border: '1px solid color-mix(in srgb, #EF4444 40%, transparent)',
-                        letterSpacing: '0.08em',
-                      }}>
-                        DISABLED
-                      </span>
-                    )}
-                    {queueAlerts
-                      .filter((a) => !(a.label === 'disabled')) // already shown above
-                      .map((a) => {
-                        const c = a.level === 'critical' ? '#EF4444' : '#F59E0B';
-                        return (
-                          <span
-                            key={a.label}
-                            style={{
-                              fontFamily: MONO, fontSize: 9.5, fontWeight: 600,
-                              color: c,
-                              background: `color-mix(in srgb, ${c} 14%, transparent)`,
-                              border: `1px solid color-mix(in srgb, ${c} 45%, transparent)`,
-                              padding: '1px 6px', borderRadius: 2,
-                              letterSpacing: '0.08em', textTransform: 'uppercase',
-                            }}
-                          >
-                            {a.label}
-                          </span>
-                        );
-                      })}
-                  </div>
-                  <div style={{ fontFamily: MONO, fontSize: 10.5, color: THEME.text.muted, marginTop: 2, letterSpacing: '0.02em' }}>
-                    concurrency={q.concurrency} · max_attempts={q.maxAttempts}
-                  </div>
-                </div>
-
-                {/* Counts strip. Kept compact + dense — the operator's first
-                    glance should tell them if anything's on fire. */}
-                <div className="flex items-center gap-4" style={{ fontSize: 12 }}>
-                  <Stat label="Pending" value={pending} color={pending > 0 ? THEME.colors.amber : THEME.text.muted} />
-                  <Stat label="Running" value={processing} color={processing > 0 ? THEME.colors.blue : THEME.text.muted} />
-                  <Stat label="Done" value={completed} color={THEME.text.muted} />
-                  <Stat label="DLQ" value={dlq} color={dlq > 0 ? THEME.colors.red : THEME.text.muted} bold={dlq > 0} />
-                </div>
-
-                <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: THEME.text.muted }} />
-              </Link>
-            );
-          })}
-        </div>
-      )}
+      <DataTable rows={qRows} headers={Q_HEADERS} isSortable>
+        {({ rows: dtRows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => (
+          <TableContainer {...getTableContainerProps()}>
+            <Table {...getTableProps()} size="md" useZebraStyles={false}>
+              <TableHead>
+                <TableRow>
+                  {headers.map((header) => {
+                    const { key, ...rest } = getHeaderProps({ header });
+                    return <TableHeader key={header.key} {...rest} style={{ width: Q_COL_WIDTH[header.key] }}>{header.header}</TableHeader>;
+                  })}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {dtRows.map((row) => {
+                  const q = qById[row.id];
+                  const { key, ...rowProps } = getRowProps({ row });
+                  if (!q) return null;
+                  const meta = BACKEND_META[q.backend] || BACKEND_META.postgres;
+                  const s = statsMap[q.name] || { counts: {}, oldestPendingSec: 0 };
+                  const pending = s.counts?.PENDING || 0;
+                  const processing = s.counts?.PROCESSING || 0;
+                  const completed = s.counts?.COMPLETED || 0;
+                  const dlq = s.counts?.DLQ || 0;
+                  const queueAlerts = alertsFor(q, s).filter((a) => a.label !== 'disabled');
+                  const num = (v: number, color?: string): React.CSSProperties => ({
+                    fontVariantNumeric: 'tabular-nums', color: color || (v > 0 ? 'var(--cds-text-primary)' : 'var(--cds-text-secondary)'),
+                  });
+                  return (
+                    <TableRow key={row.id} {...rowProps} onClick={() => router.push(`/p/${projectId}/queues/${encodeURIComponent(q.name)}`)} style={{ cursor: 'pointer' }}>
+                      <TableCell>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="rl-ellipsis" style={{ fontWeight: 600, color: 'var(--cds-text-primary)' }} title={q.name}>{q.name}</span>
+                          {!q.enabled && <Tag type="gray" size="sm">Disabled</Tag>}
+                          {queueAlerts.map((a) => <Tag key={a.label} type={a.level === 'critical' ? 'red' : 'warm-gray'} size="sm">{a.label}</Tag>)}
+                        </div>
+                        <div className="rl-ellipsis" style={{ fontSize: 12, color: 'var(--cds-text-secondary)', marginTop: 2 }}>
+                          {meta.label} · concurrency {q.concurrency} · up to {q.maxAttempts} attempts
+                        </div>
+                      </TableCell>
+                      <TableCell style={num(pending)}>{pending}</TableCell>
+                      <TableCell style={num(processing)}>{processing}</TableCell>
+                      <TableCell style={num(completed)}>{completed}</TableCell>
+                      <TableCell style={num(dlq, dlq > 0 ? 'var(--cds-text-error)' : undefined)}>{dlq}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+            {dtRows.length === 0 && (
+              <div className="text-center" style={{ padding: '48px 0' }}>
+                <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>No queues yet</h3>
+                <p style={{ fontSize: 13, color: 'var(--cds-text-secondary)' }}>Create a queue to bind a flow to a durable job inbox</p>
+              </div>
+            )}
+          </TableContainer>
+        )}
+      </DataTable>
     </div>
   );
 }
@@ -314,7 +278,7 @@ function Stat({ label, value, color, bold }: { label: string; value: number; col
   return (
     <div className="flex flex-col items-end min-w-[52px]">
       <span style={{ fontSize: 15, fontWeight: bold ? 700 : 600, color }}>{value}</span>
-      <span style={{ fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+      <span style={{ fontSize: 14, color: 'var(--t-text-secondary)'}}>
         {label}
       </span>
     </div>

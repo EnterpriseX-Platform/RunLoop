@@ -13,7 +13,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronsUpDown, Search, X } from 'lucide-react';
 
-const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
+const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
 
 export interface ComboboxOption {
   value: string;
@@ -156,9 +156,9 @@ export function Combobox({
 
       {open && (
         <div
-          className="absolute left-0 right-0 mt-1 z-50 shadow-xl"
+          className="absolute left-0 right-0 mt-1 z-50 rl-menu"
           style={{
-            background: 'var(--t-panel)',
+            background: 'var(--t-panel-hover)',
             border: '1px solid var(--t-border)',
             borderRadius: 4,
             maxHeight: 280,

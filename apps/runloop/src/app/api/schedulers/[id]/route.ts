@@ -1,14 +1,15 @@
+import { ENGINE_BASE_PATH } from '@/lib/engine-path';
 import { NextRequest, NextResponse } from 'next/server';
 
 // GET /api/schedulers/[id] - Get a single scheduler/runloop
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const engineUrl = process.env.ENGINE_URL || 'http://localhost:8080';
 
-    const res = await fetch(`${engineUrl}/rl/api/schedulers/${params.id}`, {
+    const res = await fetch(`${engineUrl}${ENGINE_BASE_PATH}/api/schedulers/${(await params).id}`, {
       headers: {
         'Authorization': request.headers.get('authorization') || '',
         'Content-Type': 'application/json',
@@ -27,13 +28,13 @@ export async function GET(
 // PUT /api/schedulers/[id] - Update a scheduler/runloop
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const engineUrl = process.env.ENGINE_URL || 'http://localhost:8080';
     const body = await request.json();
 
-    const res = await fetch(`${engineUrl}/rl/api/schedulers/${params.id}`, {
+    const res = await fetch(`${engineUrl}${ENGINE_BASE_PATH}/api/schedulers/${(await params).id}`, {
       method: 'PUT',
       headers: {
         'Authorization': request.headers.get('authorization') || '',
@@ -54,12 +55,12 @@ export async function PUT(
 // DELETE /api/schedulers/[id] - Delete a scheduler/runloop
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const engineUrl = process.env.ENGINE_URL || 'http://localhost:8080';
 
-    const res = await fetch(`${engineUrl}/rl/api/schedulers/${params.id}`, {
+    const res = await fetch(`${engineUrl}${ENGINE_BASE_PATH}/api/schedulers/${(await params).id}`, {
       method: 'DELETE',
       headers: {
         'Authorization': request.headers.get('authorization') || '',

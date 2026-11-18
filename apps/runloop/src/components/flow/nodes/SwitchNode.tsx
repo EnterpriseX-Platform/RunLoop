@@ -11,6 +11,14 @@ import { BaseNode, BaseNodeData } from './BaseNode';
 export function SwitchNode(props: NodeProps<BaseNodeData>) {
   const cases = (props.data.config?.cases as unknown[]) || [];
   return (
-    <BaseNode {...props} inputs={1} outputs={Math.max(2, cases.length + 1)} />
+    <BaseNode
+      {...props}
+      inputs={1}
+      outputs={Math.max(2, cases.length + 1)}
+      outputLabels={[
+        ...cases.map((c: any, i) => String(c?.label ?? c?.value ?? c ?? `case ${i + 1}`)),
+        'otherwise',
+      ]}
+    />
   );
 }

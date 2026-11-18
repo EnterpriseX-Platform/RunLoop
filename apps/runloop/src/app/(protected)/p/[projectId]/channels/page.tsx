@@ -1,11 +1,23 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
+import { engineWsUrl } from '@/lib/engine-ws';
 
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { BellRing, Send, Loader2, RefreshCcw, Wifi } from 'lucide-react';
-import { SharpButton } from '@/components/ControlChrome';
+import { Button, TextInput, TextArea, Tile } from '@carbon/react';
+import { Renew } from '@carbon/icons-react';
 
-const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
+const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
+
+function StatTile({ label, value }: { label: string; value: number }) {
+  return (
+    <Tile>
+      <div style={{ fontSize: 14, color: 'var(--cds-text-secondary)' }}>{label}</div>
+      <div style={{ fontSize: 32, fontWeight: 300, lineHeight: '40px', fontVariantNumeric: 'tabular-nums', color: 'var(--cds-text-primary)', marginTop: 8 }}>{value}</div>
+    </Tile>
+  );
+}
 
 interface ChannelRow {
   name: string;
@@ -35,7 +47,7 @@ export default function ChannelsPage() {
   const refresh = useCallback(async () => {
     if (!projectId) return;
     try {
-      const r = await fetch(`/runloop/api/channels?projectId=${encodeURIComponent(projectId)}`);
+      const r = await fetch(`${BASE_PATH}/api/channels?projectId=${encodeURIComponent(projectId)}`);
       if (!r.ok) throw new Error(String(r.status));
       const d = await r.json();
       setChannels(d.data || []);
@@ -68,7 +80,7 @@ export default function ChannelsPage() {
     }
     setBusy('publish');
     try {
-      const r = await fetch(`/runloop/api/channels/${encodeURIComponent(testChannel)}/publish`, {
+      const r = await fetch(`${BASE_PATH}/api/channels/${encodeURIComponent(testChannel)}/publish`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId, payload }),
@@ -90,12 +102,11 @@ export default function ChannelsPage() {
     setTapMessages([]);
     setTapStatus('connecting');
     // WebSocket upgrades don't pass through Next.js rewrites in production.
-    // The ingress has a carve-out at /runloop/rl/* that goes straight to the
+    // The ingress has a carve-out at <BASE_PATH>/rl/* that goes straight to the
     // engine container — that's also what useWebSocket uses for execution
     // streams. The session cookie (Path=/runloop) is sent on the upgrade
     // and JWTMiddleware reads it from c.Cookies("token").
-    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const url = `${proto}//${window.location.host}/runloop/rl/ws/channel/${encodeURIComponent(tapName)}?projectId=${encodeURIComponent(projectId || '')}`;
+    const url = engineWsUrl(`channel/${encodeURIComponent(tapName)}?projectId=${encodeURIComponent(projectId || '')}`);
     const ws = new WebSocket(url);
     ws.onopen = () => setTapStatus('open');
     ws.onerror = () => setTapStatus('error');
@@ -118,66 +129,43 @@ export default function ChannelsPage() {
   };
 
   return (
-    <div className="p-6">
+    <div className="">
       {toast && (
         <div
           className="fixed bottom-6 right-6 z-50 px-4 py-2 rounded-sm"
           style={{
             background: 'var(--t-accent)', color: '#fff',
-            fontFamily: MONO, fontSize: 12, letterSpacing: '0.04em',
+            fontFamily: MONO, fontSize: 12, letterSpacing: 0,
           }}
         >
           {toast}
         </div>
       )}
 
-      <div className="flex items-end justify-between mb-6 gap-4 flex-wrap">
+      <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 600, color: 'var(--t-text)', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: 24, fontWeight: 600, color: 'var(--t-text)', letterSpacing: 0 }}>
             Channels
           </h1>
           <p style={{ fontSize: 13, color: 'var(--t-text-muted)', marginTop: 6 }}>
             Flow nodes publish, apps subscribe over WebSocket.
           </p>
         </div>
-        <SharpButton onClick={refresh}>
-          <RefreshCcw className="w-3.5 h-3.5" /> Refresh
-        </SharpButton>
+        <Button kind="ghost" size="md" renderIcon={Renew} onClick={refresh}>Refresh</Button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-2 mb-6">
-        <div className="p-3" style={{ background: 'var(--t-panel)', border: '1px solid var(--t-border)', borderRadius: 2 }}>
-          <div style={{ fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-            Active channels
-          </div>
-          <div style={{ fontFamily: MONO, fontSize: 26, fontWeight: 600, color: 'var(--t-text)', marginTop: 4 }}>
-            {channels.length}
-          </div>
-        </div>
-        <div className="p-3" style={{ background: 'var(--t-panel)', border: '1px solid var(--t-border)', borderRadius: 2 }}>
-          <div style={{ fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-            Live subscribers
-          </div>
-          <div style={{ fontFamily: MONO, fontSize: 26, fontWeight: 600, color: 'var(--t-text)', marginTop: 4 }}>
-            {channels.reduce((a, c) => a + c.subscribers, 0)}
-          </div>
-        </div>
-        <div className="p-3" style={{ background: 'var(--t-panel)', border: '1px solid var(--t-border)', borderRadius: 2 }}>
-          <div style={{ fontSize: 10, color: 'var(--t-text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-            Lifetime publishes
-          </div>
-          <div style={{ fontFamily: MONO, fontSize: 26, fontWeight: 600, color: 'var(--t-text)', marginTop: 4 }}>
-            {totalPub}
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <StatTile label="Active channels" value={channels.length} />
+        <StatTile label="Live subscribers" value={channels.reduce((a, c) => a + c.subscribers, 0)} />
+        <StatTile label="Lifetime publishes" value={totalPub} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Active channels list */}
         <div style={{ background: 'var(--t-panel)', border: '1px solid var(--t-border)', borderRadius: 2 }}>
           <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--t-border)' }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--t-text)' }}>Active channels</span>
+            <span style={{ fontSize: 16, fontWeight: 400, color: 'var(--t-text)' }}>Active channels</span>
           </div>
           <div>
             {loading ? (
@@ -186,11 +174,7 @@ export default function ChannelsPage() {
               </div>
             ) : channels.length === 0 ? (
               <div className="text-center py-10 px-4" style={{ color: 'var(--t-text-muted)' }}>
-                <BellRing className="w-7 h-7 mx-auto mb-2 opacity-50" />
-                <p style={{ fontSize: 12 }}>No channels with live subscribers right now.</p>
-                <p style={{ fontSize: 11, marginTop: 4 }}>
-                  Channels appear here once a flow publishes or a client subscribes.
-                </p>
+                <p style={{ fontSize: 14, color: 'var(--t-text-secondary)' }}>No active channels</p>
               </div>
             ) : (
               channels.map((c) => (
@@ -220,70 +204,40 @@ export default function ChannelsPage() {
         <div className="space-y-4">
           <div style={{ background: 'var(--t-panel)', border: '1px solid var(--t-border)', borderRadius: 2 }}>
             <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--t-border)' }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--t-text)' }}>Test publish</span>
+              <span style={{ fontSize: 16, fontWeight: 400, color: 'var(--t-text)' }}>Test publish</span>
             </div>
             <div className="p-4 space-y-3">
-              <input
-                placeholder="channel name"
-                value={testChannel}
-                onChange={(e) => setTestChannel(e.target.value)}
-                style={{
-                  width: '100%', background: 'var(--t-input)', border: '1px solid var(--t-border)',
-                  color: 'var(--t-text)', borderRadius: 2, padding: '8px 12px',
-                  fontFamily: MONO, fontSize: 12,
-                }}
-              />
-              <textarea
-                placeholder='{"hello":"world"}'
-                value={testPayload}
-                onChange={(e) => setTestPayload(e.target.value)}
-                rows={4}
-                spellCheck={false}
-                style={{
-                  width: '100%', background: 'var(--t-input)', border: '1px solid var(--t-border)',
-                  color: 'var(--t-text)', borderRadius: 2, padding: 10,
-                  fontFamily: MONO, fontSize: 12,
-                }}
-              />
-              <SharpButton onClick={publish} disabled={busy === 'publish'}>
-                {busy === 'publish' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                Publish
-              </SharpButton>
+              <TextInput id="pub-channel" labelText="" hideLabel placeholder="Channel name" value={testChannel} onChange={(e) => setTestChannel(e.target.value)} />
+              <TextArea id="pub-payload" labelText="" hideLabel placeholder='{"hello":"world"}' value={testPayload} onChange={(e) => setTestPayload(e.target.value)} rows={4} />
+              <Button size="md" onClick={publish} disabled={busy === 'publish'}>{busy === 'publish' ? 'Publishing…' : 'Publish'}</Button>
             </div>
           </div>
 
           <div style={{ background: 'var(--t-panel)', border: '1px solid var(--t-border)', borderRadius: 2 }}>
             <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid var(--t-border)' }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--t-text)' }}>Tap subscriber (live)</span>
+              <span style={{ fontSize: 16, fontWeight: 400, color: 'var(--t-text)' }}>Tap subscriber (live)</span>
               <span
                 style={{
-                  fontFamily: MONO, fontSize: 10, letterSpacing: '0.1em',
+                  fontSize: 12,
                   color:
                     tapStatus === 'open' ? 'var(--t-success)' :
                     tapStatus === 'connecting' ? 'var(--t-text)' :
-                    tapStatus === 'error' ? 'var(--t-error, #ef4444)' :
+                    tapStatus === 'error' ? 'var(--t-error, #da1e28)' :
                     'var(--t-text-muted)',
                 }}
               >
-                {tapStatus.toUpperCase()}
+                {tapStatus.charAt(0).toUpperCase() + tapStatus.slice(1)}
               </span>
             </div>
             <div className="p-4 space-y-3">
-              <div className="flex gap-2">
-                <input
-                  placeholder="channel name to subscribe to"
-                  value={tapName}
-                  onChange={(e) => setTapName(e.target.value)}
-                  style={{
-                    flex: 1, background: 'var(--t-input)', border: '1px solid var(--t-border)',
-                    color: 'var(--t-text)', borderRadius: 2, padding: '8px 12px',
-                    fontFamily: MONO, fontSize: 12,
-                  }}
-                />
+              <div className="flex gap-2 items-end">
+                <div style={{ flex: 1 }}>
+                  <TextInput id="tap-channel" labelText="" hideLabel placeholder="Channel name" value={tapName} onChange={(e) => setTapName(e.target.value)} />
+                </div>
                 {tapStatus === 'open' || tapStatus === 'connecting' ? (
-                  <SharpButton variant="ghost" onClick={closeTap}>Disconnect</SharpButton>
+                  <Button kind="secondary" size="md" onClick={closeTap}>Disconnect</Button>
                 ) : (
-                  <SharpButton onClick={openTap}>Connect</SharpButton>
+                  <Button size="md" onClick={openTap}>Connect</Button>
                 )}
               </div>
               <div

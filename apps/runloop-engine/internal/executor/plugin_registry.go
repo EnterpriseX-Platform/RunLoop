@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/runloop/runloop-engine/internal/safehttp"
 	"io"
 	"net/http"
 	"strings"
@@ -24,30 +25,30 @@ import (
 // Fields intentionally mirror a small subset of JSON Schema so the editor
 // can generate forms without shipping a component per plugin.
 type PluginManifest struct {
-	Name        string         `json:"name"`        // logical id — unique, must not collide with built-in JobTypes
-	Version     string         `json:"version"`
-	DisplayName string         `json:"displayName"`
-	Description string         `json:"description"`
-	Category    string         `json:"category"`    // "Flow Control" | "Executors" | "Notifications" | "Utilities" | custom
-	Icon        string         `json:"icon"`        // lucide icon name, e.g. "credit-card"
-	Color       string         `json:"color"`       // hex, e.g. "#635BFF"
+	Name        string `json:"name"` // logical id — unique, must not collide with built-in JobTypes
+	Version     string `json:"version"`
+	DisplayName string `json:"displayName"`
+	Description string `json:"description"`
+	Category    string `json:"category"` // "Flow Control" | "Executors" | "Notifications" | "Utilities" | custom
+	Icon        string `json:"icon"`     // lucide icon name, e.g. "credit-card"
+	Color       string `json:"color"`    // hex, e.g. "#635BFF"
 
-	Inputs  []PluginField     `json:"inputs"`
-	Outputs []PluginField     `json:"outputs"`
+	Inputs  []PluginField `json:"inputs"`
+	Outputs []PluginField `json:"outputs"`
 
-	Handler PluginHandler     `json:"handler"`
+	Handler PluginHandler `json:"handler"`
 }
 
 // PluginField is one configurable property on the node (rendered as a form
 // field in the properties panel).
 type PluginField struct {
-	Name        string  `json:"name"`
-	Label       string  `json:"label,omitempty"`
-	Type        string  `json:"type"`        // string | number | boolean | select | json | code
-	Required    bool    `json:"required,omitempty"`
-	Placeholder string  `json:"placeholder,omitempty"`
-	Description string  `json:"description,omitempty"`
-	Default     any     `json:"default,omitempty"`
+	Name        string `json:"name"`
+	Label       string `json:"label,omitempty"`
+	Type        string `json:"type"` // string | number | boolean | select | json | code
+	Required    bool   `json:"required,omitempty"`
+	Placeholder string `json:"placeholder,omitempty"`
+	Description string `json:"description,omitempty"`
+	Default     any    `json:"default,omitempty"`
 	Options     []struct {
 		Value string `json:"value"`
 		Label string `json:"label"`
@@ -58,8 +59,8 @@ type PluginField struct {
 // supported in v1 — keeps the threat model simple and makes plugins
 // language-agnostic.
 type PluginHandler struct {
-	Kind         string `json:"kind"`              // only "http" for now
-	URL          string `json:"url"`               // POST target
+	Kind         string `json:"kind"`                   // only "http" for now
+	URL          string `json:"url"`                    // POST target
 	SecretHeader string `json:"secretHeader,omitempty"` // defaults to X-Plugin-Secret
 	TimeoutSec   int    `json:"timeoutSec,omitempty"`   // defaults to 30
 }
@@ -85,7 +86,7 @@ func NewPluginRegistry(pg *db.Postgres) *PluginRegistry {
 	r := &PluginRegistry{
 		db:     pg,
 		byName: map[string]*loadedPlugin{},
-		http:   &http.Client{Timeout: 60 * time.Second}, // per-call override below
+		http:   safehttp.NewClient(60*time.Second, true), // guarded against SSRF; per-call timeout set below
 	}
 	return r
 }

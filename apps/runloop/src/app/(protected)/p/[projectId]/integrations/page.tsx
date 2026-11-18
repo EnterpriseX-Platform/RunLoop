@@ -1,11 +1,12 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useEffect, useState } from 'react';
 import { useProject } from '@/context/ProjectContext';
 import { SharpButton } from '@/components/ControlChrome';
 import { Sparkles, CheckCircle2, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
 
-const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
+const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
 
 interface Provider {
   id: 'claude' | 'kimi' | 'openai';
@@ -55,7 +56,7 @@ const PROVIDERS: Provider[] = [
     keyPlaceholder: 'sk-...',
     getKeyUrl: 'https://platform.openai.com/api-keys',
     getKeyLabel: 'platform.openai.com',
-    accent: '#0EA5E9',
+    accent: '#0f62fe',
   },
   {
     id: 'kimi',
@@ -73,7 +74,7 @@ const PROVIDERS: Provider[] = [
     keyPlaceholder: 'sk-...',
     getKeyUrl: 'https://platform.moonshot.cn/console/api-keys',
     getKeyLabel: 'platform.moonshot.cn',
-    accent: '#10B981',
+    accent: '#24a148',
   },
 ];
 
@@ -112,7 +113,7 @@ export default function IntegrationsPage() {
   // Pull current state for all providers in one shot.
   useEffect(() => {
     if (!selectedProject?.id) return;
-    fetch(`/runloop/api/secrets?projectId=${selectedProject.id}`)
+    fetch(`${BASE_PATH}/api/secrets?projectId=${selectedProject.id}`)
       .then((r) => r.json())
       .then((d) => {
         const secrets: Array<{ name: string; value?: string }> = d.secrets || d.data || [];
@@ -142,7 +143,7 @@ export default function IntegrationsPage() {
     setActiveProvider(next);
     setSavingActive(true);
     try {
-      await fetch('/runloop/api/secrets', {
+      await fetch(`${BASE_PATH}/api/secrets`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -170,7 +171,7 @@ export default function IntegrationsPage() {
     setCard(p.id, { saving: true, result: null });
     try {
       if (c.keyInput.trim()) {
-        const res = await fetch('/runloop/api/secrets', {
+        const res = await fetch(`${BASE_PATH}/api/secrets`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -184,7 +185,7 @@ export default function IntegrationsPage() {
         if (!res.ok) throw new Error((await res.json()).error || 'save failed');
         setCard(p.id, { hasKey: true, keyInput: '' });
       }
-      await fetch('/runloop/api/secrets', {
+      await fetch(`${BASE_PATH}/api/secrets`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -206,7 +207,7 @@ export default function IntegrationsPage() {
   const testConnection = async (p: Provider) => {
     setCard(p.id, { testing: true, result: null });
     try {
-      const r = await fetch('/runloop/api/ai/chat', {
+      const r = await fetch(`${BASE_PATH}/api/ai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -232,10 +233,10 @@ export default function IntegrationsPage() {
   };
 
   return (
-    <div className="p-6 max-w-[800px]">
-      <div className="flex items-end justify-between mb-6 gap-4">
+    <div className="max-w-[800px]">
+      <div className="flex items-start justify-between mb-6 gap-4">
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 600, color: 'var(--t-text)', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: 24, fontWeight: 600, color: 'var(--t-text)', letterSpacing: 0 }}>
             Integrations
           </h1>
           <p style={{ fontSize: 13, color: 'var(--t-text-muted)', marginTop: 6 }}>
@@ -271,7 +272,7 @@ export default function IntegrationsPage() {
             <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: 'var(--t-text-muted)' }} />
           )}
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex flex-wrap" style={{ width: 'fit-content', boxShadow: 'inset 0 0 0 1px var(--t-border)' }}>
           {(['auto', 'claude', 'openai', 'kimi'] as const).map((id) => {
             const active = activeProvider === id;
             const labelMap = {
@@ -287,17 +288,13 @@ export default function IntegrationsPage() {
                 onClick={() => saveActiveProvider(id)}
                 disabled={savingActive}
                 style={{
-                  padding: '7px 14px',
-                  borderRadius: 999,
-                  fontSize: 12.5,
-                  fontWeight: active ? 600 : 500,
+                  height: 32,
+                  padding: '0 16px',
+                  fontSize: 14,
                   cursor: savingActive ? 'not-allowed' : 'pointer',
-                  background: active
-                    ? 'color-mix(in srgb, var(--t-accent) 18%, transparent)'
-                    : 'var(--t-input)',
-                  color: active ? 'var(--t-accent)' : 'var(--t-text-secondary)',
-                  border: `1px solid ${active ? 'var(--t-accent)' : 'var(--t-border)'}`,
-                  transition: 'background 0.12s, color 0.12s, border-color 0.12s',
+                  background: active ? 'var(--t-text)' : 'transparent',
+                  color: active ? 'var(--t-bg)' : 'var(--t-text-secondary)',
+                  border: 'none',
                 }}
               >
                 {labelMap[id]}
@@ -331,14 +328,11 @@ export default function IntegrationsPage() {
               <span
                 className="flex items-center gap-1.5"
                 style={{
-                  fontFamily: MONO, fontSize: 10.5, padding: '3px 8px',
-                  borderRadius: 2, letterSpacing: '0.08em', textTransform: 'uppercase',
-                  color: c.hasKey ? 'var(--t-success)' : 'var(--t-text-muted)',
-                  background: c.hasKey ? 'color-mix(in srgb, var(--t-success) 12%, transparent)' : 'var(--t-input)',
-                  border: `1px solid ${c.hasKey ? 'var(--t-success)' : 'var(--t-border)'}`,
+                  fontSize: 12, lineHeight: '16px', padding: '4px 8px', borderRadius: 24,
+                  color: c.hasKey ? 'var(--tag-green-text)' : 'var(--tag-gray-text)',
+                  background: c.hasKey ? 'var(--tag-green-bg)' : 'var(--tag-gray-bg)',
                 }}
               >
-                {c.hasKey ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
                 {c.hasKey ? 'Configured' : 'Not configured'}
               </span>
             </div>
@@ -398,7 +392,7 @@ export default function IntegrationsPage() {
                 {c.result && (
                   <span
                     className="flex items-center gap-1.5 text-sm"
-                    style={{ color: c.result.ok ? 'var(--t-success)' : 'var(--t-error, #ef4444)' }}
+                    style={{ color: c.result.ok ? 'var(--t-success)' : 'var(--t-error, #da1e28)' }}
                   >
                     {c.result.ok ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
                     {c.result.msg}

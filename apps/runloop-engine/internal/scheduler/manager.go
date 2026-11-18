@@ -633,11 +633,23 @@ func (m *Manager) getScheduler(ctx context.Context, id string) (*models.Schedule
 	return &s, nil
 }
 
+// utcPtr returns t converted to UTC. last_run_at / next_run_at are
+// `timestamp without time zone` columns that every reader treats as UTC;
+// pgx writes such columns from the value's wall clock, so a time in the
+// scheduler's zone (e.g. Asia/Bangkok) was stored 7 hours off.
+func utcPtr(t *time.Time) *time.Time {
+	if t == nil {
+		return nil
+	}
+	u := t.UTC()
+	return &u
+}
+
 // updateLastRun updates the last run time
 func (m *Manager) updateLastRun(id string, t *time.Time) error {
 	ctx := context.Background()
 	query := `UPDATE schedulers SET last_run_at = $1 WHERE id = $2`
-	_, err := m.db.Pool.Exec(ctx, query, t, id)
+	_, err := m.db.Pool.Exec(ctx, query, utcPtr(t), id)
 	return err
 }
 
@@ -645,7 +657,7 @@ func (m *Manager) updateLastRun(id string, t *time.Time) error {
 func (m *Manager) updateNextRun(id string, t *time.Time) error {
 	ctx := context.Background()
 	query := `UPDATE schedulers SET next_run_at = $1 WHERE id = $2`
-	_, err := m.db.Pool.Exec(ctx, query, t, id)
+	_, err := m.db.Pool.Exec(ctx, query, utcPtr(t), id)
 	return err
 }
 

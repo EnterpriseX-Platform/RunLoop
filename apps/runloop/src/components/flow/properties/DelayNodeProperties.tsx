@@ -32,8 +32,8 @@ export function DelayNodeProperties({ config, onChange }: BasePropertiesProps) {
             />
           </div>
 
-          <div className="p-4 bg-[#1a1a1d] border border-[#232326] rounded-lg">
-            <p className="text-sm text-[#71717a]">
+          <div className="p-4 bg-[var(--t-input)] border border-[var(--t-border-strong)] rounded-lg">
+            <p className="text-sm text-[var(--t-text-secondary)]">
               This node will pause the workflow execution for the specified duration.
               Use this to rate-limit API calls, wait for external processes, or add delays between operations.
             </p>
@@ -58,7 +58,7 @@ export function DelayNodeProperties({ config, onChange }: BasePropertiesProps) {
           />
 
           {config.randomDelay && (
-            <div className="grid grid-cols-2 gap-4 pl-4 border-l-2 border-[#232326]">
+            <div className="grid grid-cols-2 gap-4 pl-4 border-l-2 border-[var(--t-border-strong)]">
               <NumberField
                 label="Minimum Duration"
                 value={config.minDuration || 1}

@@ -52,7 +52,7 @@ export function S3NodeProperties({ config, onChange }: BasePropertiesProps) {
             onChange={(v) => onChange({ ...config, endpoint: v })}
             placeholder="https://minio.example.com"
           />
-          <p className="text-xs text-[#71717a]">For MinIO or other S3-compatible services</p>
+          <p className="text-xs text-[var(--t-text-secondary)]">For MinIO or other S3-compatible services</p>
         </div>
       </Section>
 

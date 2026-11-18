@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useState, useEffect } from 'react';
 import { useProject } from '@/context/ProjectContext';
@@ -19,9 +20,21 @@ import {
   Loader2,
   X
 } from 'lucide-react';
+import { MONO } from '@/components/ControlChrome';
 import {
-  ControlBreadcrumb, PageHeader, SharpButton, StatusDot, MONO,
-} from '@/components/ControlChrome';
+  DataTable, Table, TableContainer, TableHead, TableRow, TableHeader, TableBody, TableCell,
+  TableToolbar, TableToolbarContent, TableToolbarSearch, ContentSwitcher, Switch, Button, Tag,
+} from '@carbon/react';
+import { Add } from '@carbon/icons-react';
+
+const SEC_HEADERS = [
+  { key: 'name', header: 'Name' },
+  { key: 'category', header: 'Category' },
+  { key: 'uses', header: 'Uses' },
+  { key: 'lastUsed', header: 'Last used' },
+  { key: 'actions', header: '' },
+];
+const SEC_CAT_LABEL: Record<string, string> = { database: 'Database', cloud: 'Cloud', api: 'API', ssh: 'SSH', other: 'Other' };
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const THEME = {
@@ -29,7 +42,7 @@ const THEME = {
   border: 'var(--t-border)', borderLight: 'var(--t-border-light)',
   text: { primary: 'var(--t-text)', secondary: 'var(--t-text-secondary)', muted: 'var(--t-text-muted)' },
   accent: 'var(--t-accent)', accentLight: 'var(--t-accent-light)', input: 'var(--t-input)',
-  colors: { blue: '#3B82F6', emerald: '#10B981', purple: '#8B5CF6', amber: '#F59E0B', red: '#EF4444' }
+  colors: { blue: '#0f62fe', emerald: '#24a148', purple: '#8a3ffc', amber: '#eb6200', red: '#da1e28' }
 };
 
 interface Secret {
@@ -55,11 +68,11 @@ interface AuditLogEntry {
 }
 
 const CATEGORIES = [
-  { value: 'database', label: 'Database', color: '#06b6d4' },
-  { value: 'cloud', label: 'Cloud', color: '#3b82f6' },
-  { value: 'api', label: 'API', color: '#a855f7' },
-  { value: 'ssh', label: 'SSH', color: '#10b981' },
-  { value: 'other', label: 'Other', color: '#9ca3af' },
+  { value: 'database', label: 'Database', color: '#1192e8' },
+  { value: 'cloud', label: 'Cloud', color: '#0f62fe' },
+  { value: 'api', label: 'API', color: '#8a3ffc' },
+  { value: 'ssh', label: 'SSH', color: '#24a148' },
+  { value: 'other', label: 'Other', color: '#8d8d8d' },
 ];
 
 function formatRelativeTime(dateString?: string): string | undefined {
@@ -103,7 +116,7 @@ export default function SecretsPage() {
       setLoading(true);
       setError(null);
 
-      const res = await fetch(`/runloop/api/secrets?projectId=${selectedProject.id}`);
+      const res = await fetch(`${BASE_PATH}/api/secrets?projectId=${selectedProject.id}`);
       if (!res.ok) {
         throw new Error('Failed to fetch secrets');
       }
@@ -122,7 +135,7 @@ export default function SecretsPage() {
     if (!selectedProject) return;
 
     try {
-      const res = await fetch('/runloop/api/secrets', {
+      const res = await fetch(`${BASE_PATH}/api/secrets`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -146,7 +159,7 @@ export default function SecretsPage() {
 
   const handleUpdateSecret = async (id: string, formData: any) => {
     try {
-      const res = await fetch(`/runloop/api/secrets/${id}`, {
+      const res = await fetch(`${BASE_PATH}/api/secrets/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -171,7 +184,7 @@ export default function SecretsPage() {
 
     try {
       // API accepts `ids` (plural, comma-separated) for bulk/single delete
-      const res = await fetch(`/runloop/api/secrets?ids=${id}&projectId=${selectedProject.id}`, {
+      const res = await fetch(`${BASE_PATH}/api/secrets?ids=${id}&projectId=${selectedProject.id}`, {
         method: 'DELETE',
       });
 
@@ -207,75 +220,34 @@ export default function SecretsPage() {
   return (
     <div className="min-h-screen" style={{ background: THEME.bg, fontFamily: FONT }}>
       {/* Header */}
-      <header
-        className="sticky top-0 z-40 backdrop-blur-xl"
-        style={{ background: `${THEME.bg}cc`, borderBottom: `1px solid ${THEME.border}` }}
-      >
-        <div className="max-w-7xl mx-auto px-6 pt-4 pb-3">
-          <div className="flex items-end justify-between mb-6 gap-4">
+      <header>
+        <div className="pb-6">
+          <div className="flex items-start justify-between mb-6 gap-4">
             <div>
-              <h1 style={{ fontSize: 24, fontWeight: 600, color: THEME.text.primary, letterSpacing: '-0.02em' }}>Secrets</h1>
-              <p style={{ fontSize: 13, color: THEME.text.muted, marginTop: 6 }}>
+              <h1 style={{ fontSize: 28, lineHeight: '36px', fontWeight: 400, color: THEME.text.primary }}>Secrets</h1>
+              <p style={{ fontSize: 14, color: THEME.text.secondary, marginTop: 8 }}>
                 Encrypted credentials and API keys. Reference inside flows as <code style={{fontFamily:MONO,fontSize:12}}>{'${{secrets.NAME}}'}</code>.
               </p>
             </div>
-            <SharpButton onClick={() => setShowCreateModal(true)}>
-              <Plus className="w-3.5 h-3.5" /> New Secret
-            </SharpButton>
+            <Button renderIcon={Add} size="md" onClick={() => setShowCreateModal(true)}>New Secret</Button>
           </div>
 
-          {/* Filters */}
-          <div className="flex items-center justify-between mt-2">
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <Search
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5"
-                  style={{ color: THEME.text.muted }}
-                />
-                <input
-                  type="text"
-                  placeholder="search secrets…"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-72 pl-9 pr-4 py-2 text-[12px] focus:outline-none"
-                  style={{
-                    background: THEME.input,
-                    border: `1px solid ${THEME.border}`,
-                    color: THEME.text.primary,
-                    borderRadius: 2,
-                    fontFamily: MONO,
-                  }}
-                />
-              </div>
-
-              <div className="flex items-center gap-1">
-                {[{ value: 'all', label: 'ALL' }, ...CATEGORIES.map((c) => ({ value: c.value, label: c.label.toUpperCase() }))].map((cat) => {
-                  const active = selectedCategory === cat.value;
-                  return (
-                    <button
-                      key={cat.value}
-                      onClick={() => setSelectedCategory(cat.value)}
-                      style={{
-                        padding: '5px 10px', borderRadius: 2,
-                        fontFamily: MONO, fontSize: 10.5, fontWeight: 500,
-                        letterSpacing: '0.08em',
-                        background: active ? THEME.accent : 'transparent',
-                        color: active ? '#fff' : THEME.text.secondary,
-                        border: `1px solid ${active ? THEME.accent : THEME.border}`,
-                      }}
-                    >
-                      {cat.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+          <div style={{ overflowX: 'auto' }}>
+            <ContentSwitcher
+              selectedIndex={['all', ...CATEGORIES.map((c) => c.value)].indexOf(selectedCategory)}
+              onChange={({ name }) => setSelectedCategory((name as string) ?? 'all')}
+              style={{ maxWidth: 560 }}
+            >
+              {([['all', 'All'], ...CATEGORIES.map((c) => [c.value, c.label])] as [string, string][]).map(([v, l]) => (
+                <Switch key={v} name={v} text={l} />
+              ))}
+            </ContentSwitcher>
           </div>
         </div>
       </header>
 
       {/* Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin" style={{ color: THEME.accent }} />
@@ -310,17 +282,56 @@ export default function SecretsPage() {
             </button>
           </div>
         ) : (
-          <div className="space-y-3">
-            {filteredSecrets.map((secret) => (
-              <SecretRow
-                key={secret.id}
-                secret={secret}
-                onEdit={() => setEditingSecret(secret)}
-                onViewAudit={() => { setSelectedSecret(secret); setShowAuditLog(true); }}
-                onDelete={() => handleDeleteSecret(secret.id)}
-              />
-            ))}
-          </div>
+          <DataTable rows={filteredSecrets.map((x) => ({ id: x.id }))} headers={SEC_HEADERS} isSortable>
+            {({ rows: dtRows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => {
+              const sById = Object.fromEntries(filteredSecrets.map((x) => [x.id, x]));
+              return (
+                <TableContainer {...getTableContainerProps()}>
+                  <TableToolbar>
+                    <TableToolbarContent>
+                      <TableToolbarSearch persistent placeholder="Search secrets" onChange={(e) => setSearchQuery(e && 'target' in e ? (e.target as HTMLInputElement).value : '')} />
+                    </TableToolbarContent>
+                  </TableToolbar>
+                  <Table {...getTableProps()} size="md" useZebraStyles={false}>
+                    <TableHead>
+                      <TableRow>
+                        {headers.map((header) => { const { key, ...rest } = getHeaderProps({ header }); return <TableHeader key={header.key} {...rest}>{header.header}</TableHeader>; })}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {dtRows.map((row) => {
+                        const secret = sById[row.id];
+                        const { key, ...rowProps } = getRowProps({ row });
+                        if (!secret) return null;
+                        return (
+                          <TableRow key={row.id} {...rowProps}>
+                            <TableCell>
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="rl-ellipsis" style={{ fontWeight: 600, fontFamily: MONO, color: 'var(--cds-text-primary)' }} title={secret.name}>{secret.name}</span>
+                                {secret.scope === 'GLOBAL' && <Tag type="blue" size="sm">Global</Tag>}
+                                {secret.accessLevel === 'RESTRICTED' && <Tag type="warm-gray" size="sm">Restricted</Tag>}
+                              </div>
+                              {secret.description && <div className="rl-ellipsis" style={{ fontSize: 12, color: 'var(--cds-text-secondary)', marginTop: 2 }}>{secret.description}</div>}
+                            </TableCell>
+                            <TableCell style={{ color: 'var(--cds-text-secondary)' }}>{SEC_CAT_LABEL[secret.category || 'other'] || 'Other'}</TableCell>
+                            <TableCell style={{ fontVariantNumeric: 'tabular-nums' }}>{secret.useCount}</TableCell>
+                            <TableCell style={{ color: 'var(--cds-text-secondary)' }}>{secret.lastUsedAt ? formatRelativeTime(secret.lastUsedAt) : '—'}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Button kind="ghost" size="sm" hasIconOnly renderIcon={History} iconDescription="Access log" onClick={() => { setSelectedSecret(secret); setShowAuditLog(true); }} />
+                                <Button kind="ghost" size="sm" hasIconOnly renderIcon={Edit2} iconDescription="Edit" onClick={() => setEditingSecret(secret)} />
+                                <Button kind="danger--ghost" size="sm" hasIconOnly renderIcon={Trash2} iconDescription="Delete" onClick={() => handleDeleteSecret(secret.id)} />
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              );
+            }}
+          </DataTable>
         )}
       </main>
 
@@ -347,150 +358,6 @@ export default function SecretsPage() {
           secret={selectedSecret}
           onClose={() => setShowAuditLog(false)}
         />
-      )}
-    </div>
-  );
-}
-
-function SecretRow({
-  secret,
-  onEdit,
-  onViewAudit,
-  onDelete
-}: {
-  secret: Secret;
-  onEdit: () => void;
-  onViewAudit: () => void;
-  onDelete: () => void;
-}) {
-  const [showValue, setShowValue] = useState(false);
-
-  const getCategoryColor = (category?: string) => {
-    const colors: Record<string, string> = {
-      database: '#06b6d4',
-      cloud: '#3b82f6',
-      api: '#a855f7',
-      ssh: '#10b981',
-      other: '#9ca3af',
-    };
-    return colors[category || 'other'];
-  };
-
-  const getCategoryLabel = (category?: string) => {
-    const labels: Record<string, string> = {
-      database: 'Database',
-      cloud: 'Cloud',
-      api: 'API',
-      ssh: 'SSH',
-      other: 'Other',
-    };
-    return labels[category || 'other'];
-  };
-
-  return (
-    <div
-      className="group rounded-xl p-5 transition-all duration-200"
-      style={{ background: THEME.panel, border: `1px solid ${THEME.border}` }}
-    >
-      <div className="flex items-center gap-6">
-        {/* Icon */}
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: THEME.bg, border: `1px solid ${THEME.border}` }}>
-          <Key className="w-6 h-6" style={{ color: getCategoryColor(secret.category) }} />
-        </div>
-
-        {/* Main Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-1">
-            <h3 className="text-lg font-semibold" style={{ color: THEME.text.primary }}>{secret.name}</h3>
-            <span
-              className="px-2 py-0.5 rounded-full text-xs font-medium"
-              style={{
-                background: secret.scope === 'GLOBAL' ? `${THEME.colors.blue}15` : `${THEME.text.muted}15`,
-                color: secret.scope === 'GLOBAL' ? THEME.colors.blue : THEME.text.muted,
-                border: `1px solid ${secret.scope === 'GLOBAL' ? `${THEME.colors.blue}30` : `${THEME.text.muted}30`}`,
-              }}
-            >
-              {secret.scope}
-            </span>
-            {secret.accessLevel === 'RESTRICTED' && (
-              <span
-                className="px-2 py-0.5 rounded-full text-xs font-medium"
-                style={{ background: `${THEME.colors.amber}15`, color: THEME.colors.amber, border: `1px solid ${THEME.colors.amber}30` }}
-              >
-                Restricted
-              </span>
-            )}
-          </div>
-          <p className="text-sm" style={{ color: THEME.text.secondary }}>{secret.description}</p>
-        </div>
-
-        {/* Category & Usage */}
-        <div className="flex items-center gap-8">
-          <div className="text-center">
-            <span className="text-sm font-medium" style={{ color: getCategoryColor(secret.category) }}>
-              {getCategoryLabel(secret.category)}
-            </span>
-            <div className="text-xs mt-0.5" style={{ color: THEME.text.secondary }}>Category</div>
-          </div>
-
-          <div className="text-center">
-            <div className="text-sm font-semibold" style={{ color: THEME.text.primary }}>{secret.useCount}</div>
-            <div className="text-xs mt-0.5" style={{ color: THEME.text.secondary }}>Uses</div>
-          </div>
-
-          {secret.lastUsedAt && (
-            <div className="text-center">
-              <div className="text-sm" style={{ color: THEME.text.secondary }}>{formatRelativeTime(secret.lastUsedAt)}</div>
-              <div className="text-xs mt-0.5" style={{ color: THEME.text.secondary }}>Last Used</div>
-            </div>
-          )}
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowValue(!showValue)}
-            className="p-2 rounded-lg transition-all"
-            style={{ background: THEME.bg, color: THEME.text.secondary }}
-          >
-            {showValue ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          </button>
-          <button className="p-2 rounded-lg transition-all" style={{ background: THEME.bg, color: THEME.text.secondary }}>
-            <Copy className="w-4 h-4" />
-          </button>
-          <button
-            onClick={onViewAudit}
-            className="p-2 rounded-lg transition-all"
-            style={{ background: THEME.bg, color: THEME.text.secondary }}
-          >
-            <History className="w-4 h-4" />
-          </button>
-          <button
-            onClick={onEdit}
-            className="p-2 rounded-lg transition-all"
-            style={{ background: THEME.bg, color: THEME.text.secondary }}
-          >
-            <Edit2 className="w-4 h-4" />
-          </button>
-          <button
-            onClick={onDelete}
-            className="p-2 rounded-lg transition-all"
-            style={{ background: THEME.bg, color: THEME.colors.red }}
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {showValue && (
-        <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${THEME.border}` }}>
-          <div className="flex items-center gap-3">
-            <span className="text-xs uppercase tracking-wider" style={{ color: THEME.text.secondary }}>Value</span>
-            <code className="flex-1 px-3 py-2 rounded-lg text-sm font-mono" style={{ background: THEME.bg, color: THEME.text.secondary }}>
-              ••••••••••••••••••••••••••••••••
-            </code>
-          </div>
-        </div>
       )}
     </div>
   );
@@ -888,7 +755,7 @@ function AuditLogModal({ secret, onClose }: { secret: Secret; onClose: () => voi
   const fetchAuditLogs = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/runloop/api/secrets/${secret.id}/audit`);
+      const res = await fetch(`${BASE_PATH}/api/secrets/${secret.id}/audit`);
       if (res.ok) {
         const data = await res.json();
         setLogs(data.logs || []);
@@ -937,10 +804,10 @@ function AuditLogModal({ secret, onClose }: { secret: Secret; onClose: () => voi
             <table className="w-full">
               <thead className="sticky top-0" style={{ background: THEME.bg }}>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{ color: THEME.text.secondary }}>Action</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{ color: THEME.text.secondary }}>User</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{ color: THEME.text.secondary }}>Time</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{ color: THEME.text.secondary }}>Details</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium " style={{ color: THEME.text.secondary }}>Action</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium " style={{ color: THEME.text.secondary }}>User</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium " style={{ color: THEME.text.secondary }}>Time</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium " style={{ color: THEME.text.secondary }}>Details</th>
                 </tr>
               </thead>
               <tbody>

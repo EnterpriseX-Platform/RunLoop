@@ -136,8 +136,8 @@ export function autoLayout(
   const orphans = nodes.filter((n) => !visited.has(n.id)).map((n) => n.id);
   if (orphans.length) layers.push(orphans);
 
-  const X_STEP = 260;
-  const Y_STEP = 140;
+  const X_STEP = 264; // card 184 + room for edge labels
+  const Y_STEP = 120;
   const positions: Array<{ id: string; position: { x: number; y: number } }> = [];
   layers.forEach((layer, layerIndex) => {
     layer.forEach((id, idx) => {

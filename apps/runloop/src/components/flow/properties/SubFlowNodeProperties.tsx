@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { BaseProperties, Section, TextArea } from './BaseProperties';
@@ -12,7 +13,7 @@ export function SubFlowNodeProperties({ config, onChange }: BasePropertiesProps)
 
   useEffect(() => {
     if (!projectId) return;
-    fetch(`/runloop/api/flows?projectId=${projectId}`)
+    fetch(`${BASE_PATH}/api/flows?projectId=${projectId}`)
       .then((r) => r.json())
       .then((d) => setFlows((d.data || []).map((f: any) => ({ id: f.id, name: f.name }))))
       .catch(() => {});

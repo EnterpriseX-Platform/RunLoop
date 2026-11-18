@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
@@ -6,8 +7,7 @@ import Link from 'next/link';
 import { ArrowLeft, Loader2, AlertCircle, Plus, X, Workflow, Webhook } from 'lucide-react';
 import type { TriggerType, Flow } from '@/types';
 import {
-  ControlBreadcrumb, PageHeader, SchematicPanel, SharpButton, MonoTag, MONO,
-} from '@/components/ControlChrome';
+  ControlBreadcrumb, PageHeader, SchematicPanel, SharpButton, MonoTag, MONO, sentence } from '@/components/ControlChrome';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const T = {
@@ -20,11 +20,11 @@ const T = {
   textMuted: 'var(--t-text-muted)',
   accent: 'var(--t-accent)',
   input: 'var(--t-input)',
-  red: '#EF4444',
-  amber: '#F59E0B',
-  blue: '#3B82F6',
-  emerald: '#10B981',
-  purple: '#8B5CF6',
+  red: '#da1e28',
+  amber: '#eb6200',
+  blue: '#0f62fe',
+  emerald: '#24a148',
+  purple: '#8a3ffc',
 };
 
 const TRIGGER_TYPES: { value: TriggerType; label: string }[] = [
@@ -76,7 +76,7 @@ export default function NewSchedulerPage() {
     try {
       setIsLoadingFlows(true);
       const params = projectId ? `?projectId=${projectId}` : '';
-      const res = await fetch(`/runloop/api/flows${params}`);
+      const res = await fetch(`${BASE_PATH}/api/flows${params}`);
       if (res.ok) {
         const data = await res.json();
         setAvailableFlows(data.data || []);
@@ -125,7 +125,7 @@ export default function NewSchedulerPage() {
       };
       if (schedule && schedule.trim()) payload.schedule = schedule.trim();
 
-      const res = await fetch('/runloop/api/schedulers', {
+      const res = await fetch(`${BASE_PATH}/api/schedulers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -142,7 +142,7 @@ export default function NewSchedulerPage() {
 
       if (formData.triggerType === 'WEBHOOK') {
         try {
-          await fetch('/runloop/api/webhooks', {
+          await fetch(`${BASE_PATH}/api/webhooks`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -163,7 +163,7 @@ export default function NewSchedulerPage() {
           targetFlowId: selectedFlowIds[i + 1],
           condition: 'ON_SUCCESS',
         }));
-        await fetch(`/runloop/api/schedulers/${schedulerId}/flows`, {
+        await fetch(`${BASE_PATH}/api/schedulers/${schedulerId}/flows`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ flowIds: selectedFlowIds, edges }),
@@ -206,7 +206,7 @@ export default function NewSchedulerPage() {
       </Link>
 
       <div className="mb-6">
-        <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>
+        <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: 0 }}>
           New Scheduler
         </h1>
         <p style={{ fontSize: 13, color: T.textMuted, marginTop: 6 }}>
@@ -218,23 +218,23 @@ export default function NewSchedulerPage() {
         <div
           className="flex items-center gap-2 mb-4 p-3"
           style={{
-            background: 'color-mix(in srgb, #EF4444 10%, transparent)',
-            border: '1px solid color-mix(in srgb, #EF4444 30%, transparent)',
+            background: 'color-mix(in srgb, #da1e28 10%, transparent)',
+            border: '1px solid color-mix(in srgb, #da1e28 30%, transparent)',
             borderRadius: 2,
           }}
         >
           <AlertCircle className="w-4 h-4 flex-shrink-0" style={{ color: T.red }} />
-          <span style={{ fontFamily: MONO, fontSize: 12, color: T.red, letterSpacing: '0.04em' }}>
+          <span style={{ fontFamily: MONO, fontSize: 12, color: T.red, letterSpacing: 0 }}>
             {submitError}
           </span>
         </div>
       )}
 
       <form onSubmit={handleSubmit}>
-        <div className="flex gap-4" style={{ alignItems: 'flex-start' }}>
+        <div className="flex flex-col lg:flex-row gap-4" style={{ alignItems: 'stretch' }}>
           {/* Left — form */}
           <div className="flex-1" style={{ minWidth: 0 }}>
-            <Section title="BASIC INFORMATION">
+            <Section title="Basic information">
               <Field label="Name" required>
                 <input
                   type="text"
@@ -257,8 +257,8 @@ export default function NewSchedulerPage() {
               </Field>
             </Section>
 
-            <Section title="TRIGGER SETTINGS">
-              <div className="grid grid-cols-2 gap-3">
+            <Section title="Trigger settings">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Field label="Trigger Type">
                   <select
                     value={formData.triggerType}
@@ -288,25 +288,25 @@ export default function NewSchedulerPage() {
               </div>
 
               {formData.triggerType === 'WEBHOOK' && (
-                <Callout color={T.purple} icon={Webhook} label="WEBHOOK ENDPOINT">
+                <Callout color={T.purple} icon={Webhook} label="Webhook endpoint">
                   <p style={{ fontSize: 12, color: T.textSec, lineHeight: 1.5 }}>
                     A public webhook URL + HMAC secret will be generated after saving. Anyone with the URL and
                     secret can trigger this scheduler by POSTing JSON.
                   </p>
                   <pre style={preStyle()}>
-{`POST /runloop/api/webhooks/:id
+{`POST ${BASE_PATH}/api/webhooks/:id
 Header: X-Webhook-Signature: <HMAC-SHA256 of body using secret>`}
                   </pre>
                 </Callout>
               )}
 
               {formData.triggerType === 'API' && (
-                <Callout color={T.blue} icon={Workflow} label="API TRIGGER">
+                <Callout color={T.blue} icon={Workflow} label="Api trigger">
                   <p style={{ fontSize: 12, color: T.textSec, lineHeight: 1.5 }}>
                     Trigger this scheduler by calling the authenticated trigger endpoint:
                   </p>
                   <pre style={preStyle()}>
-{`POST /runloop/api/schedulers/<id>/trigger
+{`POST ${BASE_PATH}/api/schedulers/<id>/trigger
 Header: Authorization: Bearer <jwt-token>
 Body: { "input": {...} }`}
                   </pre>
@@ -351,8 +351,7 @@ Body: { "input": {...} }`}
                         style={{
                           fontFamily: MONO, fontSize: 10.5, padding: '4px 8px',
                           borderRadius: 2, background: 'transparent', color: T.textSec,
-                          border: `1px solid ${T.border}`, letterSpacing: '0.06em',
-                          textTransform: 'uppercase', cursor: 'pointer',
+                          border: `1px solid ${T.border}`, letterSpacing: 0, cursor: 'pointer',
                         }}
                       >
                         {preset.label}
@@ -363,7 +362,7 @@ Body: { "input": {...} }`}
               )}
             </Section>
 
-            <Section title="PARAMETERS">
+            <Section title="Parameters">
               <Field
                 label="Input (JSON)"
                 hint={
@@ -393,19 +392,19 @@ Body: { "input": {...} }`}
                     ...inp(),
                     fontFamily: 'IBM Plex Mono, ui-monospace, SFMono-Regular, monospace',
                     resize: 'vertical' as const,
-                    borderColor: paramsValid ? 'var(--t-border)' : '#EF4444',
+                    borderColor: paramsValid ? 'var(--t-border)' : '#da1e28',
                   }}
                 />
                 {!paramsValid && (
-                  <p style={{ fontSize: 11, color: '#EF4444', marginTop: 4 }}>
+                  <p style={{ fontSize: 11, color: '#da1e28', marginTop: 4 }}>
                     Invalid JSON — fix syntax before saving
                   </p>
                 )}
               </Field>
             </Section>
 
-            <Section title="EXECUTION SETTINGS">
-              <div className="grid grid-cols-4 gap-3">
+            <Section title="Execution settings">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <Field label="Timeout (s)">
                   <input type="number" value={formData.timeout}
                     onChange={(e) => setFormData({ ...formData, timeout: parseInt(e.target.value) || 300 })}
@@ -429,29 +428,19 @@ Body: { "input": {...} }`}
               </div>
             </Section>
 
-            <div className="flex items-center gap-2 pt-2">
-              <SharpButton type="submit" disabled={isSubmitting || !formData.name}>
-                {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-                {isSubmitting ? 'Creating…' : 'Create Scheduler'}
-              </SharpButton>
-              <SharpButton variant="ghost" href={`/p/${projectId}/schedulers`}>
-                Cancel
-              </SharpButton>
-            </div>
           </div>
 
           {/* Right — flows picker */}
-          <div style={{ width: 380, flexShrink: 0 }}>
+          <div className="w-full lg:w-[380px] lg:flex-shrink-0">
             <SchematicPanel>
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <h3
                     style={{
-                      fontFamily: MONO, fontSize: 10, fontWeight: 600, color: T.textSec,
-                      letterSpacing: '0.14em', textTransform: 'uppercase',
+                      fontSize: 16, fontWeight: 600, color: T.text,
                     }}
                   >
-                    // FLOWS TO RUN
+                    Flows to run
                   </h3>
                   <p style={{ fontSize: 11, color: T.textMuted, marginTop: 4 }}>
                     Select flows — they execute in order.
@@ -459,9 +448,9 @@ Body: { "input": {...} }`}
                 </div>
                 <Link
                   href={`/p/${projectId}/flows/new`}
-                  style={{ fontFamily: MONO, fontSize: 10.5, color: T.accent, letterSpacing: '0.08em' }}
+                  style={{ fontFamily: MONO, fontSize: 10.5, color: T.accent, letterSpacing: 0 }}
                 >
-                  + NEW FLOW
+                  New flow
                 </Link>
               </div>
 
@@ -542,7 +531,7 @@ Body: { "input": {...} }`}
                           {flow.type === 'DAG' ? 'DAG' : flow.jobType || 'SIMPLE'}
                         </MonoTag>
                         <MonoTag tone={flow.status === 'ACTIVE' ? 'success' : 'muted'}>
-                          {flow.status}
+                          {sentence(flow.status)}
                         </MonoTag>
                       </button>
                     ))}
@@ -553,15 +542,24 @@ Body: { "input": {...} }`}
                     <p style={{ color: T.textSec, fontSize: 12 }}>No flows found</p>
                     <Link
                       href={`/p/${projectId}/flows/new`}
-                      style={{ color: T.accent, fontFamily: MONO, fontSize: 11, display: 'inline-block', marginTop: 6, letterSpacing: '0.06em' }}
+                      style={{ color: T.accent, fontFamily: MONO, fontSize: 11, display: 'inline-block', marginTop: 6, letterSpacing: 0 }}
                     >
-                      + CREATE YOUR FIRST FLOW
+                      Create your first flow
                     </Link>
                   </div>
                 ) : null}
               </div>
             </SchematicPanel>
           </div>
+        </div>
+        <div className="flex items-center gap-2 pt-4">
+          <SharpButton type="submit" disabled={isSubmitting || !formData.name}>
+            {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+            {isSubmitting ? 'Creating…' : 'Create Scheduler'}
+          </SharpButton>
+          <SharpButton variant="ghost" href={`/p/${projectId}/schedulers`}>
+            Cancel
+          </SharpButton>
         </div>
       </form>
     </div>
@@ -573,11 +571,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     <SchematicPanel className="mb-3">
       <h3
         style={{
-          fontFamily: MONO, fontSize: 10, fontWeight: 600, color: T.textSec,
-          marginBottom: 14, letterSpacing: '0.14em', textTransform: 'uppercase',
+          fontSize: 16, lineHeight: '22px', fontWeight: 600, color: T.text,
+          marginBottom: 16,
         }}
       >
-        // {title}
+        {title}
       </h3>
       <div className="space-y-3">{children}</div>
     </SchematicPanel>
@@ -596,17 +594,14 @@ function Field({
     <div>
       <label
         style={{
-          fontFamily: MONO, fontSize: 10.5, fontWeight: 500, color: T.textSec,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          marginBottom: 5, letterSpacing: '0.08em', textTransform: 'uppercase',
+          fontSize: 12, lineHeight: '16px', color: T.textSec,
+          display: 'block', marginBottom: 8,
         }}
       >
-        <span>
-          {label} {required && <span style={{ color: T.accent }}>*</span>}
-        </span>
-        {hint && <span style={{ textTransform: 'none', letterSpacing: 0 }}>{hint}</span>}
+        {label} {required && <span style={{ color: 'var(--t-error)' }}>*</span>}
       </label>
       {children}
+      {hint && <p style={{ fontSize: 12, lineHeight: '16px', color: T.textSec, marginTop: 4 }}>{hint}</p>}
     </div>
   );
 }
@@ -625,7 +620,7 @@ function Callout({
     >
       <div className="flex items-center gap-2 mb-1.5">
         <Icon className="w-3.5 h-3.5" style={{ color }} />
-        <span style={{ fontFamily: MONO, fontSize: 10.5, color, fontWeight: 600, letterSpacing: '0.1em' }}>
+        <span style={{ fontFamily: MONO, fontSize: 10.5, color, fontWeight: 600, letterSpacing: 0 }}>
           {label}
         </span>
       </div>
@@ -637,7 +632,7 @@ function Callout({
 function preStyle(): React.CSSProperties {
   return {
     fontFamily: MONO, fontSize: 10.5, color: T.textMuted,
-    marginTop: 8, lineHeight: 1.5, whiteSpace: 'pre-wrap', letterSpacing: '0.02em',
+    marginTop: 8, lineHeight: 1.5, whiteSpace: 'pre-wrap', letterSpacing: 0,
   };
 }
 

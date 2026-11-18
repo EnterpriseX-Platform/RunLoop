@@ -10,7 +10,7 @@ export function DatabaseNode(props: NodeProps<BaseNodeData>) {
     <BaseNode {...props} inputs={1} outputs={1}>
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-[#06b6d4] uppercase">{action}</span>
+          <span className="text-xs font-medium text-[#06b6d4] ">{action}</span>
         </div>
         {query && (
           <div className="text-xs text-[#52525b] font-mono truncate max-w-[200px]">

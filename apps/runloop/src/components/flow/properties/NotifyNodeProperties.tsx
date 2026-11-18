@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { BaseProperties, Section, TextField, TextArea } from './BaseProperties';
@@ -17,7 +18,7 @@ export function NotifyNodeProperties({ config, onChange }: BasePropertiesProps) 
   // Pull live channel list so the user gets autocomplete + subscriber visibility.
   useEffect(() => {
     if (!projectId) return;
-    fetch(`/runloop/api/channels?projectId=${encodeURIComponent(projectId)}`)
+    fetch(`${BASE_PATH}/api/channels?projectId=${encodeURIComponent(projectId)}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => setChannels(d?.data || []))
       .catch(() => {});
@@ -91,7 +92,7 @@ export function NotifyNodeProperties({ config, onChange }: BasePropertiesProps) 
           background: 'var(--t-input)', border: '1px solid var(--t-border)',
           color: 'var(--t-text-secondary)', overflowX: 'auto',
         }}>{`const ws = new WebSocket(
-  'wss://<host>/runloop/rl/ws/channel/${config.channel || '<name>'}',
+  'wss://<host>${BASE_PATH}/rl/ws/channel/${config.channel || '<name>'}',
   // Authenticate with a project-scoped API key (Settings → API Keys).
   // Pass it as Authorization header via a server-side proxy, or use
   // the cookie-based session if you load the websocket from a browser

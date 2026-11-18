@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -21,18 +22,18 @@ const THEME = {
   accent: 'var(--t-accent)',
   accentLight: 'var(--t-accent-light)',
   input: 'var(--t-input)',
-  colors: { blue: '#3B82F6', emerald: '#10B981', purple: '#8B5CF6', amber: '#F59E0B', red: '#EF4444', cyan: '#06B6D4' }
+  colors: { blue: '#0f62fe', emerald: '#24a148', purple: '#8a3ffc', amber: '#eb6200', red: '#da1e28', cyan: '#1192e8' }
 };
 
 const COLORS = [
-  { name: 'Cyan', value: '#06b6d4' },
-  { name: 'Blue', value: '#3b82f6' },
-  { name: 'Purple', value: '#8b5cf6' },
-  { name: 'Pink', value: '#ec4899' },
-  { name: 'Orange', value: '#f97316' },
-  { name: 'Green', value: '#22c55e' },
-  { name: 'Red', value: '#ef4444' },
-  { name: 'Yellow', value: '#eab308' },
+  { name: 'Cyan', value: '#1192e8' },
+  { name: 'Blue', value: '#0f62fe' },
+  { name: 'Purple', value: '#8a3ffc' },
+  { name: 'Pink', value: '#d02670' },
+  { name: 'Orange', value: '#eb6200' },
+  { name: 'Green', value: '#24a148' },
+  { name: 'Red', value: '#da1e28' },
+  { name: 'Yellow', value: '#eb6200' },
 ];
 
 export default function ProjectsPage() {
@@ -55,7 +56,7 @@ export default function ProjectsPage() {
     setIsSubmitting(true);
 
     try {
-      const url = '/runloop/api/projects';
+      const url = `${BASE_PATH}/api/projects`;
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -108,8 +109,8 @@ export default function ProjectsPage() {
         title="Projects"
         subtitle="Tenant workspaces — each project gets its own flows, schedulers, queues, and secret vault."
         metrics={<>
-          <MetricChip label="total" value={String(projects.length).padStart(2, '0')} />
-          <MetricChip label="shown" value={String(filtered.length).padStart(2, '0')} accent={searchQuery ? '#F59E0B' : undefined} />
+          <MetricChip label="total" value={String(projects.length)} />
+          <MetricChip label="shown" value={String(filtered.length)} />
         </>}
         right={
           <SharpButton onClick={() => setIsCreating(true)}>
@@ -123,7 +124,7 @@ export default function ProjectsPage() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: THEME.text.muted }} />
         <input
           type="text"
-          placeholder="search projects…"
+          placeholder="Search projects"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           style={{
@@ -167,7 +168,7 @@ export default function ProjectsPage() {
                 <textarea
                   value={newProject.description}
                   onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
-                  style={{ background: THEME.input, border: `1px solid ${THEME.border}`, color: THEME.text.primary, borderRadius: 8, fontSize: 13, padding: '8px 12px' }}
+                  style={{ background: THEME.input, border: `1px solid ${THEME.border}`, color: THEME.text.primary, borderRadius: 0, fontSize: 13, padding: '8px 12px' }}
                   className="w-full outline-none"
                   placeholder="Enter project description"
                   rows={3}
@@ -197,14 +198,14 @@ export default function ProjectsPage() {
                   type="button"
                   onClick={() => setIsCreating(false)}
                   disabled={isSubmitting}
-                  style={{ flex: 1, border: `1px solid ${THEME.border}`, color: THEME.text.secondary, borderRadius: 8, padding: '8px 0', fontSize: 13, fontWeight: 500, background: 'transparent' }}
+                  style={{ flex: 1, border: `1px solid ${THEME.border}`, color: THEME.text.secondary, borderRadius: 0, padding: '8px 0', fontSize: 13, fontWeight: 500, background: 'transparent' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  style={{ flex: 1, background: THEME.accent, color: '#fff', borderRadius: 8, padding: '8px 0', fontSize: 13, fontWeight: 500, opacity: isSubmitting ? 0.6 : 1 }}
+                  style={{ flex: 1, background: THEME.accent, color: '#fff', borderRadius: 0, padding: '8px 0', fontSize: 13, fontWeight: 500, opacity: isSubmitting ? 0.6 : 1 }}
                   className="flex items-center justify-center gap-2"
                 >
                   {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -224,7 +225,7 @@ export default function ProjectsPage() {
           </div>
           <h3 style={{ fontSize: 15, fontWeight: 600, color: THEME.text.primary, marginBottom: 4 }}>No projects yet</h3>
           <p style={{ fontSize: 13, color: THEME.text.muted, marginBottom: 12 }}>Create your first project to get started</p>
-          <button onClick={() => setIsCreating(true)} style={{ background: THEME.accent, color: '#fff', borderRadius: 8, padding: '6px 16px', fontSize: 13, fontWeight: 500 }} className="inline-flex items-center gap-2">
+          <button onClick={() => setIsCreating(true)} style={{ background: THEME.accent, color: '#fff', borderRadius: 0, padding: '6px 16px', fontSize: 13, fontWeight: 500 }} className="inline-flex items-center gap-2">
             <Plus className="w-4 h-4" /> Create Project
           </button>
         </div>
@@ -232,10 +233,9 @@ export default function ProjectsPage() {
         <div style={{ background: THEME.panel, border: `1px solid ${THEME.border}`, borderRadius: 2, overflow: 'hidden' }}>
           <TableHeaderRow
             cols={[
-              { label: '#',           width: 40 },
-              { label: 'PROJECT' },
-              { label: 'RUNLOOPS',    width: 100, align: 'right' },
-              { label: 'MEMBERS',     width: 100, align: 'right' },
+              { label: 'Project' },
+              { label: 'Schedulers',  width: 100, align: 'right' },
+              { label: 'Members',     width: 100, align: 'right' },
               { label: '',            width: 24 },
             ]}
           />
@@ -250,14 +250,6 @@ export default function ProjectsPage() {
               className="flex items-center gap-3 px-4 py-2.5 transition hover:bg-[var(--t-panel-hover)] group"
               style={{ borderTop: i === 0 ? 'none' : `1px solid ${THEME.borderLight}` }}
             >
-              <span
-                style={{
-                  width: 40, fontFamily: MONO, fontSize: 10.5,
-                  color: THEME.text.muted, letterSpacing: '0.06em',
-                }}
-              >
-                {String(i + 1).padStart(2, '0')}
-              </span>
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <div
                   style={{
@@ -286,7 +278,7 @@ export default function ProjectsPage() {
                 className="text-right flex items-center justify-end gap-1.5"
                 style={{
                   width: 100, fontFamily: MONO, fontSize: 11,
-                  color: THEME.text.muted, letterSpacing: '0.04em',
+                  color: THEME.text.muted, letterSpacing: 0,
                 }}
               >
                 <Clock className="w-3 h-3" /> {project._count?.runloops || 0}
@@ -295,7 +287,7 @@ export default function ProjectsPage() {
                 className="text-right flex items-center justify-end gap-1.5"
                 style={{
                   width: 100, fontFamily: MONO, fontSize: 11,
-                  color: THEME.text.muted, letterSpacing: '0.04em',
+                  color: THEME.text.muted, letterSpacing: 0,
                 }}
               >
                 <Users className="w-3 h-3" /> {project._count?.members || 0}

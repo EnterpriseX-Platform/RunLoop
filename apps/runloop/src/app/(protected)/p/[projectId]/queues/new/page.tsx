@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -18,7 +19,7 @@ const T = {
   textSec: 'var(--t-text-secondary)',
   textMuted: 'var(--t-text-muted)',
   accent: 'var(--t-accent)',
-  red: '#EF4444',
+  red: '#da1e28',
 };
 
 type Backend = 'postgres' | 'redis' | 'rabbitmq' | 'kafka';
@@ -63,7 +64,7 @@ export default function NewQueuePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/runloop/api/flows?projectId=${projectId}`)
+    fetch(`${BASE_PATH}/api/flows?projectId=${projectId}`)
       .then((r) => r.json())
       .then((d) => setFlows((d.data || []).map((f: any) => ({ id: f.id, name: f.name }))))
       .catch(() => setFlows([]));
@@ -87,7 +88,7 @@ export default function NewQueuePage() {
 
     setSubmitting(true);
     try {
-      const res = await fetch('/runloop/api/queues', {
+      const res = await fetch(`${BASE_PATH}/api/queues`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -118,7 +119,7 @@ export default function NewQueuePage() {
       </Link>
 
       <div className="mb-6">
-        <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>New Queue</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: 0 }}>New Queue</h1>
         <p style={{ fontSize: 13, color: T.textMuted, marginTop: 6 }}>
           A queue binds a flow to a durable job inbox. Producers enqueue jobs; the engine processes them with retry + DLQ.
         </p>
@@ -128,19 +129,19 @@ export default function NewQueuePage() {
         <div
           className="mb-4 p-3 flex items-start gap-2"
           style={{
-            background: 'color-mix(in srgb, #EF4444 10%, transparent)',
-            border: '1px solid color-mix(in srgb, #EF4444 30%, transparent)',
+            background: 'color-mix(in srgb, #da1e28 10%, transparent)',
+            border: '1px solid color-mix(in srgb, #da1e28 30%, transparent)',
             borderRadius: 2,
           }}
         >
           <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: T.red }} />
-          <span style={{ fontFamily: MONO, fontSize: 12, color: T.red, letterSpacing: '0.04em' }}>
+          <span style={{ fontFamily: MONO, fontSize: 12, color: T.red, letterSpacing: 0 }}>
             {error}
           </span>
         </div>
       )}
 
-      <Section title="BASICS">
+      <Section title="Basics">
         <Field label="Name" required hint="Used as the queue identifier and in the producer URL">
           <input
             value={name}
@@ -159,7 +160,7 @@ export default function NewQueuePage() {
         </Field>
       </Section>
 
-      <Section title="BACKEND">
+      <Section title="Backend">
         <div className="flex gap-1.5 mb-3">
           {(['postgres', 'redis', 'rabbitmq', 'kafka'] as Backend[]).map((b) => {
             const active = backend === b;
@@ -169,8 +170,7 @@ export default function NewQueuePage() {
                 onClick={() => { setBackend(b); setBcfg({}); }}
                 style={{
                   padding: '7px 14px', borderRadius: 2,
-                  fontFamily: MONO, fontSize: 11, fontWeight: 500, letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
+                  fontFamily: MONO, fontSize: 11, fontWeight: 500, letterSpacing: 0,
                   background: active ? T.accent : 'transparent',
                   color: active ? '#fff' : T.textSec,
                   border: `1px solid ${active ? T.accent : T.border}`,
@@ -187,10 +187,10 @@ export default function NewQueuePage() {
           <p
             style={{
               fontFamily: MONO, fontSize: 11, color: T.textMuted,
-              padding: '8px 0', letterSpacing: '0.06em',
+              padding: '8px 0', letterSpacing: 0,
             }}
           >
-            // POSTGRES USES THE ENGINE'S OWN DATABASE — NO EXTRA CONFIG NEEDED
+            Postgres uses the engine's own database, so there is nothing else to set up.
           </p>
         ) : (
           BACKEND_FIELDS[backend].map((f) => (
@@ -206,8 +206,8 @@ export default function NewQueuePage() {
         )}
       </Section>
 
-      <Section title="DELIVERY">
-        <div className="grid grid-cols-3 gap-3">
+      <Section title="Delivery">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <Field label="Concurrency" hint="Max parallel jobs per worker">
             <input
               type="number" min={1} max={64} value={concurrency}
@@ -250,8 +250,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     <SchematicPanel className="mb-3">
       <h3
         style={{
-          fontSize: 12, fontWeight: 600, color: T.textSec,
-          marginBottom: 14, letterSpacing: '0.04em', textTransform: 'uppercase',
+          fontSize: 16, lineHeight: '22px', fontWeight: 600, color: T.text,
+          marginBottom: 16,
         }}
       >
         {title}
@@ -269,15 +269,14 @@ function Field({
       <label
         style={{
           fontFamily: MONO, fontSize: 10.5, fontWeight: 500, color: T.textSec,
-          display: 'block', marginBottom: 5, letterSpacing: '0.08em',
-          textTransform: 'uppercase',
+          display: 'block', marginBottom: 5, letterSpacing: 0,
         }}
       >
         {label} {required && <span style={{ color: T.accent }}>*</span>}
       </label>
       {children}
       {hint && (
-        <p style={{ fontFamily: MONO, fontSize: 10.5, color: T.textMuted, marginTop: 4, letterSpacing: '0.02em' }}>
+        <p style={{ fontFamily: MONO, fontSize: 10.5, color: T.textMuted, marginTop: 4, letterSpacing: 0 }}>
           {hint}
         </p>
       )}

@@ -34,33 +34,33 @@ type Config struct {
 	LoginRateLimitWindow time.Duration // Window for login attempts. Default 1m.
 
 	// Database
-	DatabaseURL        string
-	DatabaseMaxConns   int
-	DatabaseMaxIdle    int
+	DatabaseURL      string
+	DatabaseMaxConns int
+	DatabaseMaxIdle  int
 
 	// Worker Pool
-	WorkerCount        int
-	WorkerQueueSize    int
-	WorkerMaxRetries   int
+	WorkerCount      int
+	WorkerQueueSize  int
+	WorkerMaxRetries int
 
 	// JWT
-	JWTSecret          string
-	JWTExpiryHours     int
+	JWTSecret      string
+	JWTExpiryHours int
 
 	// Logging
-	LogLevel           string
-	LogFormat          string // json or console
+	LogLevel  string
+	LogFormat string // json or console
 
 	// Executor
-	DefaultTimeout     time.Duration
-	MaxTimeout         time.Duration
+	DefaultTimeout time.Duration
+	MaxTimeout     time.Duration
 
 	// Features
-	EnableMetrics      bool
-	EnablePprof        bool
+	EnableMetrics bool
+	EnablePprof   bool
 
 	// Development
-	SkipAuth           bool // Skip authentication for development
+	SkipAuth bool // Skip authentication for development
 }
 
 // Load loads configuration from environment variables
@@ -85,33 +85,33 @@ func Load() *Config {
 		LoginRateLimitWindow: getDuration("LOGIN_RATE_WINDOW", 1*time.Minute),
 
 		// Database defaults
-		DatabaseURL:        getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/runloop?sslmode=disable"),
-		DatabaseMaxConns:   getInt("DATABASE_MAX_CONNS", 20),
-		DatabaseMaxIdle:    getInt("DATABASE_MAX_IDLE", 5),
+		DatabaseURL:      getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/runloop?sslmode=disable"),
+		DatabaseMaxConns: getInt("DATABASE_MAX_CONNS", 20),
+		DatabaseMaxIdle:  getInt("DATABASE_MAX_IDLE", 5),
 
 		// Worker Pool defaults
-		WorkerCount:        getInt("WORKER_COUNT", 10),
-		WorkerQueueSize:    getInt("WORKER_QUEUE_SIZE", 100),
-		WorkerMaxRetries:   getInt("WORKER_MAX_RETRIES", 3),
+		WorkerCount:      getInt("WORKER_COUNT", 10),
+		WorkerQueueSize:  getInt("WORKER_QUEUE_SIZE", 100),
+		WorkerMaxRetries: getInt("WORKER_MAX_RETRIES", 3),
 
 		// JWT defaults
-		JWTSecret:          getEnv("JWT_SECRET", "runloop-secret-change-in-production"),
-		JWTExpiryHours:     getInt("JWT_EXPIRY_HOURS", 24),
+		JWTSecret:      getEnv("JWT_SECRET", "runloop-secret-change-in-production"),
+		JWTExpiryHours: getInt("JWT_EXPIRY_HOURS", 24),
 
 		// Logging defaults
-		LogLevel:           getEnv("LOG_LEVEL", "info"),
-		LogFormat:          getEnv("LOG_FORMAT", "console"),
+		LogLevel:  getEnv("LOG_LEVEL", "info"),
+		LogFormat: getEnv("LOG_FORMAT", "console"),
 
 		// Executor defaults
-		DefaultTimeout:     getDuration("DEFAULT_TIMEOUT", 5*time.Minute),
-		MaxTimeout:         getDuration("MAX_TIMEOUT", 1*time.Hour),
+		DefaultTimeout: getDuration("DEFAULT_TIMEOUT", 5*time.Minute),
+		MaxTimeout:     getDuration("MAX_TIMEOUT", 1*time.Hour),
 
 		// Features
-		EnableMetrics:      getBool("ENABLE_METRICS", true),
-		EnablePprof:        getBool("ENABLE_PPROF", false),
+		EnableMetrics: getBool("ENABLE_METRICS", true),
+		EnablePprof:   getBool("ENABLE_PPROF", false),
 
 		// Development
-		SkipAuth:           getBool("SKIP_AUTH", false),
+		SkipAuth: getBool("SKIP_AUTH", false),
 	}
 
 	validateJWTSecret(cfg)
@@ -141,8 +141,21 @@ func splitCSV(s string) []string {
 	return out
 }
 
+func configIsProduction() bool {
+	for _, k := range []string{"RUNTIME_ENV", "NODE_ENV", "ENV"} {
+		if v := strings.ToLower(os.Getenv(k)); v == "production" || v == "prod" {
+			return true
+		}
+	}
+	return false
+}
+
 func validateJWTSecret(cfg *Config) {
 	if cfg.SkipAuth {
+		// SKIP_AUTH makes every request an admin; it must never run in prod.
+		if configIsProduction() {
+			log.Fatal().Msg("SKIP_AUTH must not be enabled in production")
+		}
 		return // Auth is disabled; no JWT secret needed
 	}
 	if len(cfg.JWTSecret) < 32 {

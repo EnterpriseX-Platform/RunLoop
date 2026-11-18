@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
@@ -14,6 +15,19 @@ import {
   Filter,
   X,
 } from 'lucide-react';
+import {
+  DataTable, Table, TableContainer, TableHead, TableRow, TableHeader, TableBody, TableCell,
+  TableExpandHeader, TableExpandRow, TableExpandedRow, Tag, Button,
+} from '@carbon/react';
+
+const AL_HEADERS = [
+  { key: 'timestamp', header: 'Timestamp' },
+  { key: 'user', header: 'User' },
+  { key: 'action', header: 'Action' },
+  { key: 'resource', header: 'Resource' },
+  { key: 'details', header: 'Details' },
+  { key: 'ip', header: 'IP' },
+];
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const THEME = {
@@ -31,12 +45,12 @@ const THEME = {
   accentLight: 'var(--t-accent-light)',
   input: 'var(--t-input)',
   colors: {
-    blue: '#3B82F6',
-    emerald: '#10B981',
-    purple: '#8B5CF6',
-    amber: '#F59E0B',
-    red: '#EF4444',
-    cyan: '#06B6D4',
+    blue: '#0f62fe',
+    emerald: '#24a148',
+    purple: '#8a3ffc',
+    amber: '#eb6200',
+    red: '#da1e28',
+    cyan: '#1192e8',
   },
 };
 
@@ -155,7 +169,7 @@ export default function AuditLogPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/runloop/api/audit-logs?${queryString}`);
+      const res = await fetch(`${BASE_PATH}/api/audit-logs?${queryString}`);
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data?.error || 'Failed to fetch audit logs');
@@ -208,10 +222,10 @@ export default function AuditLogPage() {
     <div className="min-h-screen" style={{ background: THEME.bg, fontFamily: FONT }}>
       {/* Header */}
       <header
-        className="sticky top-0 z-30 backdrop-blur-xl"
-        style={{ background: `${THEME.bg}cc`, borderBottom: `1px solid ${THEME.border}` }}
+        className=""
+        
       >
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="pb-6">
           <div className="flex items-center justify-between">
             <div>
               <h1
@@ -362,7 +376,7 @@ export default function AuditLogPage() {
       </header>
 
       {/* Content */}
-      <main className="max-w-7xl mx-auto px-6 py-6">
+      <main className="">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin" style={{ color: THEME.accent }} />
@@ -406,180 +420,67 @@ export default function AuditLogPage() {
           </div>
         ) : (
           <>
-            <div
-              className="rounded-xl overflow-hidden"
-              style={{ background: THEME.panel, border: `1px solid ${THEME.border}` }}
-            >
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ background: THEME.bg, borderBottom: `1px solid ${THEME.border}` }}>
-                    <th
-                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider w-8"
-                      style={{ color: THEME.text.secondary }}
-                    />
-                    <th
-                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                      style={{ color: THEME.text.secondary }}
-                    >
-                      Timestamp
-                    </th>
-                    <th
-                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                      style={{ color: THEME.text.secondary }}
-                    >
-                      User
-                    </th>
-                    <th
-                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                      style={{ color: THEME.text.secondary }}
-                    >
-                      Action
-                    </th>
-                    <th
-                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                      style={{ color: THEME.text.secondary }}
-                    >
-                      Resource
-                    </th>
-                    <th
-                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                      style={{ color: THEME.text.secondary }}
-                    >
-                      Details
-                    </th>
-                    <th
-                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                      style={{ color: THEME.text.secondary }}
-                    >
-                      IP
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {logs.map((log) => {
-                    const isOpen = !!expanded[log.id];
-                    const details = log.newValue ?? log.oldValue ?? null;
-                    const hasDetails =
-                      details !== null && details !== undefined && details !== '';
-                    return (
-                      <React.Fragment key={log.id}>
-                        <tr
-                          className="transition-colors"
-                          style={{ borderTop: `1px solid ${THEME.borderLight}` }}
-                        >
-                          <td className="px-4 py-3 align-top">
-                            {hasDetails ? (
-                              <button
-                                onClick={() =>
-                                  setExpanded((prev) => ({
-                                    ...prev,
-                                    [log.id]: !prev[log.id],
-                                  }))
-                                }
-                                className="p-1 rounded transition-colors"
-                                style={{ color: THEME.text.secondary }}
-                                title={isOpen ? 'Collapse' : 'Expand'}
-                              >
-                                {isOpen ? (
-                                  <ChevronDown className="w-4 h-4" />
-                                ) : (
-                                  <ChevronRight className="w-4 h-4" />
-                                )}
-                              </button>
-                            ) : null}
-                          </td>
-                          <td
-                            className="px-4 py-3 align-top whitespace-nowrap font-mono text-xs"
-                            style={{ color: THEME.text.primary }}
-                          >
-                            {formatTimestamp(log.createdAt)}
-                          </td>
-                          <td className="px-4 py-3 align-top" style={{ color: THEME.text.primary }}>
-                            {log.user ? (
-                              <div>
-                                <div style={{ color: THEME.text.primary }}>
-                                  {log.user.email}
-                                </div>
-                                {log.user.name && (
-                                  <div
-                                    className="text-xs mt-0.5"
-                                    style={{ color: THEME.text.muted }}
-                                  >
-                                    {log.user.name}
+            <DataTable rows={logs.map((l) => ({ id: l.id }))} headers={AL_HEADERS} isSortable>
+              {({ rows: dtRows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps, getExpandHeaderProps, getExpandedRowProps }) => {
+                const lById = Object.fromEntries(logs.map((l) => [l.id, l]));
+                return (
+                  <TableContainer {...getTableContainerProps()}>
+                    <Table {...getTableProps()} size="md" useZebraStyles={false}>
+                      <TableHead>
+                        <TableRow>
+                          <TableExpandHeader enableToggle {...getExpandHeaderProps()} />
+                          {headers.map((header) => {
+                            const { key, ...rest } = getHeaderProps({ header });
+                            return <TableHeader key={header.key} {...rest}>{header.header}</TableHeader>;
+                          })}
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {dtRows.map((row) => {
+                          const log = lById[row.id];
+                          const { key, ...rowProps } = getRowProps({ row });
+                          if (!log) return null;
+                          const details = log.newValue ?? log.oldValue ?? null;
+                          const hasDetails = details !== null && details !== undefined && details !== '';
+                          return (
+                            <React.Fragment key={row.id}>
+                              <TableExpandRow {...rowProps}>
+                                <TableCell style={{ fontFamily: 'var(--font-mono)', fontSize: 12, whiteSpace: 'nowrap', color: 'var(--cds-text-primary)' }}>{formatTimestamp(log.createdAt)}</TableCell>
+                                <TableCell>
+                                  {log.user ? (
+                                    <div>
+                                      <div style={{ color: 'var(--cds-text-primary)' }}>{log.user.email}</div>
+                                      {log.user.name && <div style={{ fontSize: 12, color: 'var(--cds-text-secondary)' }}>{log.user.name}</div>}
+                                    </div>
+                                  ) : <span style={{ color: 'var(--cds-text-secondary)' }}>system</span>}
+                                </TableCell>
+                                <TableCell>
+                                  <span className="inline-flex items-center" style={{ fontSize: 12, fontWeight: 500, padding: '2px 8px', color: actionColor(log.action), background: `${actionColor(log.action)}15` }}>{log.action}</span>
+                                </TableCell>
+                                <TableCell>
+                                  <div style={{ color: 'var(--cds-text-primary)' }}>{log.resource}</div>
+                                  {log.resourceId && <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--cds-text-secondary)' }}>{log.resourceId}</div>}
+                                </TableCell>
+                                <TableCell style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--cds-text-secondary)' }}>{hasDetails ? truncate(details, 80) : '—'}</TableCell>
+                                <TableCell style={{ fontFamily: 'var(--font-mono)', fontSize: 12, whiteSpace: 'nowrap', color: 'var(--cds-text-secondary)' }}>{log.ipAddress || '—'}</TableCell>
+                              </TableExpandRow>
+                              <TableExpandedRow colSpan={headers.length + 1} {...getExpandedRowProps({ row })}>
+                                {hasDetails ? (
+                                  <div>
+                                    <pre style={{ fontSize: 12, fontFamily: 'var(--font-mono)', padding: 12, background: 'var(--cds-layer-01)', overflow: 'auto', maxHeight: 360, margin: 0, color: 'var(--cds-text-primary)' }}>{JSON.stringify(details, null, 2)}</pre>
+                                    {log.userAgent && <div style={{ fontSize: 12, marginTop: 8, fontFamily: 'var(--font-mono)', color: 'var(--cds-text-secondary)' }}>User-Agent: {log.userAgent}</div>}
                                   </div>
-                                )}
-                              </div>
-                            ) : (
-                              <span style={{ color: THEME.text.muted }}>system</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 align-top whitespace-nowrap">
-                            <span
-                              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                              style={{
-                                background: `${actionColor(log.action)}15`,
-                                color: actionColor(log.action),
-                                border: `1px solid ${actionColor(log.action)}30`,
-                              }}
-                            >
-                              {log.action}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 align-top" style={{ color: THEME.text.primary }}>
-                            <div>{log.resource}</div>
-                            {log.resourceId && (
-                              <div
-                                className="text-xs mt-0.5 font-mono"
-                                style={{ color: THEME.text.muted }}
-                              >
-                                {log.resourceId}
-                              </div>
-                            )}
-                          </td>
-                          <td
-                            className="px-4 py-3 align-top font-mono text-xs"
-                            style={{ color: THEME.text.secondary }}
-                          >
-                            {hasDetails ? truncate(details, 80) : '—'}
-                          </td>
-                          <td
-                            className="px-4 py-3 align-top whitespace-nowrap font-mono text-xs"
-                            style={{ color: THEME.text.secondary }}
-                          >
-                            {log.ipAddress || '—'}
-                          </td>
-                        </tr>
-                        {isOpen && hasDetails && (
-                          <tr style={{ background: THEME.bg }}>
-                            <td colSpan={7} className="px-4 py-3">
-                              <pre
-                                className="text-xs font-mono p-3 rounded-lg overflow-auto"
-                                style={{
-                                  background: THEME.input,
-                                  border: `1px solid ${THEME.border}`,
-                                  color: THEME.text.primary,
-                                  maxHeight: 360,
-                                }}
-                              >
-                                {JSON.stringify(details, null, 2)}
-                              </pre>
-                              {log.userAgent && (
-                                <div
-                                  className="text-xs mt-2 font-mono"
-                                  style={{ color: THEME.text.muted }}
-                                >
-                                  User-Agent: {log.userAgent}
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                                ) : <span style={{ color: 'var(--cds-text-secondary)' }}>No details</span>}
+                              </TableExpandedRow>
+                            </React.Fragment>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                );
+              }}
+            </DataTable>
 
             {/* Pagination */}
             <div className="flex items-center justify-between mt-4">

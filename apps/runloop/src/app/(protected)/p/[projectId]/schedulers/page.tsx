@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
@@ -19,7 +20,22 @@ import {
   Check,
   X,
 } from 'lucide-react';
-import { HeroHeader, MetricChip, SharpButton } from '@/components/ControlChrome';
+import { HeroHeader, MetricChip } from '@/components/ControlChrome';
+import {
+  DataTable, Table, TableContainer, TableHead, TableRow, TableHeader, TableBody, TableCell,
+  TableToolbar, TableToolbarContent, TableToolbarSearch, ContentSwitcher, Switch, Button, Tag, Loading,
+} from '@carbon/react';
+import { Add, Play as PlayIcon } from '@carbon/icons-react';
+
+const SCHED_TAG: Record<string, 'green' | 'warm-gray' | 'red'> = { ACTIVE: 'green', PAUSED: 'warm-gray', ERROR: 'red' };
+const SCHED_HEADERS = [
+  { key: 'scheduler', header: 'Scheduler' },
+  { key: 'recent', header: 'Recent runs' },
+  { key: 'success', header: 'Success' },
+  { key: 'status', header: 'Status' },
+  { key: 'actions', header: '' },
+];
+const SCHED_COL_WIDTH: Record<string, string | undefined> = { scheduler: 'auto', recent: '140px', success: '140px', status: '120px', actions: '160px' };
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
 const THEME = {
@@ -32,7 +48,7 @@ const THEME = {
   accent: 'var(--t-accent)',
   accentLight: 'var(--t-accent-light)',
   input: 'var(--t-input)',
-  colors: { blue: '#3B82F6', emerald: '#10B981', purple: '#8B5CF6', amber: '#F59E0B', red: '#EF4444', cyan: '#06B6D4' }
+  colors: { blue: '#0f62fe', emerald: '#24a148', purple: '#8a3ffc', amber: '#eb6200', red: '#da1e28', cyan: '#1192e8' }
 };
 
 interface Scheduler {
@@ -147,17 +163,16 @@ function humanizeCron(expr: string): string {
 
 function RunTrail({ statuses }: { statuses: string[] }) {
   if (statuses.length === 0) {
-    return <span style={{ fontSize: 11, color: 'var(--t-text-muted)', fontStyle: 'italic' }}>no runs</span>;
+    return <span style={{ fontSize: 12, color: 'var(--t-text-secondary)' }}>No runs yet</span>;
   }
   const color = (s: string) => {
     switch (s) {
-      case 'SUCCESS': return '#10B981';
+      case 'SUCCESS': return 'var(--t-success)';
       case 'FAILED':
-      case 'TIMEOUT': return '#EF4444';
+      case 'TIMEOUT': return 'var(--t-error)';
       case 'RUNNING':
-      case 'PENDING': return '#3B82F6';
-      case 'CANCELLED': return '#6B7280';
-      default: return '#9CA3AF';
+      case 'PENDING': return 'var(--t-accent)';
+      default: return 'var(--t-border-strong)';
     }
   };
   return (
@@ -168,8 +183,6 @@ function RunTrail({ statuses }: { statuses: string[] }) {
           style={{
             width: 6, height: 16,
             background: color(s),
-            borderRadius: 2,
-            opacity: 1 - i * 0.08,
           }}
         />
       ))}
@@ -183,7 +196,7 @@ function Toast({ toast, onClose }: { toast: ToastState; onClose: () => void }) {
   if (!toast.visible) return null;
   const bgColor = toast.type === 'success' ? THEME.colors.emerald : THEME.colors.red;
   return (
-    <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999, background: bgColor, color: '#fff', padding: '12px 20px', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.3)', fontSize: 14, fontWeight: 500 }}>
+    <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999, background: bgColor, color: '#fff', padding: '12px 20px', borderRadius: 0, display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.3)', fontSize: 14, fontWeight: 500 }}>
       {toast.type === 'success' ? <Check size={16} /> : <AlertCircle size={16} />}
       {toast.message}
       <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', marginLeft: 8, padding: 0, display: 'flex' }}><X size={14} /></button>
@@ -216,8 +229,8 @@ export default function SchedulersPage() {
       // project (we bucket by schedulerId client-side). 200 rows is enough
       // for a 7-dot sparkline across dozens of schedulers.
       const [schedRes, execRes] = await Promise.all([
-        fetch(`/runloop/api/schedulers${params}`),
-        fetch(`/runloop/api/executions${params}${params ? '&' : '?'}limit=200`).catch(() => null),
+        fetch(`${BASE_PATH}/api/schedulers${params}`),
+        fetch(`${BASE_PATH}/api/executions${params}${params ? '&' : '?'}limit=200`).catch(() => null),
       ]);
 
       if (!schedRes.ok) throw new Error('Failed to fetch schedulers');
@@ -250,12 +263,15 @@ export default function SchedulersPage() {
   const handleToggleStatus = async (id: string, currentStatus: string) => {
     try {
       const newStatus = currentStatus === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
-      const res = await fetch(`/runloop/api/schedulers/${id}`, {
-        method: 'PATCH',
+      // The scheduler update route (web proxy and engine) is PUT-only;
+      // PATCH answered 405 and the toggle silently did nothing.
+      const res = await fetch(`${BASE_PATH}/api/schedulers/${id}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
       });
       if (res.ok) fetchSchedulers();
+      else showToast(newStatus === 'PAUSED' ? 'Could not pause scheduler' : 'Could not resume scheduler', 'error');
     } catch (err) {
       console.error('Failed to toggle scheduler status:', err);
     }
@@ -268,7 +284,7 @@ export default function SchedulersPage() {
 
   const handleTrigger = async (id: string) => {
     try {
-      const res = await fetch(`/runloop/api/schedulers/${id}/trigger`, { method: 'POST' });
+      const res = await fetch(`${BASE_PATH}/api/schedulers/${id}/trigger`, { method: 'POST' });
       if (res.ok) {
         showToast('RunLoop triggered successfully', 'success');
         setTimeout(fetchSchedulers, 1000);
@@ -291,6 +307,11 @@ export default function SchedulersPage() {
     return matchesSearch && matchesFilter;
   });
 
+  const byId: Record<string, Scheduler> = Object.fromEntries(filtered.map((s) => [s.id, s]));
+  const schedRows = filtered.map((s) => ({
+    id: s.id, scheduler: s.name, recent: '', success: String(s.successRate), status: s.status, actions: '',
+  }));
+
   if (isLoading) {
     return (
       <div style={{ fontFamily: FONT }} className="flex items-center justify-center h-64">
@@ -309,7 +330,7 @@ export default function SchedulersPage() {
           <AlertCircle className="w-10 h-10 mx-auto mb-3" style={{ color: THEME.colors.red }} />
           <h3 style={{ fontSize: 16, fontWeight: 600, color: THEME.text.primary, marginBottom: 4 }}>Failed to load schedulers</h3>
           <p style={{ fontSize: 13, color: THEME.text.muted, marginBottom: 12 }}>{error}</p>
-          <button onClick={fetchSchedulers} style={{ background: THEME.accent, color: '#fff', borderRadius: 8, padding: '6px 16px', fontSize: 13, fontWeight: 500 }}>
+          <button onClick={fetchSchedulers} style={{ background: THEME.accent, color: '#fff', borderRadius: 0, padding: '6px 16px', fontSize: 13, fontWeight: 500 }}>
             Try Again
           </button>
         </div>
@@ -317,7 +338,7 @@ export default function SchedulersPage() {
     );
   }
 
-  const MONO = "'IBM Plex Mono', ui-monospace, monospace";
+  const MONO = "'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif";
   const runningCount = schedulers.filter((s) => s.status === 'ACTIVE').length;
   const pausedCount = schedulers.filter((s) => s.status === 'PAUSED').length;
 
@@ -329,174 +350,93 @@ export default function SchedulersPage() {
         title="Schedulers"
         subtitle="Cron, webhook, and manual triggers — decide when and how each flow fires."
         metrics={<>
-          <MetricChip label="active" value={String(runningCount).padStart(2, '0')} accent="#10B981" />
-          <MetricChip label="paused" value={String(pausedCount).padStart(2, '0')} accent="#F59E0B" />
-          <MetricChip label="total"  value={String(runningCount + pausedCount).padStart(2, '0')} />
+          <MetricChip label="active" value={String(runningCount)} />
+          <MetricChip label="paused" value={String(pausedCount)} />
+          <MetricChip label="total"  value={String(runningCount + pausedCount)} />
         </>}
         right={
-          <SharpButton href={`/p/${projectId}/schedulers/new`}>
-            <Plus className="w-3.5 h-3.5" /> New Scheduler
-          </SharpButton>
+          <Button renderIcon={Add} size="md" onClick={() => { window.location.href = `${BASE_PATH}/p/${projectId}/schedulers/new`; }}>
+            New Scheduler
+          </Button>
         }
       />
 
-      {/* Filter tabs — mono pills */}
-      <div className="flex items-center gap-1.5 mb-3">
-        {tabs.map((tab) => {
-          const active = filterStatus === tab;
-          return (
-            <button
-              key={tab}
-              onClick={() => setFilterStatus(tab)}
-              style={{
-                background: active ? 'color-mix(in srgb, var(--t-accent) 12%, transparent)' : 'transparent',
-                color: active ? 'var(--t-accent)' : THEME.text.secondary,
-                border: `1px solid ${active ? 'color-mix(in srgb, var(--t-accent) 40%, transparent)' : THEME.border}`,
-                borderRadius: 2,
-                padding: '5px 12px',
-                fontFamily: MONO,
-                fontSize: 11,
-                fontWeight: 500,
-                letterSpacing: '0.06em',
-              }}
-            >
-              {tab.toUpperCase()}
-            </button>
-          );
-        })}
-        <div
-          className="ml-auto flex items-center gap-3"
-          style={{ fontFamily: MONO, fontSize: 10.5, color: THEME.text.muted, letterSpacing: '0.04em' }}
+      <div className="mb-4" style={{ maxWidth: 320 }}>
+        <ContentSwitcher
+          selectedIndex={['All', 'Active', 'Paused'].indexOf(filterStatus)}
+          onChange={({ name }) => setFilterStatus((name as 'All' | 'Active' | 'Paused') ?? 'All')}
         >
-          <span>
-            <span style={{ color: '#10B981' }}>●</span> {runningCount} ACTIVE
-          </span>
-          <span>
-            <span style={{ color: '#F59E0B' }}>●</span> {pausedCount} PAUSED
-          </span>
-        </div>
+          <Switch name="All" text="All" />
+          <Switch name="Active" text="Active" />
+          <Switch name="Paused" text="Paused" />
+        </ContentSwitcher>
       </div>
 
-      {/* Search */}
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: THEME.text.muted }} />
-        <input
-          type="text"
-          placeholder="search schedulers..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ background: THEME.panel, border: `1px solid ${THEME.border}`, color: THEME.text.primary, borderRadius: 2, height: 36, fontFamily: MONO, fontSize: 12 }}
-          className="w-full pl-9 pr-4 outline-none"
-        />
-      </div>
-
-      {/* List */}
-      {filtered.length === 0 ? (
-        <div className="text-center py-16">
-          <div style={{ width: 56, height: 56, background: THEME.panel, border: `1px solid ${THEME.border}`, borderRadius: 12 }} className="mx-auto mb-4 flex items-center justify-center">
-            <Clock className="w-7 h-7" style={{ color: THEME.text.muted }} />
-          </div>
-          <h3 style={{ fontSize: 15, fontWeight: 600, color: THEME.text.primary, marginBottom: 4 }}>No schedulers found</h3>
-          <p style={{ fontSize: 13, color: THEME.text.muted, marginBottom: 12 }}>Create a schedule to run your tasks automatically</p>
-          <Link href={`/p/${projectId}/schedulers/new`} style={{ background: THEME.accent, color: '#fff', borderRadius: 8, padding: '6px 16px', fontSize: 13, fontWeight: 500 }} className="inline-flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Create Schedule
-          </Link>
-        </div>
-      ) : (
-        <div style={{ background: THEME.panel, border: `1px solid ${THEME.border}`, borderRadius: 2, overflow: 'hidden' }}>
-          {/* Table header */}
-          <div
-            className="flex items-center gap-3 px-4 py-2"
-            style={{
-              fontFamily: MONO, fontSize: 10, letterSpacing: '0.14em',
-              color: THEME.text.muted,
-              borderBottom: `1px solid ${THEME.border}`,
-              background: 'color-mix(in srgb, var(--t-bg) 40%, transparent)',
-            }}
-          >
-            <span style={{ width: 22 }} aria-hidden />
-            <span style={{ width: 26 }} aria-hidden />
-            <span className="flex-1">SCHEDULER</span>
-            <span style={{ width: 90, textAlign: 'right' }}>HISTORY</span>
-            <span style={{ width: 70, textAlign: 'right' }}>SUCCESS</span>
-            <span style={{ width: 70, textAlign: 'right' }}>STATUS</span>
-            <span style={{ width: 100 }} aria-hidden />
-          </div>
-          {filtered.map((scheduler, i) => {
-            const st = statusStyle[scheduler.status] || statusStyle.PAUSED;
-            const idx = String(i + 1).padStart(2, '0');
-            return (
-              <div
-                key={scheduler.id}
-                className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-[var(--t-panel-hover)] group"
-                style={{ borderBottom: i < filtered.length - 1 ? `1px solid ${THEME.borderLight}` : 'none' }}
-              >
-                {/* Row index */}
-                <span style={{ fontFamily: MONO, fontSize: 10, color: THEME.text.muted, width: 22, textAlign: 'right' }}>{idx}</span>
-                {/* Icon */}
-                <div style={{ width: 26, height: 26, background: `${st.color}18`, border: `1px solid ${st.color}40`, borderRadius: 2 }} className="flex items-center justify-center flex-shrink-0">
-                  <Clock className="w-3 h-3" style={{ color: st.color }} />
-                </div>
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <p style={{ fontSize: 13, fontWeight: 500, color: THEME.text.primary, letterSpacing: '-0.005em' }} className="truncate">
-                    {scheduler.name}
-                  </p>
-                  <p style={{ fontFamily: MONO, fontSize: 10.5, color: THEME.text.muted }} className="truncate">
-                    <span title={scheduler.schedule}>{humanizeCron(scheduler.schedule)}</span>
-                    {scheduler.lastRun && <> · last {scheduler.lastRun}</>}
-                    {scheduler.nextRun && <> · next {scheduler.nextRun}</>}
-                  </p>
-                </div>
-                <span style={{ width: 90 }} className="flex justify-end">
-                  <RunTrail statuses={recentRuns[scheduler.id] || []} />
-                </span>
-                <span style={{ width: 70, textAlign: 'right', fontFamily: MONO, fontSize: 11, color: THEME.text.secondary }}>
-                  {scheduler.successRate}% / {scheduler.totalRuns}
-                </span>
-                <span
-                  className="flex items-center justify-end gap-1.5"
-                  style={{ width: 70, fontFamily: MONO, fontSize: 10.5, color: st.color, letterSpacing: '0.04em' }}
-                >
-                  <span
-                    style={{
-                      width: 6, height: 6, borderRadius: 999,
-                      background: st.color,
-                      boxShadow: `0 0 0 3px color-mix(in srgb, ${st.color} 15%, transparent)`,
-                    }}
-                  />
-                  {st.label.toUpperCase()}
-                </span>
-                {/* Actions — sharp buttons, revealed on hover for density */}
-                <div className="flex items-center gap-1" style={{ width: 100, justifyContent: 'flex-end' }}>
-                  <button
-                    onClick={(e) => { e.preventDefault(); handleToggleStatus(scheduler.id, scheduler.status); }}
-                    style={{ width: 24, height: 24, borderRadius: 2, background: 'transparent', border: `1px solid ${THEME.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    title={scheduler.status === 'ACTIVE' ? 'Pause' : 'Resume'}
-                    className="opacity-60 group-hover:opacity-100 transition-opacity"
-                  >
-                    {scheduler.status === 'ACTIVE' ? (
-                      <Pause className="w-3 h-3" style={{ color: THEME.text.secondary }} />
-                    ) : (
-                      <Play className="w-3 h-3" style={{ color: THEME.text.secondary }} />
-                    )}
-                  </button>
-                  <button
-                    onClick={(e) => { e.preventDefault(); handleTrigger(scheduler.id); }}
-                    style={{ width: 24, height: 24, borderRadius: 2, background: `${THEME.colors.blue}15`, border: `1px solid ${THEME.colors.blue}40`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    title="Run now"
-                  >
-                    <Play className="w-3 h-3" style={{ color: THEME.colors.blue, fill: THEME.colors.blue }} />
-                  </button>
-                  <Link href={`/p/${projectId}/schedulers/${scheduler.id}`} className="opacity-40 group-hover:opacity-100 transition-opacity">
-                    <ChevronRight className="w-4 h-4" style={{ color: THEME.text.muted }} />
-                  </Link>
-                </div>
+      <DataTable rows={schedRows} headers={SCHED_HEADERS} isSortable>
+        {({ rows: dtRows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => (
+          <TableContainer {...getTableContainerProps()}>
+            <TableToolbar>
+              <TableToolbarContent>
+                <TableToolbarSearch
+                  persistent
+                  placeholder="Search schedulers"
+                  onChange={(e) => setSearchQuery(e && 'target' in e ? (e.target as HTMLInputElement).value : '')}
+                />
+              </TableToolbarContent>
+            </TableToolbar>
+            <Table {...getTableProps()} size="md" useZebraStyles={false}>
+              <TableHead>
+                <TableRow>
+                  {headers.map((header) => {
+                    const { key, ...rest } = getHeaderProps({ header });
+                    return <TableHeader key={header.key} {...rest} style={{ width: SCHED_COL_WIDTH[header.key] }}>{header.header}</TableHeader>;
+                  })}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {dtRows.map((row) => {
+                  const s = byId[row.id];
+                  const { key, ...rowProps } = getRowProps({ row });
+                  if (!s) return null;
+                  return (
+                    <TableRow key={row.id} {...rowProps}>
+                      <TableCell>
+                        <Link href={`/p/${projectId}/schedulers/${s.id}`} className="rl-ellipsis hover:underline" style={{ display: 'block', fontWeight: 600, color: 'var(--cds-text-primary)' }} title={s.name}>
+                          {s.name}
+                        </Link>
+                        <div className="rl-ellipsis" style={{ fontSize: 12, color: 'var(--cds-text-secondary)', marginTop: 2 }}>
+                          <span title={s.schedule}>{humanizeCron(s.schedule)}</span>
+                          {s.lastRun && <> · last {s.lastRun}</>}
+                          {s.nextRun && <> · next {s.nextRun}</>}
+                        </div>
+                      </TableCell>
+                      <TableCell><RunTrail statuses={recentRuns[s.id] || []} /></TableCell>
+                      <TableCell style={{ fontVariantNumeric: 'tabular-nums' }}>
+                        {s.successRate}%<span style={{ color: 'var(--cds-text-secondary)', fontSize: 12 }}> of {s.totalRuns}</span>
+                      </TableCell>
+                      <TableCell><Tag type={SCHED_TAG[s.status] ?? 'warm-gray'} size="sm">{statusStyle[s.status]?.label ?? s.status}</Tag></TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button kind="ghost" size="sm" hasIconOnly renderIcon={PlayIcon} iconDescription="Run now" onClick={() => handleTrigger(s.id)} />
+                          <Button kind="ghost" size="sm" onClick={() => handleToggleStatus(s.id, s.status)}>
+                            {s.status === 'ACTIVE' ? 'Pause' : 'Resume'}
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+            {dtRows.length === 0 && (
+              <div className="text-center" style={{ padding: '48px 0' }}>
+                <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>No schedulers found</h3>
+                <p style={{ fontSize: 13, color: 'var(--cds-text-secondary)' }}>Create a schedule to run your tasks automatically</p>
               </div>
-            );
-          })}
-        </div>
-      )}
+            )}
+          </TableContainer>
+        )}
+      </DataTable>
     </div>
   );
 }

@@ -10,13 +10,13 @@ export function NodejsNodeProperties({ config, onChange }: BasePropertiesProps) 
     <BaseProperties config={config} onChange={onChange}>
       <Section title="Node.js Configuration">
         <div className="space-y-4">
-          <div className="flex gap-2 p-1 bg-[#0a0a0b] border border-[#232326] rounded-lg">
+          <div className="flex gap-2 p-1 bg-[var(--t-input)] border border-[var(--t-border-strong)] rounded-lg">
             <button
               onClick={() => onChange({ ...config, mode: 'code' })}
               className={`flex-1 px-3 py-1.5 rounded text-sm font-medium transition-all ${
                 !isFileMode
-                  ? 'bg-[#1a1a1d] text-white'
-                  : 'text-[#71717a] hover:text-white'
+                  ? 'bg-[var(--t-input)] text-[var(--t-text)]'
+                  : 'text-[var(--t-text-secondary)] hover:text-[var(--t-text)]'
               }`}
             >
               Inline Code
@@ -25,8 +25,8 @@ export function NodejsNodeProperties({ config, onChange }: BasePropertiesProps) 
               onClick={() => onChange({ ...config, mode: 'file' })}
               className={`flex-1 px-3 py-1.5 rounded text-sm font-medium transition-all ${
                 isFileMode
-                  ? 'bg-[#1a1a1d] text-white'
-                  : 'text-[#71717a] hover:text-white'
+                  ? 'bg-[var(--t-input)] text-[var(--t-text)]'
+                  : 'text-[var(--t-text-secondary)] hover:text-[var(--t-text)]'
               }`}
             >
               Script File
@@ -58,10 +58,10 @@ export function NodejsNodeProperties({ config, onChange }: BasePropertiesProps) 
             </>
           )}
 
-          <div className="p-3 bg-[#1a1a1d] border border-[#232326] rounded-lg">
-            <p className="text-xs text-[#71717a]">
-              Available variables: <code className="text-[#0ea5e9]">context</code> (object with input/output data),
-              <code className="text-[#0ea5e9]">console</code>, <code className="text-[#0ea5e9]">process.env</code>
+          <div className="p-3 bg-[var(--t-input)] border border-[var(--t-border-strong)] rounded-lg">
+            <p className="text-xs text-[var(--t-text-secondary)]">
+              Available variables: <code className="text-[var(--t-accent)]">context</code> (object with input/output data),
+              <code className="text-[var(--t-accent)]">console</code>, <code className="text-[var(--t-accent)]">process.env</code>
             </p>
           </div>
         </div>
@@ -74,7 +74,7 @@ export function NodejsNodeProperties({ config, onChange }: BasePropertiesProps) 
           onChange={(v) => onChange({ ...config, packageJson: v })}
           placeholder="{{workspace}}/package.json"
         />
-        <p className="text-xs text-[#71717a] mt-1">
+        <p className="text-xs text-[var(--t-text-secondary)] mt-1">
           npm install will run if package.json exists
         </p>
       </Section>

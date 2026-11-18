@@ -1,0 +1,25 @@
+// Carbon Design System component styles for @carbon/react.
+//
+// We disable Carbon's global resets/typography/font-face so they don't fight
+// Tailwind's preflight or the app's own base styles — only component styles
+// and the design tokens are emitted. IBM Plex is already loaded from Google
+// Fonts in globals.css.
+@use '@carbon/react' with (
+  $css--reset: false,
+  $css--font-face: false,
+  $css--body: false,
+  $css--default-type: false
+);
+@use '@carbon/styles/scss/theme';
+@use '@carbon/styles/scss/themes';
+
+// Carbon's --cds-* tokens follow the app's existing light/dark switch
+// (data-theme on <html>): g10 for light (the default), g100 for dark.
+:root,
+:root[data-theme='light'] {
+  @include theme.theme(themes.$g10);
+}
+
+:root[data-theme='dark'] {
+  @include theme.theme(themes.$g100);
+}

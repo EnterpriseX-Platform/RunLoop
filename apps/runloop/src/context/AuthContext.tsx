@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -40,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const res = await fetch('/runloop/api/auth/me');
+      const res = await fetch(`${BASE_PATH}/api/auth/me`);
       if (res.ok) {
         const data = await res.json();
         setUser(data.user);
@@ -59,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [checkAuth]);
 
   const login = async (email: string, password: string) => {
-    const res = await fetch('/runloop/api/auth/login', {
+    const res = await fetch(`${BASE_PATH}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -79,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    await fetch('/runloop/api/auth/logout', { method: 'POST' });
+    await fetch(`${BASE_PATH}/api/auth/logout`, { method: 'POST' });
     // Mark that the user explicitly left. Prevents dev auth-skip from
     // silently re-seeding the fake user when the /login route re-mounts.
     if (typeof window !== 'undefined') sessionStorage.setItem('rl-logged-out', '1');

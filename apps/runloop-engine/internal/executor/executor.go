@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/runloop/runloop-engine/internal/safehttp"
 	"io"
 	"net/http"
 	"net/smtp"
@@ -31,9 +32,7 @@ type JobExecutor struct {
 // NewJobExecutor creates a new job executor
 func NewJobExecutor() *JobExecutor {
 	return &JobExecutor{
-		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
-		},
+		httpClient: safehttp.NewClient(30*time.Second, true),
 	}
 }
 
@@ -76,62 +75,54 @@ func (e *JobExecutor) Execute(ctx context.Context, task *worker.Task) (*models.J
 // executeHTTP executes an HTTP request job
 func (e *JobExecutor) executeHTTP(ctx context.Context, task *worker.Task) (*models.JobResult, error) {
 	config := task.Config
-	
+
 	// Extract configuration
 	method, _ := config["method"].(string)
 	if method == "" {
 		method = "GET"
 	}
-	
+
 	url, _ := config["url"].(string)
 	if url == "" {
 		return nil, fmt.Errorf("URL is required for HTTP jobs")
 	}
-	
+
 	headers, _ := config["headers"].(map[string]interface{})
 	body, _ := config["body"].(string)
-	
+
 	// Get timeout from config (default 30 seconds)
 	timeout := 30 * time.Second
 	if timeoutVal, ok := config["timeout"].(float64); ok && timeoutVal > 0 {
 		timeout = time.Duration(timeoutVal) * time.Second
 	}
-	
+
 	// Check follow redirects
 	followRedirects := true
 	if followVal, ok := config["followRedirects"].(bool); ok {
 		followRedirects = followVal
 	}
-	
-	// Create HTTP client with timeout and redirect policy
-	client := &http.Client{
-		Timeout: timeout,
-	}
-	
-	if !followRedirects {
-		client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		}
-	}
-	
+
+	// Guarded client (blocks SSRF to metadata/link-local); honours redirect policy.
+	client := safehttp.NewClient(timeout, followRedirects)
+
 	// Create request
 	var bodyReader io.Reader
 	if body != "" {
 		bodyReader = strings.NewReader(body)
 	}
-	
+
 	req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create HTTP request: %w", err)
 	}
-	
+
 	// Add headers
 	for key, value := range headers {
 		if strValue, ok := value.(string); ok {
 			req.Header.Set(key, strValue)
 		}
 	}
-	
+
 	// Handle authentication
 	authType, _ := config["authType"].(string)
 	switch authType {
@@ -152,12 +143,12 @@ func (e *JobExecutor) executeHTTP(ctx context.Context, task *worker.Task) (*mode
 			}
 		}
 	}
-	
+
 	// Execute request
 	start := time.Now()
 	resp, err := client.Do(req)
 	duration := time.Since(start)
-	
+
 	if err != nil {
 		return &models.JobResult{
 			Success:      false,
@@ -166,7 +157,7 @@ func (e *JobExecutor) executeHTTP(ctx context.Context, task *worker.Task) (*mode
 		}, nil
 	}
 	defer resp.Body.Close()
-	
+
 	// Read response
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -176,13 +167,13 @@ func (e *JobExecutor) executeHTTP(ctx context.Context, task *worker.Task) (*mode
 			Logs:         fmt.Sprintf("Request: %s %s\nDuration: %v\nError: %v", method, url, duration, err),
 		}, nil
 	}
-	
+
 	// Parse response
 	var responseData interface{}
 	if err := json.Unmarshal(respBody, &responseData); err != nil {
 		responseData = string(respBody)
 	}
-	
+
 	// Check status code
 	success := resp.StatusCode >= 200 && resp.StatusCode < 300
 	expectedStatus, hasExpected := config["expectedStatus"].(float64)
@@ -269,7 +260,7 @@ func (e *JobExecutor) executeHTTP(ctx context.Context, task *worker.Task) (*mode
 			}
 		}
 	}
-	
+
 	// Build auth info for logs — never log credentials
 	authInfo := "Auth: None"
 	switch authType {
@@ -310,7 +301,7 @@ func (e *JobExecutor) executeHTTP(ctx context.Context, task *worker.Task) (*mode
 			method, url, timeout, authInfo, followRedirects, duration, resp.StatusCode, string(respBody),
 		),
 	}
-	
+
 	if !success {
 		if failureReason != "" {
 			result.ErrorMessage = strPtr(fmt.Sprintf("HTTP %d but %s; body=%s",
@@ -420,23 +411,23 @@ func looseEqual(a, b interface{}) bool {
 // executeDatabase executes a database query job
 func (e *JobExecutor) executeDatabase(ctx context.Context, task *worker.Task) (*models.JobResult, error) {
 	config := task.Config
-	
+
 	// Extract configuration
 	driver, _ := config["driver"].(string)
 	if driver == "" {
 		driver = "postgres"
 	}
-	
+
 	connectionString, _ := config["connectionString"].(string)
 	if connectionString == "" {
 		return nil, fmt.Errorf("connectionString is required for database jobs")
 	}
-	
+
 	query, _ := config["query"].(string)
 	if query == "" {
 		return nil, fmt.Errorf("query is required for database jobs")
 	}
-	
+
 	// Connect to database
 	db, err := sql.Open(driver, connectionString)
 	if err != nil {
@@ -447,11 +438,11 @@ func (e *JobExecutor) executeDatabase(ctx context.Context, task *worker.Task) (*
 		}, nil
 	}
 	defer db.Close()
-	
+
 	// Set connection limits
 	db.SetMaxOpenConns(1)
 	db.SetMaxIdleConns(1)
-	
+
 	// Test connection
 	if err := db.PingContext(ctx); err != nil {
 		return &models.JobResult{
@@ -460,17 +451,17 @@ func (e *JobExecutor) executeDatabase(ctx context.Context, task *worker.Task) (*
 			Logs:         fmt.Sprintf("Driver: %s\nError: %v", driver, err),
 		}, nil
 	}
-	
+
 	// Execute query
 	start := time.Now()
-	
+
 	// Check if it's a SELECT query
 	isSelect := strings.HasPrefix(strings.TrimSpace(strings.ToUpper(query)), "SELECT")
-	
+
 	if isSelect {
 		rows, err := db.QueryContext(ctx, query)
 		duration := time.Since(start)
-		
+
 		if err != nil {
 			return &models.JobResult{
 				Success:      false,
@@ -479,7 +470,7 @@ func (e *JobExecutor) executeDatabase(ctx context.Context, task *worker.Task) (*
 			}, nil
 		}
 		defer rows.Close()
-		
+
 		// Get column names
 		columns, err := rows.Columns()
 		if err != nil {
@@ -489,7 +480,7 @@ func (e *JobExecutor) executeDatabase(ctx context.Context, task *worker.Task) (*
 				Logs:         fmt.Sprintf("Query: %s\nDuration: %v\nError: %v", query, duration, err),
 			}, nil
 		}
-		
+
 		// Fetch results
 		var results []map[string]interface{}
 		for rows.Next() {
@@ -498,7 +489,7 @@ func (e *JobExecutor) executeDatabase(ctx context.Context, task *worker.Task) (*
 			for i := range values {
 				valuePtrs[i] = &values[i]
 			}
-			
+
 			if err := rows.Scan(valuePtrs...); err != nil {
 				return &models.JobResult{
 					Success:      false,
@@ -506,14 +497,14 @@ func (e *JobExecutor) executeDatabase(ctx context.Context, task *worker.Task) (*
 					Logs:         fmt.Sprintf("Query: %s\nDuration: %v\nError: %v", query, duration, err),
 				}, nil
 			}
-			
+
 			row := make(map[string]interface{})
 			for i, col := range columns {
 				row[col] = values[i]
 			}
 			results = append(results, row)
 		}
-		
+
 		return &models.JobResult{
 			Success: true,
 			Output: models.JSONMap{
@@ -525,11 +516,11 @@ func (e *JobExecutor) executeDatabase(ctx context.Context, task *worker.Task) (*
 			Logs: fmt.Sprintf("Query: %s\nDuration: %v\nRows returned: %d", query, duration, len(results)),
 		}, nil
 	}
-	
+
 	// Execute non-SELECT query
 	result, err := db.ExecContext(ctx, query)
 	duration := time.Since(start)
-	
+
 	if err != nil {
 		return &models.JobResult{
 			Success:      false,
@@ -537,9 +528,9 @@ func (e *JobExecutor) executeDatabase(ctx context.Context, task *worker.Task) (*
 			Logs:         fmt.Sprintf("Query: %s\nDuration: %v\nError: %v", query, duration, err),
 		}, nil
 	}
-	
+
 	rowsAffected, _ := result.RowsAffected()
-	
+
 	return &models.JobResult{
 		Success: true,
 		Output: models.JSONMap{
@@ -551,8 +542,10 @@ func (e *JobExecutor) executeDatabase(ctx context.Context, task *worker.Task) (*
 }
 
 // executeShell executes a shell command job. Honours the UI's two modes:
-//   mode="command" (default) — single line in `command`
-//   mode="script"            — multi-line in `script`
+//
+//	mode="command" (default) — single line in `command`
+//	mode="script"            — multi-line in `script`
+//
 // And the UI knobs failOnError + captureStderr.
 func (e *JobExecutor) executeShell(ctx context.Context, task *worker.Task) (*models.JobResult, error) {
 	config := task.Config
@@ -592,7 +585,7 @@ func (e *JobExecutor) executeShell(ctx context.Context, task *worker.Task) (*mod
 	if workingDir != "" {
 		cmd.Dir = workingDir
 	}
-	
+
 	// Set environment variables
 	if env != nil {
 		for key, value := range env {
@@ -601,7 +594,7 @@ func (e *JobExecutor) executeShell(ctx context.Context, task *worker.Task) (*mod
 			}
 		}
 	}
-	
+
 	// Capture output
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -676,25 +669,25 @@ func (e *JobExecutor) executePython(ctx context.Context, task *worker.Task) (*mo
 		pythonPath = "python3"
 	}
 	failOnStderr := boolFromConfig(config, "failOnStderr", false) || boolFromConfig(config, "fail_on_stderr", false)
-	
+
 	// Create command
 	cmd := exec.CommandContext(ctx, pythonPath, "-c", script)
-	
+
 	// Capture output
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	
+
 	// Execute
 	start := time.Now()
 	err := cmd.Run()
 	duration := time.Since(start)
-	
+
 	logs := fmt.Sprintf(
 		"Python Script:\n%s\n\nDuration: %v\nExit Code: %d\n\nSTDOUT:\n%s\n\nSTDERR:\n%s",
 		script, duration, cmd.ProcessState.ExitCode(), stdout.String(), stderr.String(),
 	)
-	
+
 	if err != nil {
 		return &models.JobResult{
 			Success:      false,
@@ -767,25 +760,25 @@ func (e *JobExecutor) executeNodeJS(ctx context.Context, task *worker.Task) (*mo
 	if nodePath == "" {
 		nodePath = "node"
 	}
-	
+
 	// Create command
 	cmd := exec.CommandContext(ctx, nodePath, "-e", script)
-	
+
 	// Capture output
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	
+
 	// Execute
 	start := time.Now()
 	err := cmd.Run()
 	duration := time.Since(start)
-	
+
 	logs := fmt.Sprintf(
 		"Node.js Script:\n%s\n\nDuration: %v\nExit Code: %d\n\nSTDOUT:\n%s\n\nSTDERR:\n%s",
 		script, duration, cmd.ProcessState.ExitCode(), stdout.String(), stderr.String(),
 	)
-	
+
 	if err != nil {
 		return &models.JobResult{
 			Success:      false,
@@ -807,7 +800,7 @@ func (e *JobExecutor) executeNodeJS(ctx context.Context, task *worker.Task) (*mo
 	if err := json.Unmarshal(stdout.Bytes(), &output); err != nil {
 		output = stdout.String()
 	}
-	
+
 	return &models.JobResult{
 		Success: true,
 		Output: models.JSONMap{
@@ -822,44 +815,44 @@ func (e *JobExecutor) executeNodeJS(ctx context.Context, task *worker.Task) (*mo
 // executeSlack executes a Slack notification job
 func (e *JobExecutor) executeSlack(ctx context.Context, task *worker.Task) (*models.JobResult, error) {
 	config := task.Config
-	
+
 	webhookURL, _ := config["webhook_url"].(string)
 	if webhookURL == "" {
 		return nil, fmt.Errorf("webhook_url is required for Slack jobs")
 	}
-	
+
 	channel, _ := config["channel"].(string)
 	text, _ := config["text"].(string)
 	action, _ := config["action"].(string)
 	if action == "" {
 		action = "send_message"
 	}
-	
+
 	// Build Slack payload
 	payload := map[string]interface{}{
 		"text": text,
 	}
-	
+
 	if channel != "" {
 		payload["channel"] = channel
 	}
-	
+
 	jsonBody, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal payload: %w", err)
 	}
-	
+
 	req, err := http.NewRequestWithContext(ctx, "POST", webhookURL, bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	
+
 	req.Header.Set("Content-Type", "application/json")
-	
+
 	start := time.Now()
 	resp, err := e.httpClient.Do(req)
 	duration := time.Since(start)
-	
+
 	if err != nil {
 		return &models.JobResult{
 			Success:      false,
@@ -868,7 +861,7 @@ func (e *JobExecutor) executeSlack(ctx context.Context, task *worker.Task) (*mod
 		}, nil
 	}
 	defer resp.Body.Close()
-	
+
 	return &models.JobResult{
 		Success: resp.StatusCode == 200,
 		Output: models.JSONMap{

@@ -3,11 +3,13 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/jackc/pgx/v5"
 	"github.com/robfig/cron/v3"
 	"github.com/runloop/runloop-engine/internal/db"
 	"github.com/runloop/runloop-engine/internal/executor"
@@ -643,7 +645,7 @@ func (h *Handler) GetExecution(c *fiber.Ctx) error {
 	query := `
 		SELECT e.id, e.scheduler_id, e.project_id, e.trigger_type, e.triggered_by, e.status,
 		       e.started_at, e.completed_at, e.duration_ms, e.input, e.output,
-		       e.error_message, e.logs, e.retry_attempt, e.worker_id, e.ip_address,
+		       e.error_message, COALESCE(e.logs, ''), e.retry_attempt, e.worker_id, e.ip_address,
 		       e.replay_count, e.replayed_from,
 		       s.name as scheduler_name
 		FROM executions e
@@ -667,9 +669,15 @@ func (h *Handler) GetExecution(c *fiber.Ctx) error {
 		&e.SchedulerName,
 	)
 
-	if err != nil {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Execution not found",
+		})
+	}
+	if err != nil {
+		log.Error().Err(err).Str("execution_id", id).Msg("Failed to load execution")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to load execution",
 		})
 	}
 

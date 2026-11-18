@@ -1,12 +1,13 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 import { BaseProperties, Section, TextField, NumberField } from './BaseProperties';
 import { BasePropertiesProps } from './BaseProperties';
 
 export function WaitWebhookNodeProperties({ config, onChange }: BasePropertiesProps) {
   const baseHint =
     typeof window !== 'undefined'
-      ? `${window.location.origin}/runloop/api/webhooks/wait/<correlationId>`
-      : '/runloop/api/webhooks/wait/<correlationId>';
+      ? `${window.location.origin}${BASE_PATH}/api/webhooks/wait/<correlationId>`
+      : `${BASE_PATH}/api/webhooks/wait/<correlationId>`;
   return (
     <BaseProperties config={config} onChange={onChange}>
       <Section title="Wait for Webhook">
@@ -32,7 +33,9 @@ export function WaitWebhookNodeProperties({ config, onChange }: BasePropertiesPr
           </code>
           <p className="text-xs mt-2" style={{ color: 'var(--t-text-muted)' }}>
             The request body lands in the node&apos;s output. Make the correlation id unguessable —
-            anyone with the URL can resume the flow.
+            anyone with the URL can resume the flow. When <code>WEBHOOK_WAIT_SECRET</code> is set on
+            the engine, callbacks must carry a signed <code>?token=</code> (exposed as the node&apos;s{' '}
+            <code>callbackToken</code> output) or they are rejected with 401.
           </p>
         </div>
       </Section>

@@ -1,3 +1,4 @@
+import { ENGINE_BASE_PATH } from '@/lib/engine-path';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Proxy to Go Engine
@@ -6,7 +7,7 @@ export async function GET(request: NextRequest) {
     const engineUrl = process.env.ENGINE_URL || 'http://localhost:8080';
     const url = new URL(request.url);
 
-    const res = await fetch(`${engineUrl}/rl/api/tasks${url.search}`, {
+    const res = await fetch(`${engineUrl}${ENGINE_BASE_PATH}/api/tasks${url.search}`, {
       headers: {
         'Authorization': request.headers.get('authorization') || '',
         'Content-Type': 'application/json',
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
     const engineUrl = process.env.ENGINE_URL || 'http://localhost:8080';
     const body = await request.json();
 
-    const res = await fetch(`${engineUrl}/rl/api/tasks`, {
+    const res = await fetch(`${engineUrl}${ENGINE_BASE_PATH}/api/tasks`, {
       method: 'POST',
       headers: {
         'Authorization': request.headers.get('authorization') || '',

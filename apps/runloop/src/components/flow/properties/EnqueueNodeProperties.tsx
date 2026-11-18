@@ -1,4 +1,5 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { BaseProperties, Section, TextArea, TextField } from './BaseProperties';
@@ -19,7 +20,7 @@ export function EnqueueNodeProperties({ config, onChange }: BasePropertiesProps)
 
   useEffect(() => {
     if (!projectId) return;
-    fetch(`/runloop/api/queues?projectId=${projectId}`)
+    fetch(`${BASE_PATH}/api/queues?projectId=${projectId}`)
       .then((r) => r.json())
       .then((d) => setQueues(d.data || []))
       .catch(() => {});

@@ -6,7 +6,7 @@ import { logAuditFromRequest } from '@/lib/audit';
 // GET /api/webhooks/[id] - Get webhook details (including secret)
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await authenticateRequest(request);
@@ -14,7 +14,7 @@ export async function GET(
       return Response.json({ error: auth.error }, { status: 401 });
     }
 
-    const webhook = await prisma.webhook.findUnique({ where: { id: params.id } });
+    const webhook = await prisma.webhook.findUnique({ where: { id: (await params).id } });
     if (!webhook) {
       return Response.json({ error: 'Webhook not found' }, { status: 404 });
     }
@@ -37,7 +37,7 @@ export async function GET(
 // PUT /api/webhooks/[id] - Update webhook status or config
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await authenticateRequest(request);
@@ -45,7 +45,7 @@ export async function PUT(
       return Response.json({ error: auth.error }, { status: 401 });
     }
 
-    const existing = await prisma.webhook.findUnique({ where: { id: params.id } });
+    const existing = await prisma.webhook.findUnique({ where: { id: (await params).id } });
     if (!existing) {
       return Response.json({ error: 'Webhook not found' }, { status: 404 });
     }
@@ -65,7 +65,7 @@ export async function PUT(
     const { name, description, status, customPayload } = body;
 
     const updated = await prisma.webhook.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: {
         ...(name !== undefined ? { name } : {}),
         ...(description !== undefined ? { description } : {}),
@@ -100,7 +100,7 @@ export async function PUT(
 // DELETE /api/webhooks/[id] - Delete webhook
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await authenticateRequest(request);
@@ -108,7 +108,7 @@ export async function DELETE(
       return Response.json({ error: auth.error }, { status: 401 });
     }
 
-    const existing = await prisma.webhook.findUnique({ where: { id: params.id } });
+    const existing = await prisma.webhook.findUnique({ where: { id: (await params).id } });
     if (!existing) {
       return Response.json({ error: 'Webhook not found' }, { status: 404 });
     }
@@ -124,7 +124,7 @@ export async function DELETE(
       return Response.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    await prisma.webhook.delete({ where: { id: params.id } });
+    await prisma.webhook.delete({ where: { id: (await params).id } });
 
     // Audit log
     await logAuditFromRequest(request, auth.userId, {

@@ -67,9 +67,9 @@ export function DatabaseNodeProperties({ config, onChange }: BasePropertiesProps
               type="checkbox"
               checked={config.useConnectionString || false}
               onChange={(e) => onChange({ ...config, useConnectionString: e.target.checked })}
-              className="rounded border-[#232326] bg-[#0a0a0b] text-[#0ea5e9] focus:ring-[#0ea5e9]"
+              className="rounded border-[var(--t-border-strong)] bg-[var(--t-input)] text-[var(--t-accent)] focus:ring-[var(--t-accent)]"
             />
-            <span className="text-sm text-[#a1a1aa]">Use Connection String</span>
+            <span className="text-sm text-[var(--t-text-secondary)]">Use Connection String</span>
           </label>
 
           {config.useConnectionString && (

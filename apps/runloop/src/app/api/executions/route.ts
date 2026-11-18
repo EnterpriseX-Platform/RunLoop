@@ -1,3 +1,4 @@
+import { ENGINE_BASE_PATH } from '@/lib/engine-path';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Proxy to Go Engine
@@ -5,7 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     const engineUrl = process.env.ENGINE_URL || 'http://localhost:8080';
     const url = new URL(request.url);
-    const targetUrl = `${engineUrl}/rl/api/executions${url.search}`;
+    const targetUrl = `${engineUrl}${ENGINE_BASE_PATH}/api/executions${url.search}`;
 
     const res = await fetch(targetUrl, {
       headers: {

@@ -1,85 +1,84 @@
 'use client';
+import { BASE_PATH } from '@/lib/base-path';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useEffect, useState, useCallback, useRef, useMemo, Fragment } from 'react';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useProject } from '@/context/ProjectContext';
 import {
-  PlayCircle,
-  CheckCircle2,
-  XCircle,
-  Loader2,
-  Clock,
-  Search,
-  ChevronDown,
-  ChevronRight,
-  AlertCircle,
-  Activity,
-  TrendingUp,
-  Timer,
-  RefreshCw,
-  Zap,
+  DataTable,
+  Table,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableToolbar,
+  TableToolbarContent,
+  TableToolbarSearch,
+  TableBatchActions,
+  TableBatchAction,
+  TableSelectAll,
+  TableSelectRow,
+  TableExpandHeader,
+  TableExpandRow,
+  TableExpandedRow,
+  ContentSwitcher,
+  Switch,
+  Button,
+  Tag,
+  Loading,
+} from '@carbon/react';
+import {
+  Renew,
+  TrashCan,
+  CheckmarkFilled,
+  MisuseOutline,
   Calendar,
-  Terminal,
+  Terminal as TerminalIcon,
   Webhook,
-  MousePointerClick,
-} from 'lucide-react';
+  TouchInteraction,
+  Launch,
+} from '@carbon/icons-react';
 import type { Execution } from '@/types';
-import { HeroHeader, MetricChip } from '@/components/ControlChrome';
 
 const FONT = "'IBM Plex Sans Thai', 'IBM Plex Sans', sans-serif";
-const THEME = {
-  bg: 'var(--t-bg)',
-  panel: 'var(--t-panel)',
-  panelHover: 'var(--t-panel-hover)',
-  border: 'var(--t-border)',
-  borderLight: 'var(--t-border-light)',
-  text: { primary: 'var(--t-text)', secondary: 'var(--t-text-secondary)', muted: 'var(--t-text-muted)' },
-  accent: 'var(--t-accent)',
-  accentLight: 'var(--t-accent-light)',
-  input: 'var(--t-input)',
-  colors: { blue: '#3B82F6', emerald: '#10B981', purple: '#8B5CF6', amber: '#F59E0B', red: '#EF4444', cyan: '#06B6D4' },
+const MONO = "'IBM Plex Mono', monospace";
+import { HeroHeader, MetricChip } from '@/components/ControlChrome';
+
+type TagType = 'green' | 'red' | 'blue' | 'gray' | 'warm-gray' | 'magenta' | 'purple' | 'cyan' | 'teal' | 'cool-gray';
+
+const statusTag: Record<string, { type: TagType; label: string }> = {
+  SUCCESS: { type: 'green', label: 'Success' },
+  FAILED: { type: 'red', label: 'Failed' },
+  RUNNING: { type: 'blue', label: 'Running' },
+  PENDING: { type: 'warm-gray', label: 'Pending' },
+  CANCELLED: { type: 'gray', label: 'Cancelled' },
+  TIMEOUT: { type: 'red', label: 'Timeout' },
 };
 
-const statusConfig: Record<string, { bg: string; color: string; label: string }> = {
-  SUCCESS: { bg: `${THEME.colors.emerald}18`, color: THEME.colors.emerald, label: 'Success' },
-  FAILED: { bg: `${THEME.colors.red}18`, color: THEME.colors.red, label: 'Failed' },
-  RUNNING: { bg: `${THEME.colors.blue}18`, color: THEME.colors.blue, label: 'Running' },
-  PENDING: { bg: `${THEME.colors.amber}18`, color: THEME.colors.amber, label: 'Pending' },
-  CANCELLED: { bg: '#64748B18', color: '#64748B', label: 'Cancelled' },
-  TIMEOUT: { bg: `${THEME.colors.red}18`, color: THEME.colors.red, label: 'Timeout' },
-};
-
-const triggerConfig: Record<string, { color: string; bg: string; icon: typeof Zap }> = {
-  SCHEDULE: { color: THEME.colors.purple, bg: `${THEME.colors.purple}18`, icon: Calendar },
-  MANUAL: { color: THEME.colors.cyan, bg: `${THEME.colors.cyan}18`, icon: MousePointerClick },
-  WEBHOOK: { color: THEME.colors.amber, bg: `${THEME.colors.amber}18`, icon: Webhook },
-  API: { color: THEME.colors.blue, bg: `${THEME.colors.blue}18`, icon: Terminal },
+const triggerIcon: Record<string, typeof Calendar> = {
+  SCHEDULE: Calendar,
+  MANUAL: TouchInteraction,
+  WEBHOOK: Webhook,
+  API: TerminalIcon,
 };
 
 function relativeTime(dateStr: string): string {
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const diffMs = now - then;
-
+  const diffMs = Date.now() - new Date(dateStr).getTime();
   if (diffMs < 0) return 'just now';
-
-  const seconds = Math.floor(diffMs / 1000);
-  if (seconds < 5) return 'just now';
-  if (seconds < 60) return `${seconds}s ago`;
-
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-
-  const weeks = Math.floor(days / 7);
-  if (weeks < 4) return `${weeks}w ago`;
-
+  const s = Math.floor(diffMs / 1000);
+  if (s < 5) return 'just now';
+  if (s < 60) return `${s}s ago`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}d ago`;
+  const w = Math.floor(d / 7);
+  if (w < 4) return `${w}w ago`;
   return new Date(dateStr).toLocaleDateString();
 }
 
@@ -92,34 +91,42 @@ function formatDuration(ms: number | undefined): string {
   return `${mins}m ${secs}s`;
 }
 
-// Queue-triggered executions use a synthetic schedulerId "queue:<name>".
-// Extract the display name so the list reads "Queue: email-outbox" instead
-// of the cryptic "Unknown RunLoop" fallback.
 function queueNameFromSchedulerId(id?: string): string | null {
   if (!id) return null;
   if (id.startsWith('queue:')) return `Queue: ${id.slice(6)}`;
   return null;
 }
 
-// Best-effort label for executions that don't have a saved RunLoop —
-// dry-runs from the editor, webhook fires, manual API triggers, etc.
 function syntheticLabel(e: { schedulerId?: string; triggerType?: string }): string | null {
   if (e.schedulerId?.startsWith('dryrun_')) return 'Dry-run';
   if (e.schedulerId?.startsWith('webhook_')) return 'Webhook';
   switch (e.triggerType) {
     case 'WEBHOOK': return 'Webhook trigger';
-    case 'API':     return 'API trigger';
-    case 'MANUAL':  return 'Manual run';
-    case 'QUEUE':   return 'Queue trigger';
-    default:        return null;
+    case 'API': return 'API trigger';
+    case 'MANUAL': return 'Manual run';
+    case 'QUEUE': return 'Queue trigger';
+    default: return null;
   }
 }
 
-// "Needs Review" reads from the dead_letter_queue table, not from
-// executions: items end up there only after exhausting retries / hitting
-// the circuit breaker. Operators can replay (re-enqueue or re-trigger
-// the source scheduler) or discard.
+function runName(e: Execution): string {
+  return (
+    queueNameFromSchedulerId(e.schedulerId) ||
+    e.schedulerName ||
+    e.runloop?.name ||
+    syntheticLabel(e) ||
+    'Untitled run'
+  );
+}
+
 const STATUS_TABS = ['All', 'Running', 'Success', 'Failed', 'Pending', 'Needs Review'] as const;
+
+const HEADERS = [
+  { key: 'run', header: 'Run' },
+  { key: 'trigger', header: 'Trigger' },
+  { key: 'status', header: 'Status' },
+];
+const COL_WIDTH: Record<string, string | undefined> = { run: 'auto', trigger: '160px', status: '140px' };
 
 interface DLQEntry {
   id: string;
@@ -128,168 +135,35 @@ interface DLQEntry {
   project_id: string;
   reason: string;
   error_message: string;
-  error_details?: string;
   retry_count: number;
-  original_input?: unknown;
   node_id?: string;
   node_type?: string;
   status: 'PENDING' | 'REVIEWING' | 'RESOLVED' | 'DISCARDED' | 'REPLAYED';
-  replayed: boolean;
-  new_execution_id?: string;
   created_at: string;
 }
 
 export default function ExecutionsPage() {
   const params = useParams();
   const projectId = params.projectId as string;
+  const router = useRouter();
   const { selectedProject } = useProject();
   const searchParams = useSearchParams();
-  // Map the `?filter=needs_review` query param (set by the DLQ redirect) to
-  // the corresponding tab so links from old DLQ bookmarks still work.
   const initialFilter = searchParams?.get('filter') === 'needs_review' ? 'Needs Review' : 'All';
   const [executions, setExecutions] = useState<Execution[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>(initialFilter);
   const [autoRefresh, setAutoRefresh] = useState(false);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // DLQ state — populated when the "Needs Review" tab is active.
   const [dlqEntries, setDlqEntries] = useState<DLQEntry[]>([]);
   const [dlqLoading, setDlqLoading] = useState(false);
   const [dlqActingOn, setDlqActingOn] = useState<string | null>(null);
 
-  const fetchDLQ = useCallback(async () => {
-    if (!projectId) return;
-    setDlqLoading(true);
-    try {
-      // Show every "open" entry. The leader-only escalator flips PENDING
-      // → REVIEWING after 30 min so we'd miss the bulk of the backlog if
-      // we filtered to PENDING only. Anything RESOLVED / DISCARDED /
-      // REPLAYED is considered handled and stays out of view.
-      const [pending, reviewing] = await Promise.all([
-        fetch(`/runloop/api/dlq?projectId=${projectId}&status=PENDING&limit=200`),
-        fetch(`/runloop/api/dlq?projectId=${projectId}&status=REVIEWING&limit=200`),
-      ]);
-      const combined: DLQEntry[] = [];
-      if (pending.ok) {
-        const d = await pending.json();
-        combined.push(...((d.data as DLQEntry[]) || []));
-      }
-      if (reviewing.ok) {
-        const d = await reviewing.json();
-        combined.push(...((d.data as DLQEntry[]) || []));
-      }
-      // Newest first
-      combined.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
-      setDlqEntries(combined);
-    } finally {
-      setDlqLoading(false);
-    }
-  }, [projectId]);
-
-  const replayDLQ = async (id: string) => {
-    setDlqActingOn(id);
-    try {
-      const res = await fetch(`/runloop/api/dlq/${id}/replay`, { method: 'POST' });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        alert(`Replay failed: ${err.error || res.statusText}`);
-        return;
-      }
-      await fetchDLQ();
-    } finally {
-      setDlqActingOn(null);
-    }
-  };
-
-  const discardDLQ = async (id: string) => {
-    if (!confirm('Discard this entry? It will be removed from Needs Review.')) return;
-    setDlqActingOn(id);
-    try {
-      const res = await fetch(`/runloop/api/dlq/${id}/discard`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: 'discarded by operator' }),
-      });
-      if (!res.ok) {
-        alert('Discard failed');
-        return;
-      }
-      await fetchDLQ();
-    } finally {
-      setDlqActingOn(null);
-    }
-  };
-
-  // Bulk actions
-  const toggleSelection = (id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-  const selectAllFiltered = (ids: string[]) => {
-    setSelectedIds(new Set(ids));
-  };
-  const clearSelection = () => setSelectedIds(new Set());
-
-  const handleBulkDelete = async () => {
-    const ids = Array.from(selectedIds);
-    if (ids.length === 0) return;
-    if (!confirm(`Delete ${ids.length} execution(s)? This cannot be undone.`)) return;
-    const res = await fetch('/runloop/api/executions/bulk-delete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids }),
-    });
-    if (res.ok) {
-      clearSelection();
-      // Refetch
-      const pid = projectId;
-      const qs = pid ? `?projectId=${pid}` : '';
-      const refreshRes = await fetch(`/runloop/api/executions${qs}`);
-      if (refreshRes.ok) {
-        const data = await refreshRes.json();
-        setExecutions(data.data || []);
-      }
-    } else {
-      alert('Bulk delete failed');
-    }
-  };
-
-  const handleBulkRetry = async () => {
-    const ids = Array.from(selectedIds);
-    if (ids.length === 0) return;
-    if (!confirm(`Retry ${ids.length} execution(s)?`)) return;
-    const res = await fetch('/runloop/api/executions/bulk-retry', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids }),
-    });
-    if (res.ok) {
-      clearSelection();
-      const pid = projectId;
-      const qs = pid ? `?projectId=${pid}` : '';
-      const refreshRes = await fetch(`/runloop/api/executions${qs}`);
-      if (refreshRes.ok) {
-        const data = await refreshRes.json();
-        setExecutions(data.data || []);
-      }
-    } else {
-      alert('Bulk retry failed');
-    }
-  };
-
   const fetchExecutions = useCallback(async () => {
     try {
-      const pid = projectId;
-      const params = pid ? `?projectId=${pid}` : '';
-      const res = await fetch(`/runloop/api/executions${params}`);
+      const qs = projectId ? `?projectId=${projectId}` : '';
+      const res = await fetch(`${BASE_PATH}/api/executions${qs}`);
       if (res.ok) {
         const data = await res.json();
         setExecutions(data.data || []);
@@ -299,782 +173,326 @@ export default function ExecutionsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedProject]);
+  }, [selectedProject]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    fetchExecutions();
-  }, [fetchExecutions]);
-
-  // Refetch DLQ whenever the user lands on Needs Review.
-  useEffect(() => {
-    if (filterStatus === 'Needs Review') fetchDLQ();
-  }, [filterStatus, fetchDLQ]);
-
-  useEffect(() => {
-    if (autoRefresh) {
-      intervalRef.current = setInterval(fetchExecutions, 5000);
-    } else if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+  const fetchDLQ = useCallback(async () => {
+    if (!projectId) return;
+    setDlqLoading(true);
+    try {
+      const [pending, reviewing] = await Promise.all([
+        fetch(`${BASE_PATH}/api/dlq?projectId=${projectId}&status=PENDING&limit=200`),
+        fetch(`${BASE_PATH}/api/dlq?projectId=${projectId}&status=REVIEWING&limit=200`),
+      ]);
+      const combined: DLQEntry[] = [];
+      if (pending.ok) combined.push(...(((await pending.json()).data as DLQEntry[]) || []));
+      if (reviewing.ok) combined.push(...(((await reviewing.json()).data as DLQEntry[]) || []));
+      combined.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+      setDlqEntries(combined);
+    } finally {
+      setDlqLoading(false);
     }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+  }, [projectId]);
+
+  useEffect(() => { fetchExecutions(); }, [fetchExecutions]);
+  useEffect(() => { if (filterStatus === 'Needs Review') fetchDLQ(); }, [filterStatus, fetchDLQ]);
+  useEffect(() => {
+    if (autoRefresh) intervalRef.current = setInterval(fetchExecutions, 5000);
+    else if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [autoRefresh, fetchExecutions]);
 
-  // --- Computed stats ---
+  const bulkAction = async (kind: 'bulk-delete' | 'bulk-retry', ids: string[]) => {
+    if (ids.length === 0) return;
+    const verb = kind === 'bulk-delete' ? 'Delete' : 'Retry';
+    if (!confirm(`${verb} ${ids.length} execution(s)?${kind === 'bulk-delete' ? ' This cannot be undone.' : ''}`)) return;
+    const res = await fetch(`${BASE_PATH}/api/executions/${kind}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }),
+    });
+    if (res.ok) fetchExecutions();
+    else alert(`Bulk ${verb.toLowerCase()} failed`);
+  };
+
+  const replayDLQ = async (id: string) => {
+    setDlqActingOn(id);
+    try {
+      const res = await fetch(`${BASE_PATH}/api/dlq/${id}/replay`, { method: 'POST' });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); alert(`Replay failed: ${e.error || res.statusText}`); return; }
+      await fetchDLQ();
+    } finally { setDlqActingOn(null); }
+  };
+  const discardDLQ = async (id: string) => {
+    if (!confirm('Discard this entry? It will be removed from Needs Review.')) return;
+    setDlqActingOn(id);
+    try {
+      const res = await fetch(`${BASE_PATH}/api/dlq/${id}/discard`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: 'discarded by operator' }),
+      });
+      if (!res.ok) { alert('Discard failed'); return; }
+      await fetchDLQ();
+    } finally { setDlqActingOn(null); }
+  };
+
   const totalCount = executions.length;
   const successCount = executions.filter((e) => e.status === 'SUCCESS').length;
   const failedCount = executions.filter((e) => e.status === 'FAILED').length;
   const successRate = totalCount > 0 ? ((successCount / totalCount) * 100).toFixed(1) : '0.0';
-  const avgDuration =
-    totalCount > 0
-      ? Math.round(
-          executions.reduce((sum, e) => sum + (e.durationMs || 0), 0) /
-            executions.filter((e) => e.durationMs).length || 0
-        )
-      : 0;
+  const withDuration = executions.filter((e) => e.durationMs);
+  const avgDuration = withDuration.length > 0
+    ? Math.round(withDuration.reduce((sum, e) => sum + (e.durationMs || 0), 0) / withDuration.length)
+    : 0;
 
-  // --- Filtered list ---
-  // "Needs Review" shows executions that ended in a terminal failure state
-  // — this replaces the standalone DLQ page and makes retry/discard actions
-  // available inline.
-  const filtered = executions.filter((e) => {
-    const matchesSearch = (e.runloop?.name || e.id || '').toLowerCase().includes(searchQuery.toLowerCase());
-    let matchesFilter = true;
-    if (filterStatus === 'Needs Review') {
-      matchesFilter = ['FAILED', 'TIMEOUT'].includes(e.status);
-    } else if (filterStatus !== 'All') {
-      matchesFilter = e.status.toLowerCase() === filterStatus.toLowerCase();
-    }
-    return matchesSearch && matchesFilter;
-  });
   const isReviewMode = filterStatus === 'Needs Review';
 
-  const getStatusIcon = (status: string, size = 14) => {
-    const s = `w-[${size}px] h-[${size}px]`;
-    switch (status) {
-      case 'SUCCESS':
-        return <CheckCircle2 style={{ width: size, height: size, color: THEME.colors.emerald }} />;
-      case 'FAILED':
-        return <XCircle style={{ width: size, height: size, color: THEME.colors.red }} />;
-      case 'RUNNING':
-        return <Loader2 className="animate-spin" style={{ width: size, height: size, color: THEME.colors.blue }} />;
-      case 'CANCELLED':
-        return <AlertCircle style={{ width: size, height: size, color: '#64748B' }} />;
-      case 'TIMEOUT':
-        return <XCircle style={{ width: size, height: size, color: THEME.colors.red }} />;
-      default:
-        return <Clock style={{ width: size, height: size, color: THEME.colors.amber }} />;
-    }
-  };
+  const filtered = useMemo(() => executions.filter((e) => {
+    const matchesSearch = (e.runloop?.name || e.id || '').toLowerCase().includes(searchQuery.toLowerCase());
+    let matchesFilter = true;
+    if (filterStatus === 'Needs Review') matchesFilter = ['FAILED', 'TIMEOUT'].includes(e.status);
+    else if (filterStatus !== 'All') matchesFilter = e.status.toLowerCase() === filterStatus.toLowerCase();
+    return matchesSearch && matchesFilter;
+  }), [executions, searchQuery, filterStatus]);
 
-  if (isLoading) {
-    return (
-      <div style={{ fontFamily: FONT }} className="flex items-center justify-center h-64">
-        <div className="flex items-center gap-3">
-          <Loader2 className="w-5 h-5 animate-spin" style={{ color: THEME.accent }} />
-          <span style={{ fontSize: 13, color: THEME.text.muted }}>Loading executions...</span>
-        </div>
-      </div>
-    );
-  }
+  const byId = useMemo(() => Object.fromEntries(executions.map((e) => [e.id, e])), [executions]);
 
-  const MONO = "'IBM Plex Mono', ui-monospace, monospace";
+  const rows = filtered.map((e) => ({
+    id: e.id,
+    run: runName(e),
+    trigger: e.triggerType.charAt(0) + e.triggerType.slice(1).toLowerCase(),
+    status: e.status,
+  }));
+
   return (
     <div style={{ fontFamily: FONT }}>
       <HeroHeader
         title="Executions"
         subtitle="Every run, every node, every millisecond — the raw log of what the engine actually did."
-        metrics={<>
-          <MetricChip label="total"    value={String(totalCount).padStart(3, '0')} />
-          <MetricChip label="success"  value={`${successRate}%`} accent="#10B981" />
-          <MetricChip label="failed"   value={String(failedCount).padStart(2, '0')} accent={failedCount > 0 ? '#EF4444' : undefined} />
-          <MetricChip label="avg"      value={formatDuration(avgDuration)} />
-        </>}
+        metrics={
+          <>
+            <MetricChip label="total" value={String(totalCount)} />
+            <MetricChip label="success" value={`${successRate}%`} />
+            <MetricChip label="failed" value={String(failedCount)} />
+            <MetricChip label="avg" value={formatDuration(avgDuration)} />
+          </>
+        }
       />
 
-
-      {/* Filter Bar */}
-      <div className="flex items-center gap-3 mb-4">
-        {/* Status tabs */}
-        <div
-          className="flex items-center gap-0.5"
-          style={{
-            background: THEME.panel,
-            border: `1px solid ${THEME.border}`,
-            borderRadius: 9,
-            padding: 3,
-          }}
+      <div className="mb-4" style={{ overflowX: 'auto' }}>
+        <ContentSwitcher
+          selectedIndex={STATUS_TABS.indexOf(filterStatus as (typeof STATUS_TABS)[number])}
+          onChange={({ name }) => setFilterStatus((name as string) ?? 'All')}
+          style={{ maxWidth: 560 }}
         >
-          {STATUS_TABS.map((tab) => {
-            const isActive = filterStatus === tab;
-            return (
-              <button
-                key={tab}
-                onClick={() => setFilterStatus(tab)}
-                style={{
-                  background: isActive ? THEME.accent : 'transparent',
-                  color: isActive ? '#fff' : THEME.text.secondary,
-                  border: `1px solid ${isActive ? THEME.accent : THEME.border}`,
-                  borderRadius: 2,
-                  padding: '5px 12px',
-                  fontSize: 12,
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                {tab}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Search */}
-        <div className="relative flex-1">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2"
-            style={{ width: 14, height: 14, color: THEME.text.muted }}
-          />
-          <input
-            type="text"
-            placeholder="Search by name or ID..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              background: THEME.panel,
-              border: `1px solid ${THEME.border}`,
-              color: THEME.text.primary,
-              borderRadius: 9,
-              height: 36,
-              fontSize: 12,
-            }}
-            className="w-full pl-9 pr-4 outline-none"
-          />
-        </div>
-
-        {/* Select all */}
-        <button
-          onClick={() => selectedIds.size === filtered.length ? clearSelection() : selectAllFiltered(filtered.map((e) => e.id))}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            background: selectedIds.size > 0 ? `${THEME.colors.blue}14` : THEME.panel,
-            border: `1px solid ${selectedIds.size > 0 ? `${THEME.colors.blue}40` : THEME.border}`,
-            color: selectedIds.size > 0 ? THEME.colors.blue : THEME.text.muted,
-            borderRadius: 9,
-            padding: '5px 12px',
-            fontSize: 12,
-            fontWeight: 500,
-            cursor: 'pointer',
-            height: 36,
-          }}
-        >
-          {selectedIds.size === filtered.length && filtered.length > 0 ? 'Deselect all' : 'Select all'}
-        </button>
-
-        {/* Auto-refresh toggle */}
-        <button
-          onClick={() => setAutoRefresh((v) => !v)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            background: autoRefresh ? `${THEME.colors.emerald}14` : THEME.panel,
-            border: `1px solid ${autoRefresh ? `${THEME.colors.emerald}40` : THEME.border}`,
-            color: autoRefresh ? THEME.colors.emerald : THEME.text.muted,
-            borderRadius: 9,
-            padding: '5px 12px',
-            fontSize: 12,
-            fontWeight: 500,
-            cursor: 'pointer',
-            height: 36,
-            transition: 'all 0.15s ease',
-          }}
-        >
-          <RefreshCw
-            className={autoRefresh ? 'animate-spin' : ''}
-            style={{ width: 13, height: 13, animationDuration: '2s' }}
-          />
-          Auto
-        </button>
+          {STATUS_TABS.map((t) => <Switch key={t} name={t} text={t} />)}
+        </ContentSwitcher>
       </div>
 
-      {/* Bulk action bar */}
-      {selectedIds.size > 0 && (
-        <div
-          style={{
-            position: 'sticky',
-            top: 16,
-            zIndex: 20,
-            marginBottom: 12,
-            padding: '10px 16px',
-            background: THEME.panel,
-            border: `1px solid ${THEME.colors.blue}40`,
-            borderRadius: 10,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          }}
-        >
-          <span style={{ fontSize: 13, color: THEME.text.primary, fontWeight: 500 }}>
-            {selectedIds.size} selected
-          </span>
-          <div style={{ flex: 1 }} />
-          <button
-            onClick={handleBulkRetry}
-            style={{
-              padding: '6px 14px',
-              background: `${THEME.colors.blue}20`,
-              color: THEME.colors.blue,
-              border: `1px solid ${THEME.colors.blue}40`,
-              borderRadius: 6,
-              fontSize: 12,
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            Retry selected
-          </button>
-          <button
-            onClick={handleBulkDelete}
-            style={{
-              padding: '6px 14px',
-              background: `${THEME.colors.red}20`,
-              color: THEME.colors.red,
-              border: `1px solid ${THEME.colors.red}40`,
-              borderRadius: 6,
-              fontSize: 12,
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            Delete selected
-          </button>
-          <button
-            onClick={clearSelection}
-            style={{
-              padding: '6px 10px',
-              background: 'transparent',
-              color: THEME.text.muted,
-              border: 'none',
-              fontSize: 12,
-              cursor: 'pointer',
-            }}
-          >
-            Cancel
-          </button>
+      {isLoading ? (
+        <div className="flex items-center justify-center" style={{ height: 240 }}>
+          <Loading withOverlay={false} description="Loading executions" />
         </div>
-      )}
-
-      {/* Needs Review — DLQ-backed list with replay/discard actions. */}
-      {isReviewMode ? (
-        dlqLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-5 h-5 animate-spin" style={{ color: THEME.accent }} />
-            <span className="ml-2" style={{ fontSize: 13, color: THEME.text.muted }}>
-              Loading dead-letter queue…
-            </span>
-          </div>
-        ) : dlqEntries.length === 0 ? (
-          <div className="text-center py-16">
-            <div
-              style={{
-                width: 56, height: 56,
-                background: THEME.panel,
-                border: `1px solid ${THEME.border}`,
-                borderRadius: 12,
-              }}
-              className="mx-auto mb-4 flex items-center justify-center"
-            >
-              <CheckCircle2 className="w-7 h-7" style={{ color: THEME.colors.emerald }} />
-            </div>
-            <h3 style={{ fontSize: 15, fontWeight: 600, color: THEME.text.primary, marginBottom: 4 }}>
-              Nothing to review
-            </h3>
-            <p style={{ fontSize: 13, color: THEME.text.muted }}>
-              Items appear here when an execution exhausts retries or trips a circuit breaker.
-            </p>
-          </div>
-        ) : (
-          <div
-            style={{
-              background: THEME.panel,
-              border: `1px solid ${THEME.border}`,
-              borderRadius: 12,
-              overflow: 'hidden',
-            }}
-          >
-            {dlqEntries.map((entry, i) => {
-              const sourceLabel = entry.scheduler_id?.startsWith('queue:')
-                ? `queue · ${entry.scheduler_id.slice(6)}`
-                : `scheduler · ${entry.scheduler_id}`;
-              const acting = dlqActingOn === entry.id;
-              return (
-                <div
-                  key={entry.id}
-                  className="px-4 py-3 flex items-start gap-3"
-                  style={{
-                    borderBottom: i < dlqEntries.length - 1 ? `1px solid ${THEME.borderLight}` : 'none',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 32, height: 32,
-                      background: `${THEME.colors.red}18`,
-                      border: `1px solid ${THEME.colors.red}30`,
-                      borderRadius: 6,
-                      flexShrink: 0,
-                    }}
-                    className="flex items-center justify-center"
-                  >
-                    <AlertCircle className="w-4 h-4" style={{ color: THEME.colors.red }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span
-                        style={{
-                          fontFamily: MONO, fontSize: 10.5,
-                          padding: '2px 6px',
-                          background: `${THEME.colors.red}14`,
-                          color: THEME.colors.red,
-                          border: `1px solid ${THEME.colors.red}30`,
-                          letterSpacing: '0.04em',
-                        }}
-                      >
-                        {entry.reason}
-                      </span>
-                      <span style={{ fontSize: 13, fontWeight: 500, color: THEME.text.primary }}>
-                        {entry.node_id ? `node: ${entry.node_id}` : 'flow run'}
-                      </span>
-                      {entry.node_type && (
-                        <span
-                          style={{
-                            fontFamily: MONO, fontSize: 10,
-                            color: THEME.text.muted,
-                            padding: '1px 5px',
-                            border: `1px solid ${THEME.border}`,
-                          }}
-                        >
-                          {entry.node_type}
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ fontSize: 12, color: THEME.text.secondary, marginBottom: 4 }}>
-                      {entry.error_message || '—'}
-                    </div>
-                    <div
-                      style={{
-                        fontFamily: MONO, fontSize: 10.5,
-                        color: THEME.text.muted, letterSpacing: '0.02em',
-                      }}
-                      className="flex items-center gap-3 flex-wrap"
-                    >
-                      <span>{sourceLabel}</span>
-                      <span>retries: {entry.retry_count}</span>
-                      <span>{relativeTime(entry.created_at)}</span>
-                      <Link
-                        href={`/p/${projectId}/executions/${entry.execution_id}`}
-                        style={{ color: THEME.accent }}
-                      >
-                        view execution →
-                      </Link>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <button
-                      onClick={() => replayDLQ(entry.id)}
-                      disabled={acting}
-                      style={{
-                        background: THEME.accent, color: '#fff',
-                        fontSize: 12, fontWeight: 500,
-                        borderRadius: 2, padding: '6px 12px',
-                        opacity: acting ? 0.6 : 1,
-                      }}
-                      className="flex items-center gap-1.5"
-                    >
-                      <RefreshCw className="w-3.5 h-3.5" />
-                      Replay
-                    </button>
-                    <button
-                      onClick={() => discardDLQ(entry.id)}
-                      disabled={acting}
-                      style={{
-                        background: 'transparent',
-                        color: THEME.text.muted,
-                        fontSize: 12,
-                        border: `1px solid ${THEME.border}`,
-                        borderRadius: 2, padding: '6px 12px',
-                        opacity: acting ? 0.6 : 1,
-                      }}
-                    >
-                      Discard
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-16">
-          <div
-            style={{
-              width: 56,
-              height: 56,
-              background: THEME.panel,
-              border: `1px solid ${THEME.border}`,
-              borderRadius: 12,
-            }}
-            className="mx-auto mb-4 flex items-center justify-center"
-          >
-            <PlayCircle className="w-7 h-7" style={{ color: THEME.text.muted }} />
-          </div>
-          <h3 style={{ fontSize: 15, fontWeight: 600, color: THEME.text.primary, marginBottom: 4 }}>
-            No executions found
-          </h3>
-          <p style={{ fontSize: 13, color: THEME.text.muted }}>
-            {searchQuery || filterStatus !== 'All'
-              ? 'Try adjusting your filters'
-              : 'Run a runloop to see executions here'}
-          </p>
-        </div>
+      ) : isReviewMode ? (
+        <NeedsReview
+          loading={dlqLoading}
+          entries={dlqEntries}
+          actingOn={dlqActingOn}
+          projectId={projectId}
+          onReplay={replayDLQ}
+          onDiscard={discardDLQ}
+        />
       ) : (
-        <div
-          style={{
-            background: THEME.panel,
-            border: `1px solid ${THEME.border}`,
-            borderRadius: 2,
-            overflow: 'hidden',
-          }}
-        >
-          {/* Header row — mono uppercase columns */}
-          <div
-            className="flex items-center gap-3 px-4 py-2"
-            style={{
-              fontFamily: MONO, fontSize: 10, letterSpacing: '0.14em',
-              color: THEME.text.muted,
-              borderBottom: `1px solid ${THEME.border}`,
-              background: 'color-mix(in srgb, var(--t-bg) 40%, transparent)',
-            }}
-          >
-            <span style={{ width: 14 }} aria-hidden />
-            <span style={{ width: 14 }} aria-hidden />
-            <span style={{ width: 24 }} aria-hidden />
-            <span className="flex-1">TARGET</span>
-            <span style={{ width: 80, textAlign: 'right' }}>TRIGGER</span>
-            <span style={{ width: 70, textAlign: 'right' }}>STATUS</span>
-            <span style={{ width: 16 }} aria-hidden />
-          </div>
-          {filtered.map((execution, i) => {
-            const st = statusConfig[execution.status] || statusConfig.PENDING;
-            const trigger = triggerConfig[execution.triggerType] || triggerConfig.MANUAL;
-            const TriggerIcon = trigger.icon;
-            const isExpanded = expandedId === execution.id;
-            const idx = String(i + 1).padStart(3, '0');
-
+        <DataTable rows={rows} headers={HEADERS} isSortable>
+          {({
+            rows: dtRows, headers, getHeaderProps, getRowProps, getSelectionProps,
+            getBatchActionProps, getTableProps, getTableContainerProps, getExpandHeaderProps,
+            getExpandedRowProps, selectedRows,
+          }) => {
+            const batch = getBatchActionProps();
+            const selectedIds = selectedRows.map((r) => r.id);
             return (
-              <div
-                key={execution.id}
-                style={{
-                  borderBottom: i < filtered.length - 1 ? `1px solid ${THEME.borderLight}` : 'none',
-                }}
-              >
-                {/* Row */}
-                <div
-                  className="flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors hover:bg-[var(--t-panel-hover)] group"
-                  onClick={() => setExpandedId(isExpanded ? null : execution.id)}
-                >
-                  {/* Checkbox */}
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.has(execution.id)}
-                    onChange={(e) => { e.stopPropagation(); toggleSelection(execution.id); }}
-                    onClick={(e) => e.stopPropagation()}
-                    style={{ accentColor: THEME.accent, cursor: 'pointer', width: 14, height: 14 }}
-                  />
-
-                  {/* Expand chevron */}
-                  <div
-                    style={{
-                      transition: 'transform 0.15s ease',
-                      transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-                      width: 14,
-                    }}
-                  >
-                    <ChevronRight style={{ width: 12, height: 12, color: THEME.text.muted }} />
-                  </div>
-
-                  {/* Row index as log-line id */}
-                  <span style={{ fontFamily: MONO, fontSize: 10, color: THEME.text.muted, width: 24, textAlign: 'right' }}>
-                    {idx}
-                  </span>
-
-                  {/* Name + time — left column */}
-                  <div className="flex-1 min-w-0">
-                    <p
-                      style={{ fontSize: 13, fontWeight: 500, color: THEME.text.primary, letterSpacing: '-0.005em' }}
-                      className="truncate"
-                    >
-                      {queueNameFromSchedulerId(execution.schedulerId) ||
-                        execution.schedulerName ||
-                        execution.runloop?.name ||
-                        syntheticLabel(execution) ||
-                        'Untitled run'}
-                    </p>
-                    <p style={{ fontFamily: MONO, fontSize: 10.5, color: THEME.text.muted, marginTop: 2 }}>
-                      {relativeTime(execution.startedAt)}
-                      {execution.durationMs !== undefined && execution.durationMs !== null
-                        ? ` · ${formatDuration(execution.durationMs)}`
-                        : ''}
-                    </p>
-                  </div>
-
-                  {/* Trigger tag — sharp, mono */}
-                  <span
-                    className="flex items-center justify-end gap-1.5"
-                    style={{ width: 80, fontFamily: MONO, fontSize: 10, color: trigger.color, letterSpacing: '0.08em' }}
-                  >
-                    <TriggerIcon style={{ width: 10, height: 10 }} />
-                    {execution.triggerType}
-                  </span>
-
-                  {/* Status dot + label — same pattern as other list pages */}
-                  <span
-                    className="flex items-center justify-end gap-1.5"
-                    style={{ width: 70, fontFamily: MONO, fontSize: 10.5, color: st.color, letterSpacing: '0.04em' }}
-                  >
-                    <span
-                      style={{
-                        width: 6, height: 6, borderRadius: 999,
-                        background: st.color,
-                        boxShadow: `0 0 0 3px color-mix(in srgb, ${st.color} 15%, transparent)`,
-                      }}
+              <TableContainer {...getTableContainerProps()}>
+                <TableToolbar>
+                  <TableBatchActions {...batch}>
+                    <TableBatchAction renderIcon={Renew} onClick={() => { bulkAction('bulk-retry', selectedIds); batch.onCancel(); }}>
+                      Retry
+                    </TableBatchAction>
+                    <TableBatchAction renderIcon={TrashCan} onClick={() => { bulkAction('bulk-delete', selectedIds); batch.onCancel(); }}>
+                      Delete
+                    </TableBatchAction>
+                  </TableBatchActions>
+                  <TableToolbarContent>
+                    <TableToolbarSearch
+                      persistent
+                      placeholder="Search by name or ID"
+                      onChange={(e) => setSearchQuery(e && 'target' in e ? (e.target as HTMLInputElement).value : '')}
                     />
-                    {st.label.toUpperCase()}
-                  </span>
-
-                  {/* Review-mode inline actions: replay and discard */}
-                  {isReviewMode && (
-                    <>
-                      <button
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          if (!confirm(`Replay this execution? A new run will be triggered.`)) return;
-                          const r = await fetch('/runloop/api/executions/bulk-retry', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ ids: [execution.id] }),
-                          });
-                          if (r.ok) fetchExecutions();
-                        }}
-                        title="Replay"
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 4,
-                          padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 500,
-                          background: `${THEME.colors.blue}15`, color: THEME.colors.blue,
-                          border: `1px solid ${THEME.colors.blue}40`, cursor: 'pointer',
-                        }}
-                      >
-                        <RefreshCw style={{ width: 11, height: 11 }} />
-                        Replay
-                      </button>
-                      <button
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          if (!confirm(`Discard this failed execution?`)) return;
-                          const r = await fetch('/runloop/api/executions/bulk-delete', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ ids: [execution.id] }),
-                          });
-                          if (r.ok) fetchExecutions();
-                        }}
-                        title="Discard"
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 4,
-                          padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 500,
-                          background: `${THEME.colors.red}15`, color: THEME.colors.red,
-                          border: `1px solid ${THEME.colors.red}40`, cursor: 'pointer',
-                        }}
-                      >
-                        Discard
-                      </button>
-                    </>
-                  )}
-
-                  {/* Link to detail page */}
-                  <Link
-                    href={`/p/${projectId}/executions/${execution.id}`}
-                    onClick={(e) => e.stopPropagation()}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: 28,
-                      height: 28,
-                      borderRadius: 6,
-                      border: `1px solid ${THEME.border}`,
-                      color: THEME.text.muted,
-                      transition: 'all 0.15s ease',
-                    }}
-                    className="flex-shrink-0 hover:bg-[var(--t-panel-hover)]"
-                    title="View full details"
-                  >
-                    <Zap style={{ width: 12, height: 12 }} />
-                  </Link>
-                </div>
-
-                {/* Expanded detail */}
-                {isExpanded && (
-                  <div
-                    style={{
-                      padding: '0 16px 14px 58px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 10,
-                    }}
-                  >
-                    {/* Error message */}
-                    {execution.errorMessage && (
-                      <div
-                        style={{
-                          background: `${THEME.colors.red}0C`,
-                          border: `1px solid ${THEME.colors.red}25`,
-                          borderRadius: 8,
-                          padding: '10px 14px',
-                        }}
-                      >
-                        <div
-                          className="flex items-center gap-2 mb-1"
-                          style={{ fontSize: 11, fontWeight: 600, color: THEME.colors.red }}
-                        >
-                          <AlertCircle style={{ width: 12, height: 12 }} />
-                          Error
-                        </div>
-                        <pre
-                          style={{
-                            fontSize: 11,
-                            color: THEME.colors.red,
-                            margin: 0,
-                            whiteSpace: 'pre-wrap',
-                            wordBreak: 'break-word',
-                            fontFamily: "'IBM Plex Mono', monospace",
-                            lineHeight: 1.5,
-                            opacity: 0.85,
-                          }}
-                        >
-                          {execution.errorMessage}
-                        </pre>
-                      </div>
-                    )}
-
-                    {/* Logs preview */}
-                    {execution.logs && (
-                      <div
-                        style={{
-                          background: '#0D1117',
-                          border: `1px solid ${THEME.border}`,
-                          borderRadius: 8,
-                          padding: '10px 14px',
-                          maxHeight: 180,
-                          overflow: 'auto',
-                        }}
-                      >
-                        <div
-                          className="flex items-center gap-2 mb-2"
-                          style={{ fontSize: 11, fontWeight: 600, color: THEME.text.muted }}
-                        >
-                          <Terminal style={{ width: 12, height: 12 }} />
-                          Logs
-                        </div>
-                        <pre
-                          style={{
-                            fontSize: 11,
-                            color: '#C9D1D9',
-                            margin: 0,
-                            whiteSpace: 'pre-wrap',
-                            wordBreak: 'break-word',
-                            fontFamily: "'IBM Plex Mono', monospace",
-                            lineHeight: 1.6,
-                          }}
-                        >
-                          {execution.logs}
-                        </pre>
-                      </div>
-                    )}
-
-                    {/* Output JSON */}
-                    {execution.output && Object.keys(execution.output).length > 0 && (
-                      <div
-                        style={{
-                          background: '#0D1117',
-                          border: `1px solid ${THEME.border}`,
-                          borderRadius: 8,
-                          padding: '10px 14px',
-                          maxHeight: 180,
-                          overflow: 'auto',
-                        }}
-                      >
-                        <div
-                          className="flex items-center gap-2 mb-2"
-                          style={{ fontSize: 11, fontWeight: 600, color: THEME.text.muted }}
-                        >
-                          <Zap style={{ width: 12, height: 12 }} />
-                          Output
-                        </div>
-                        <pre
-                          style={{
-                            fontSize: 11,
-                            color: '#C9D1D9',
-                            margin: 0,
-                            whiteSpace: 'pre-wrap',
-                            wordBreak: 'break-word',
-                            fontFamily: "'IBM Plex Mono', monospace",
-                            lineHeight: 1.6,
-                          }}
-                        >
-                          {JSON.stringify(execution.output, null, 2)}
-                        </pre>
-                      </div>
-                    )}
-
-                    {/* Meta info row */}
-                    <div className="flex items-center gap-4 flex-wrap" style={{ fontSize: 11, color: THEME.text.muted }}>
-                      <span>ID: <span style={{ fontFamily: "'IBM Plex Mono', monospace", color: THEME.text.secondary }}>{execution.id}</span></span>
-                      {execution.workerId && (
-                        <span>Worker: <span style={{ fontFamily: "'IBM Plex Mono', monospace", color: THEME.text.secondary }}>{execution.workerId}</span></span>
-                      )}
-                      {execution.retryAttempt > 0 && (
-                        <span>Retry: <span style={{ color: THEME.colors.amber }}>#{execution.retryAttempt}</span></span>
-                      )}
-                      <span>Started: {new Date(execution.startedAt).toLocaleString()}</span>
-                      {execution.completedAt && (
-                        <span>Completed: {new Date(execution.completedAt).toLocaleString()}</span>
-                      )}
-                    </div>
+                    <Button
+                      kind={autoRefresh ? 'primary' : 'ghost'}
+                      size="lg"
+                      renderIcon={Renew}
+                      onClick={() => setAutoRefresh((v) => !v)}
+                    >
+                      Auto
+                    </Button>
+                  </TableToolbarContent>
+                </TableToolbar>
+                <Table {...getTableProps()} size="md" useZebraStyles={false}>
+                  <TableHead>
+                    <TableRow>
+                      <TableExpandHeader enableToggle {...getExpandHeaderProps()} />
+                      <TableSelectAll {...getSelectionProps()} />
+                      {headers.map((header) => {
+                        const { key, ...rest } = getHeaderProps({ header });
+                        return <TableHeader key={header.key} {...rest} style={{ width: COL_WIDTH[header.key] }}>{header.header}</TableHeader>;
+                      })}
+                      <TableHeader style={{ width: 48 }} aria-label="Open" />
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {dtRows.map((row) => {
+                      const e = byId[row.id];
+                      const { key, ...rowProps } = getRowProps({ row });
+                      const { key: selKey, ...selProps } = getSelectionProps({ row });
+                      const TriggerIcon = e ? (triggerIcon[e.triggerType] || TouchInteraction) : TouchInteraction;
+                      return (
+                        <Fragment key={row.id}>
+                          <TableExpandRow {...rowProps}>
+                            <TableSelectRow {...selProps} />
+                            {row.cells.map((cell) => {
+                              if (cell.info.header === 'run') {
+                                return (
+                                  <TableCell key={cell.id}>
+                                    <div className="rl-ellipsis" style={{ fontWeight: 600, color: 'var(--cds-text-primary)' }} title={row.cells[0].value}>
+                                      {row.cells[0].value}
+                                    </div>
+                                    <div style={{ fontSize: 12, color: 'var(--cds-text-secondary)', marginTop: 2 }}>
+                                      {e ? relativeTime(e.startedAt) : ''}
+                                      {e && e.durationMs != null ? ` · ${formatDuration(e.durationMs)}` : ''}
+                                    </div>
+                                  </TableCell>
+                                );
+                              }
+                              if (cell.info.header === 'trigger') {
+                                return (
+                                  <TableCell key={cell.id}>
+                                    <span className="flex items-center gap-2" style={{ color: 'var(--cds-text-secondary)' }}>
+                                      <TriggerIcon size={16} /> {cell.value}
+                                    </span>
+                                  </TableCell>
+                                );
+                              }
+                              if (cell.info.header === 'status') {
+                                const st = statusTag[cell.value] ?? statusTag.PENDING;
+                                return <TableCell key={cell.id}><Tag type={st.type} size="sm">{st.label}</Tag></TableCell>;
+                              }
+                              return <TableCell key={cell.id}>{cell.value}</TableCell>;
+                            })}
+                            <TableCell>
+                              <Button
+                                kind="ghost" size="sm" hasIconOnly renderIcon={Launch} iconDescription="Open run"
+                                onClick={(ev) => { ev.stopPropagation(); router.push(`/p/${projectId}/executions/${row.id}`); }}
+                              />
+                            </TableCell>
+                          </TableExpandRow>
+                          <TableExpandedRow colSpan={headers.length + 3} {...getExpandedRowProps({ row })}>
+                            {e && <ExpandedDetail e={e} />}
+                          </TableExpandedRow>
+                        </Fragment>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+                {dtRows.length === 0 && (
+                  <div className="text-center" style={{ padding: '48px 0' }}>
+                    <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>No executions found</h3>
+                    <p style={{ fontSize: 13, color: 'var(--cds-text-secondary)' }}>
+                      {searchQuery || filterStatus !== 'All' ? 'Try adjusting your filters' : 'Run a runloop to see executions here'}
+                    </p>
                   </div>
                 )}
-              </div>
+              </TableContainer>
             );
-          })}
-        </div>
+          }}
+        </DataTable>
       )}
 
-      {/* Footer count */}
-      {!isReviewMode && filtered.length > 0 && (
-        <div style={{ fontSize: 11, color: THEME.text.muted, marginTop: 10, textAlign: 'right' }}>
+      {!isReviewMode && !isLoading && filtered.length > 0 && (
+        <div style={{ fontSize: 12, color: 'var(--cds-text-secondary)', marginTop: 10, textAlign: 'right' }}>
           Showing {filtered.length} of {totalCount} execution{totalCount !== 1 ? 's' : ''}
-          {autoRefresh && (
-            <span style={{ color: THEME.colors.emerald, marginLeft: 8 }}>
-              Auto-refreshing every 5s
-            </span>
-          )}
+          {autoRefresh && <span style={{ color: 'var(--cds-support-success)', marginLeft: 8 }}>Auto-refreshing every 5s</span>}
         </div>
       )}
+    </div>
+  );
+}
+
+function ExpandedDetail({ e }: { e: Execution }) {
+  const panel = (title: string, body: React.ReactNode, mono = false, tone?: 'error') => (
+    <div style={{ padding: '10px 14px', background: tone === 'error' ? 'var(--cds-notification-background-error, #fff1f1)' : 'var(--cds-layer-01)', marginBottom: 10 }}>
+      <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 6, color: tone === 'error' ? 'var(--cds-text-error)' : 'var(--cds-text-secondary)' }}>{title}</div>
+      <pre style={{ fontSize: 11, margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: mono ? MONO : 'inherit', lineHeight: 1.6, color: 'var(--cds-text-primary)' }}>{body}</pre>
+    </div>
+  );
+  return (
+    <div style={{ padding: '4px 0' }}>
+      {e.errorMessage && panel('Error', e.errorMessage, true, 'error')}
+      {e.logs && panel('Logs', e.logs, true)}
+      {e.output && Object.keys(e.output).length > 0 && panel('Output', JSON.stringify(e.output, null, 2), true)}
+      <div className="flex items-center gap-4 flex-wrap" style={{ fontSize: 11, color: 'var(--cds-text-secondary)', padding: '2px 2px' }}>
+        <span>ID: <span style={{ fontFamily: MONO, color: 'var(--cds-text-primary)' }}>{e.id}</span></span>
+        {e.workerId && <span>Worker: <span style={{ fontFamily: MONO, color: 'var(--cds-text-primary)' }}>{e.workerId}</span></span>}
+        {e.retryAttempt > 0 && <span>Retry: #{e.retryAttempt}</span>}
+        <span>Started: {new Date(e.startedAt).toLocaleString()}</span>
+        {e.completedAt && <span>Completed: {new Date(e.completedAt).toLocaleString()}</span>}
+      </div>
+    </div>
+  );
+}
+
+function NeedsReview({
+  loading, entries, actingOn, projectId, onReplay, onDiscard,
+}: {
+  loading: boolean; entries: DLQEntry[]; actingOn: string | null; projectId: string;
+  onReplay: (id: string) => void; onDiscard: (id: string) => void;
+}) {
+  if (loading) {
+    return <div className="flex items-center justify-center" style={{ height: 160 }}><Loading withOverlay={false} description="Loading dead-letter queue" /></div>;
+  }
+  if (entries.length === 0) {
+    return (
+      <div className="text-center" style={{ padding: '64px 0' }}>
+        <CheckmarkFilled size={32} style={{ color: 'var(--cds-support-success)', marginBottom: 12 }} />
+        <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>Nothing to review</h3>
+        <p style={{ fontSize: 13, color: 'var(--cds-text-secondary)' }}>Items appear here when an execution exhausts retries or trips a circuit breaker.</p>
+      </div>
+    );
+  }
+  return (
+    <div style={{ background: 'var(--cds-layer-01)' }}>
+      {entries.map((entry, i) => {
+        const source = entry.scheduler_id?.startsWith('queue:') ? `queue · ${entry.scheduler_id.slice(6)}` : `scheduler · ${entry.scheduler_id}`;
+        const acting = actingOn === entry.id;
+        return (
+          <div key={entry.id} className="flex items-start gap-4" style={{ padding: '16px', borderTop: i > 0 ? '1px solid var(--cds-border-subtle)' : 'none' }}>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <Tag type="red" size="sm">{String(entry.reason || '').replace(/_/g, ' ')}</Tag>
+                <span style={{ fontSize: 14, fontWeight: 600 }}>{entry.node_id ? `Step ${entry.node_id}` : 'Flow run'}</span>
+                {entry.node_type && <Tag type="gray" size="sm">{entry.node_type}</Tag>}
+              </div>
+              <div style={{ fontSize: 14, marginBottom: 4 }}>{entry.error_message || '—'}</div>
+              <div className="flex items-center gap-3 flex-wrap" style={{ fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+                <span>{source}</span>
+                <span>{entry.retry_count} retries</span>
+                <span>{relativeTime(entry.created_at)}</span>
+                <Link href={`/p/${projectId}/executions/${entry.execution_id}`} style={{ color: 'var(--cds-link-primary)' }}>View run</Link>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Button kind="tertiary" size="sm" renderIcon={Renew} disabled={acting} onClick={() => onReplay(entry.id)}>Replay</Button>
+              <Button kind="ghost" size="sm" renderIcon={MisuseOutline} disabled={acting} onClick={() => onDiscard(entry.id)}>Discard</Button>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

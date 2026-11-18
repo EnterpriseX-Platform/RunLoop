@@ -1,14 +1,15 @@
+import { ENGINE_BASE_PATH } from '@/lib/engine-path';
 import { NextRequest, NextResponse } from 'next/server';
 
 // GET /api/tasks/[id] - Get a single task
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const engineUrl = process.env.ENGINE_URL || 'http://localhost:8080';
 
-    const res = await fetch(`${engineUrl}/rl/api/tasks/${params.id}`, {
+    const res = await fetch(`${engineUrl}${ENGINE_BASE_PATH}/api/tasks/${(await params).id}`, {
       headers: {
         'Authorization': request.headers.get('authorization') || '',
         'Content-Type': 'application/json',
@@ -27,13 +28,13 @@ export async function GET(
 // PUT /api/tasks/[id] - Update a task
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const engineUrl = process.env.ENGINE_URL || 'http://localhost:8080';
     const body = await request.json();
 
-    const res = await fetch(`${engineUrl}/rl/api/tasks/${params.id}`, {
+    const res = await fetch(`${engineUrl}${ENGINE_BASE_PATH}/api/tasks/${(await params).id}`, {
       method: 'PUT',
       headers: {
         'Authorization': request.headers.get('authorization') || '',
@@ -54,12 +55,12 @@ export async function PUT(
 // DELETE /api/tasks/[id] - Delete a task
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const engineUrl = process.env.ENGINE_URL || 'http://localhost:8080';
 
-    const res = await fetch(`${engineUrl}/rl/api/tasks/${params.id}`, {
+    const res = await fetch(`${engineUrl}${ENGINE_BASE_PATH}/api/tasks/${(await params).id}`, {
       method: 'DELETE',
       headers: {
         'Authorization': request.headers.get('authorization') || '',
