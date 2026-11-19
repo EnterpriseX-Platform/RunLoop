@@ -23,7 +23,7 @@ import {
 import { HeroHeader, MetricChip } from '@/components/ControlChrome';
 import {
   DataTable, Table, TableContainer, TableHead, TableRow, TableHeader, TableBody, TableCell,
-  TableToolbar, TableToolbarContent, TableToolbarSearch, ContentSwitcher, Switch, Button, Tag, Loading,
+  TableToolbar, TableToolbarContent, TableToolbarSearch, Tabs, TabList, Tab, Button, Tag, Loading,
 } from '@carbon/react';
 import { Add, Play as PlayIcon } from '@carbon/icons-react';
 
@@ -361,15 +361,17 @@ export default function SchedulersPage() {
         }
       />
 
-      <div className="mb-4" style={{ maxWidth: 320 }}>
-        <ContentSwitcher
+      <div className="mb-4">
+        <Tabs
           selectedIndex={['All', 'Active', 'Paused'].indexOf(filterStatus)}
-          onChange={({ name }) => setFilterStatus((name as 'All' | 'Active' | 'Paused') ?? 'All')}
+          onChange={({ selectedIndex }) => setFilterStatus(['All', 'Active', 'Paused'][selectedIndex] as 'All' | 'Active' | 'Paused')}
         >
-          <Switch name="All" text="All" />
-          <Switch name="Active" text="Active" />
-          <Switch name="Paused" text="Paused" />
-        </ContentSwitcher>
+          <TabList aria-label="Filter schedulers by status">
+            <Tab>All</Tab>
+            <Tab>Active</Tab>
+            <Tab>Paused</Tab>
+          </TabList>
+        </Tabs>
       </div>
 
       <DataTable rows={schedRows} headers={SCHED_HEADERS} isSortable>
