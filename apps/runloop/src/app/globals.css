@@ -22,6 +22,7 @@
   --t-accent: #0f62fe;
   --t-accent-hover: #0353e9;
   --t-accent-light: #0f62fe;
+  --t-brand: #009d9a;
   --t-input: #f4f4f4;
   --t-header: #ffffff;
   --t-sidebar: #ffffff;
@@ -109,6 +110,7 @@
   --t-accent: #0f62fe;
   --t-accent-hover: #0353e9;
   --t-accent-light: #0f62fe;
+  --t-brand: #009d9a;
   --t-input: #f4f4f4;
   --t-header: #ffffff;
   --t-sidebar: #ffffff;
@@ -145,6 +147,7 @@
   --t-panel-hover: #333333;
   --t-border: #393939;
   --t-border-light: #393939;
+  --t-brand: #08bdba;
   --t-text: #f4f4f4;
   --t-text-secondary: #c6c6c6;
   --t-text-muted: #a8a8a8;
@@ -598,3 +601,57 @@ main table:not([class*="cds--"]) td { font-size: 14px; }
 /* Floating menus (dropdowns, comboboxes, header menus) keep Carbon's
    menu elevation so they read above the panel they open over. */
 .rl-menu { box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important; background: var(--t-panel-hover); }
+
+/* ============================================================
+   RunLoop on Carbon — design-system layer (full pass)
+   IBM Carbon g10/g100 + 3 house rules:
+   1. Squared edges (radius 0) on every Carbon surface.
+      Exceptions: Tag keeps its pill; round dots/avatars/toggles stay round.
+   2. cyan (--t-brand) is identity only; blue (--t-accent) drives
+      interactive/focus; red/green/amber are status only.
+   3. One hairline (--t-border) between rows; no stray shadows.
+   ============================================================ */
+
+/* 1 — Squared Carbon surfaces */
+.cds--btn,
+.cds--text-input, .cds--text-area, .cds--text-input__field-wrapper,
+.cds--select-input, .cds--select, .cds--number input[type="number"],
+.cds--dropdown, .cds--list-box, .cds--list-box__field, .cds--list-box__menu,
+.cds--search-input, .cds--toolbar-search-container-expandable,
+.cds--toolbar-search-container-expandable.cds--toolbar-search-container-active,
+.cds--tile, .cds--clickable-tile, .cds--selectable-tile, .cds--expandable-tile,
+.cds--modal-container,
+.cds--toast-notification, .cds--inline-notification, .cds--actionable-notification,
+.cds--toggletip-content, .cds--popover-content, .cds--tooltip-content,
+.cds--overflow-menu, .cds--overflow-menu-options, .cds--overflow-menu-options__option,
+.cds--menu, .cds--menu-item,
+.cds--snippet, .cds--code-snippet,
+.cds--pagination, .cds--pagination__control-buttons,
+.cds--date-picker__input, .cds--tag--interactive {
+  border-radius: 0 !important;
+}
+
+/* Tag keeps the Carbon pill (design-system rule) — undo any inherited square */
+.cds--tag { border-radius: 1rem !important; }
+
+/* 2 — Metric / big-number tiles: squared, hairline, thin numerals */
+.cds--tile { border: 1px solid var(--t-border); box-shadow: none; }
+
+/* 3 — Data table: hairline rows, grey header, no card radius */
+.cds--data-table-container, .cds--data-table { border-radius: 0 !important; }
+.cds--data-table thead th { background: var(--t-selected); border-block-end: 1px solid var(--t-border); }
+.cds--data-table tbody tr:hover td { background: var(--t-panel-hover); }
+
+/* Tabs (line): the house filter bar — accent underline on the selected tab */
+.cds--tabs .cds--tabs__nav-item--selected .cds--tabs__nav-link,
+.cds--tab--list .cds--tabs__nav-item--selected { border-block-end-color: var(--t-accent) !important; }
+
+/* Accordion: flush to the panel, hairline dividers */
+.cds--accordion__item { border-block-start: 1px solid var(--t-border); }
+.cds--accordion { border-block-end: 1px solid var(--t-border); }
+
+/* Focus ring stays Carbon blue everywhere (never cyan) */
+.cds--btn:focus, .cds--text-input:focus, .cds--dropdown:focus,
+.cds--list-box__field:focus, .cds--search-input:focus {
+  outline-color: var(--t-accent) !important;
+}
