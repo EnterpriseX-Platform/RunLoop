@@ -23,7 +23,7 @@ import {
 import { MONO } from '@/components/ControlChrome';
 import {
   DataTable, Table, TableContainer, TableHead, TableRow, TableHeader, TableBody, TableCell,
-  TableToolbar, TableToolbarContent, TableToolbarSearch, ContentSwitcher, Switch, Button, Tag,
+  TableToolbar, TableToolbarContent, TableToolbarSearch, Tabs, TabList, Tab, Button, Tag,
 } from '@carbon/react';
 import { Add } from '@carbon/icons-react';
 
@@ -233,15 +233,16 @@ export default function SecretsPage() {
           </div>
 
           <div style={{ overflowX: 'auto' }}>
-            <ContentSwitcher
-              selectedIndex={['all', ...CATEGORIES.map((c) => c.value)].indexOf(selectedCategory)}
-              onChange={({ name }) => setSelectedCategory((name as string) ?? 'all')}
-              style={{ maxWidth: 560 }}
+            <Tabs
+              selectedIndex={Math.max(0, ['all', ...CATEGORIES.map((c) => c.value)].indexOf(selectedCategory))}
+              onChange={({ selectedIndex }) => setSelectedCategory(['all', ...CATEGORIES.map((c) => c.value)][selectedIndex] ?? 'all')}
             >
-              {([['all', 'All'], ...CATEGORIES.map((c) => [c.value, c.label])] as [string, string][]).map(([v, l]) => (
-                <Switch key={v} name={v} text={l} />
-              ))}
-            </ContentSwitcher>
+              <TabList aria-label="Filter secrets by category">
+                {([['all', 'All'], ...CATEGORIES.map((c) => [c.value, c.label])] as [string, string][]).map(([v, l]) => (
+                  <Tab key={v}>{l}</Tab>
+                ))}
+              </TabList>
+            </Tabs>
           </div>
         </div>
       </header>

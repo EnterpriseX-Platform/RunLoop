@@ -15,8 +15,9 @@ import {
   TableToolbar,
   TableToolbarContent,
   TableToolbarSearch,
-  ContentSwitcher,
-  Switch,
+  Tabs,
+  TabList,
+  Tab,
   Button,
   Tag,
   Loading,
@@ -133,14 +134,16 @@ export default function FlowsPage() {
       />
 
       <div className="mb-4" style={{ maxWidth: 320 }}>
-        <ContentSwitcher
+        <Tabs
           selectedIndex={['All', 'Active', 'Draft'].indexOf(filterStatus)}
-          onChange={({ name }) => setFilterStatus((name as 'All' | 'Active' | 'Draft') ?? 'All')}
+          onChange={({ selectedIndex }) => setFilterStatus(['All', 'Active', 'Draft'][selectedIndex] as 'All' | 'Active' | 'Draft')}
         >
-          <Switch name="All" text="All" />
-          <Switch name="Active" text="Active" />
-          <Switch name="Draft" text="Draft" />
-        </ContentSwitcher>
+          <TabList aria-label="Filter flows by status">
+            <Tab>All</Tab>
+            <Tab>Active</Tab>
+            <Tab>Draft</Tab>
+          </TabList>
+        </Tabs>
       </div>
 
       {isLoading ? (

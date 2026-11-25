@@ -24,8 +24,11 @@ import {
   TableExpandHeader,
   TableExpandRow,
   TableExpandedRow,
-  ContentSwitcher,
-  Switch,
+  Tabs,
+  TabList,
+  Tab,
+  Accordion,
+  AccordionItem,
   Button,
   Tag,
   Loading,
@@ -40,6 +43,7 @@ import {
   Webhook,
   TouchInteraction,
   Launch,
+  WarningAlt,
 } from '@carbon/icons-react';
 import type { Execution } from '@/types';
 
@@ -276,13 +280,14 @@ export default function ExecutionsPage() {
       />
 
       <div className="mb-4" style={{ overflowX: 'auto' }}>
-        <ContentSwitcher
-          selectedIndex={STATUS_TABS.indexOf(filterStatus as (typeof STATUS_TABS)[number])}
-          onChange={({ name }) => setFilterStatus((name as string) ?? 'All')}
-          style={{ maxWidth: 560 }}
+        <Tabs
+          selectedIndex={Math.max(0, STATUS_TABS.indexOf(filterStatus as (typeof STATUS_TABS)[number]))}
+          onChange={({ selectedIndex }) => setFilterStatus(STATUS_TABS[selectedIndex] as string)}
         >
-          {STATUS_TABS.map((t) => <Switch key={t} name={t} text={t} />)}
-        </ContentSwitcher>
+          <TabList aria-label="Filter executions by status">
+            {STATUS_TABS.map((t) => <Tab key={t}>{t}</Tab>)}
+          </TabList>
+        </Tabs>
       </div>
 
       {isLoading ? (
@@ -425,25 +430,32 @@ export default function ExecutionsPage() {
 }
 
 function ExpandedDetail({ e }: { e: Execution }) {
-  const panel = (title: string, body: React.ReactNode, mono = false, tone?: 'error') => (
-    <div style={{ padding: '10px 14px', background: tone === 'error' ? 'var(--cds-notification-background-error, #fff1f1)' : 'var(--cds-layer-01)', marginBottom: 10 }}>
-      <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 6, color: tone === 'error' ? 'var(--cds-text-error)' : 'var(--cds-text-secondary)' }}>{title}</div>
-      <pre style={{ fontSize: 11, margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: mono ? MONO : 'inherit', lineHeight: 1.6, color: 'var(--cds-text-primary)' }}>{body}</pre>
-    </div>
+  const pre = (body: React.ReactNode, tone?: 'error') => (
+    <pre style={{ fontSize: 11.5, margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: MONO, lineHeight: 1.6, color: tone === 'error' ? 'var(--cds-text-error)' : 'var(--cds-text-secondary)' }}>{body}</pre>
   );
+  const hasOutput = e.output && Object.keys(e.output).length > 0;
   return (
-    <div style={{ padding: '4px 0' }}>
-      {e.errorMessage && panel('Error', e.errorMessage, true, 'error')}
-      {e.logs && panel('Logs', e.logs, true)}
-      {e.output && Object.keys(e.output).length > 0 && panel('Output', JSON.stringify(e.output, null, 2), true)}
-      <div className="flex items-center gap-4 flex-wrap" style={{ fontSize: 11, color: 'var(--cds-text-secondary)', padding: '2px 2px' }}>
-        <span>ID: <span style={{ fontFamily: MONO, color: 'var(--cds-text-primary)' }}>{e.id}</span></span>
-        {e.workerId && <span>Worker: <span style={{ fontFamily: MONO, color: 'var(--cds-text-primary)' }}>{e.workerId}</span></span>}
-        {e.retryAttempt > 0 && <span>Retry: #{e.retryAttempt}</span>}
-        <span>Started: {new Date(e.startedAt).toLocaleString()}</span>
-        {e.completedAt && <span>Completed: {new Date(e.completedAt).toLocaleString()}</span>}
-      </div>
-    </div>
+    <Accordion align="start" size="sm">
+      {e.errorMessage && (
+        <AccordionItem
+          open
+          title={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--cds-text-error)', fontWeight: 600 }}><WarningAlt size={14} /> Error</span>}
+        >
+          <div style={{ boxShadow: 'inset 3px 0 0 var(--cds-support-error, #da1e28)', background: 'var(--cds-notification-background-error, #fff1f1)', padding: '10px 14px' }}>{pre(e.errorMessage, 'error')}</div>
+        </AccordionItem>
+      )}
+      {e.logs && <AccordionItem title="Logs">{pre(e.logs)}</AccordionItem>}
+      {hasOutput && <AccordionItem title="Output">{pre(JSON.stringify(e.output, null, 2))}</AccordionItem>}
+      <AccordionItem open={!e.errorMessage && !e.logs && !hasOutput} title="Details">
+        <div className="flex items-center gap-4 flex-wrap" style={{ fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+          <span>ID: <span style={{ fontFamily: MONO, color: 'var(--cds-text-primary)' }}>{e.id}</span></span>
+          {e.workerId && <span>Worker: <span style={{ fontFamily: MONO, color: 'var(--cds-text-primary)' }}>{e.workerId}</span></span>}
+          {e.retryAttempt > 0 && <span>Retry: #{e.retryAttempt}</span>}
+          <span>Started: {new Date(e.startedAt).toLocaleString()}</span>
+          {e.completedAt && <span>Completed: {new Date(e.completedAt).toLocaleString()}</span>}
+        </div>
+      </AccordionItem>
+    </Accordion>
   );
 }
 

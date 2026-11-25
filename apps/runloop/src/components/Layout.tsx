@@ -230,6 +230,7 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [filter, setFilter] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -249,6 +250,7 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
         setIsOpen(false);
         setShowCreateForm(false);
         setNewProjectName('');
+        setFilter('');
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -299,61 +301,94 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
     }
   };
 
+  // The switcher lives on the always-dark Carbon shell header, so its panel
+  // is pinned to the g100 shell ramp (a HeaderPanel), the way Carbon drops
+  // account/switcher panels from the UI shell.
+  const SHELL = {
+    panel: '#262626', hover: '#333333', border: '#393939',
+    text: '#f4f4f4', textSoft: '#c6c6c6', textMuted: '#8d8d8d',
+  };
+  const accent = 'var(--t-accent)';
+  const filtered = projects.filter((p) => p.name.toLowerCase().includes(filter.trim().toLowerCase()));
+
+  const optRow = (opts: { key: string; onClick: () => void; selected: boolean; swatch: React.ReactNode; label: string }) => (
+    <button
+      key={opts.key}
+      onClick={opts.onClick}
+      role="option"
+      aria-selected={opts.selected}
+      className="w-full text-left flex items-center gap-3 transition-colors"
+      style={{
+        height: 40, padding: '0 16px', fontSize: 14, letterSpacing: 0,
+        color: opts.selected ? SHELL.text : SHELL.textSoft,
+        background: 'transparent',
+        boxShadow: opts.selected ? `inset 3px 0 0 ${accent}` : 'none',
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = SHELL.hover)}
+      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+    >
+      {opts.swatch}
+      <span className="flex-1 truncate">{opts.label}</span>
+      {opts.selected && <Check className="w-4 h-4 flex-shrink-0" style={{ color: accent }} />}
+    </button>
+  );
+
   const dropdownMenu = (positionClass: string) => (
     <div
-      style={{ backgroundColor: 'var(--t-panel)', borderColor: 'var(--t-border)', borderRadius: 2 }}
-      className={`${positionClass} border py-1 z-50 rl-menu`}
+      style={{ backgroundColor: SHELL.panel, border: `1px solid ${SHELL.border}`, boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}
+      className={`${positionClass} z-50`}
+      role="listbox"
     >
-      <div className="max-h-48 overflow-auto py-0.5">
-        <button
-          onClick={() => handleSelect(null)}
-          className="w-full h-10 px-4 text-left flex items-center gap-3 transition-colors hover:bg-[var(--t-panel-hover)]"
-          style={{
-            fontSize: 14,
-            letterSpacing: 0,
-            color: !selectedProject ? 'var(--t-accent)' : 'var(--t-text-secondary)',
-          }}
-        >
-          <Layers className="w-4 h-4" style={{ color: 'var(--t-text-muted)' }} />
-          <span className="flex-1">All projects</span>
-          {!selectedProject && <Check className="w-4 h-4" style={{ color: 'var(--t-accent)' }} />}
-        </button>
-        {projects.map((project) => (
-          <button
-            key={project.id}
-            onClick={() => handleSelect(project)}
-            className="w-full h-10 px-4 text-left flex items-center gap-3 transition-colors hover:bg-[var(--t-panel-hover)]"
-            style={{
-              fontSize: 14,
-              letterSpacing: 0,
-              color: selectedProject?.id === project.id ? 'var(--t-accent)' : 'var(--t-text-secondary)',
-            }}
-          >
-            <div
-              className="w-3 h-3 flex-shrink-0"
-              style={{ backgroundColor: project.color || 'var(--t-accent)' }}
-            />
-            <span className="flex-1 truncate">{project.name}</span>
-            {selectedProject?.id === project.id && <Check className="w-4 h-4" style={{ color: 'var(--t-accent)' }} />}
-          </button>
-        ))}
+      <div style={{ padding: '10px 16px 6px', color: SHELL.textMuted, fontSize: 11, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+        Switch project
       </div>
-      <div className="border-t" style={{ borderColor: 'var(--t-border)' }}>
+
+      {projects.length > 6 && (
+        <div style={{ padding: '0 8px 6px' }}>
+          <div className="flex items-center gap-2" style={{ background: '#161616', border: `1px solid ${SHELL.border}`, height: 32, padding: '0 10px' }}>
+            <Search className="w-3.5 h-3.5 flex-shrink-0" style={{ color: SHELL.textMuted }} />
+            <input
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              placeholder="Find a project"
+              style={{ background: 'transparent', color: SHELL.text, fontSize: 13, border: 'none', outline: 'none', width: '100%' }}
+            />
+          </div>
+        </div>
+      )}
+
+      <div style={{ maxHeight: 240, overflow: 'auto' }}>
+        {optRow({
+          key: '__all', onClick: () => handleSelect(null), selected: !selectedProject,
+          swatch: <Layers className="w-4 h-4 flex-shrink-0" style={{ color: SHELL.textMuted }} />,
+          label: 'All projects',
+        })}
+        {filtered.map((project) =>
+          optRow({
+            key: project.id, onClick: () => handleSelect(project), selected: selectedProject?.id === project.id,
+            swatch: <span className="flex-shrink-0" style={{ width: 10, height: 10, borderRadius: '50%', background: project.color || accent }} />,
+            label: project.name,
+          })
+        )}
+        {filtered.length === 0 && (
+          <div style={{ padding: '12px 16px', fontSize: 13, color: SHELL.textMuted }}>No projects match “{filter}”.</div>
+        )}
+      </div>
+
+      <div style={{ borderTop: `1px solid ${SHELL.border}` }}>
         {!showCreateForm ? (
           <button
             onClick={() => setShowCreateForm(true)}
-            className="w-full h-10 px-4 text-left flex items-center gap-3 transition-colors hover:bg-[var(--t-panel-hover)]"
-            style={{
-              fontSize: 14,
-              letterSpacing: 0,
-              color: 'var(--t-accent)',
-            }}
+            className="w-full text-left flex items-center gap-3 transition-colors"
+            style={{ height: 40, padding: '0 16px', fontSize: 14, letterSpacing: 0, color: accent, background: 'transparent' }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = SHELL.hover)}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
           >
             <Plus className="w-4 h-4" />
             New project
           </button>
         ) : (
-          <div className="px-2.5 py-2 space-y-1.5">
+          <div style={{ padding: '10px 8px' }} className="space-y-1.5">
             <input
               ref={inputRef}
               type="text"
@@ -363,31 +398,24 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
                 if (e.key === 'Enter') handleCreateProject();
                 if (e.key === 'Escape') { setShowCreateForm(false); setNewProjectName(''); }
               }}
-              placeholder="project name…"
-              style={{
-                backgroundColor: 'var(--t-input)',
-                borderColor: 'var(--t-border)',
-                color: 'var(--t-text)',
-                fontFamily: MONO,
-                borderRadius: 2,
-              }}
-              className="w-full h-7 px-2 text-[11px] border focus:outline-none focus:border-[var(--t-accent)]"
+              placeholder="Project name"
+              style={{ background: '#161616', border: `1px solid ${SHELL.border}`, color: SHELL.text, height: 32, padding: '0 10px', fontSize: 13, width: '100%', outline: 'none' }}
             />
             <div className="flex gap-1">
               <button
                 onClick={handleCreateProject}
                 disabled={!newProjectName.trim() || isCreating}
-                style={{ fontFamily: MONO, letterSpacing: 0, borderRadius: 2 }}
-                className="flex-1 h-6 text-[10px] font-medium bg-[var(--t-accent)] text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed  transition-opacity"
+                style={{ height: 32, background: accent, color: '#fff', fontSize: 13, fontWeight: 500 }}
+                className="flex-1 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
               >
-                {isCreating ? '...' : 'create'}
+                {isCreating ? 'Creating…' : 'Create'}
               </button>
               <button
                 onClick={() => { setShowCreateForm(false); setNewProjectName(''); }}
-                style={{ color: 'var(--t-text-muted)', borderRadius: 2 }}
-                className="h-6 w-6 flex items-center justify-center hover:bg-[var(--t-panel-hover)]"
+                style={{ color: SHELL.textMuted, height: 32, width: 32 }}
+                className="flex items-center justify-center hover:bg-[#333333]"
               >
-                <X className="w-3 h-3" />
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
@@ -420,35 +448,33 @@ function ProjectSelector({ collapsed }: { collapsed: boolean }) {
         aria-expanded={isOpen}
         style={{
           border: 'none',
-          background: isOpen ? 'var(--t-panel-hover)' : 'transparent',
+          background: isOpen ? '#333333' : 'transparent',
           height: 48,
           maxWidth: 280,
-          padding: '0 16px',
+          padding: '0 14px',
         }}
-        className="flex items-center gap-2 transition-colors hover:bg-[var(--t-panel-hover)]"
-        title={selectedProject?.name || 'Select Project'}
+        className="flex items-center gap-2.5 transition-colors hover:bg-[#333333]"
+        title={selectedProject?.name || 'All projects'}
       >
         <span
           className="flex-shrink-0"
           style={{
-            width: 10, height: 10,
-            background: selectedProject?.color || 'var(--t-text-muted)',
+            width: 10, height: 10, borderRadius: '50%',
+            background: selectedProject?.color || '#8d8d8d',
+            boxShadow: selectedProject ? `0 0 0 3px color-mix(in srgb, ${selectedProject.color || 'var(--t-accent)'} 22%, transparent)` : 'none',
           }}
         />
-        <span
-          className="truncate flex-1 text-left"
-          style={{
-            fontSize: 14,
-            fontWeight: 400,
-            color: 'var(--t-text)',
-            letterSpacing: 0,
-          }}
-        >
-          {selectedProject?.name || 'All projects'}
+        <span className="flex flex-col items-start min-w-0" style={{ lineHeight: 1.15 }}>
+          <span style={{ fontSize: 10, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#8d8d8d' }}>
+            Project
+          </span>
+          <span className="truncate" style={{ fontSize: 14, fontWeight: 400, color: '#f4f4f4', letterSpacing: 0, maxWidth: 190 }}>
+            {selectedProject?.name || 'All projects'}
+          </span>
         </span>
-        <ChevronDown className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--t-text-secondary)', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.1s' }} />
+        <ChevronDown className="w-4 h-4 flex-shrink-0" style={{ color: '#c6c6c6', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.12s' }} />
       </button>
-      {isOpen && dropdownMenu('absolute left-0 top-full w-64')}
+      {isOpen && dropdownMenu('absolute left-0 top-full w-72')}
     </div>
   );
 }
